@@ -1,0 +1,9 @@
+/docs/generated/
+/lib/
+/bin/*
+!/bin/.keep
+/.shards/
+*.dwarf
+/screenshots/
+*.log
+.DS_Store

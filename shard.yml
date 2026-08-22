@@ -1,0 +1,13 @@
+name: eagle
+version: 0.1.0
+description: A Crystal-native 2D/3D game engine, library and viewer.
+
+authors:
+  - Joey Robert <joey@joeyrobert.org>
+
+crystal: ">= 1.21.0"
+license: MIT
+
+targets:
+  eagle:
+    main: src/cli.cr
