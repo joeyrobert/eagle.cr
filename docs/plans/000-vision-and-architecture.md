@@ -81,3 +81,31 @@ docs/plans/               plans and progress logs (this folder)
 ## Roadmap (phases)
 
 See `010-roadmap.md` — updated as work lands.
+
+## Modular backends (added 2026-09-18 after user request for WASM/WebGL)
+
+Everything platform-specific sits behind small abstract classes so backends are
+plug-and-play:
+
+| Abstraction              | Default impl (desktop) | Planned                    |
+|--------------------------|------------------------|----------------------------|
+| `Eagle::Platform::Base`  | `Platform::SDL`        | `Platform::Web` (JS glue)  |
+| `Eagle::GPU::Device`     | `GPU::GL33`            | `GPU::WebGL2`              |
+| `Eagle::Audio::Device`   | `Audio::SDLDevice`     | `Audio::WebAudioDevice`    |
+| `Eagle::Input::Source`   | SDL events             | DOM events                 |
+
+Rules that keep WebGL2 reachable:
+
+* Shaders are written **once** in the GLSL 300 es / GL 3.3 common subset. The
+  backend prepends the `#version` line and precision qualifiers. No geometry
+  shaders, no compute, no `gl_VertexID` tricks, no bindless. UBO-free by default
+  (plain uniforms) so GLES 3.0 and WebGL2 both work.
+* Vertex formats and texture formats are limited to the WebGL2 set
+  (RGBA8, RGB8, R8, depth24, float32 attributes).
+* The renderer never calls `LibGL` directly; it calls `GPU::Device`.
+* Engine code never calls SDL directly; it calls `Platform`.
+* Audio is mixed in Crystal into Float32 frames; the device just consumes them.
+
+Crystal's `wasm32-unknown-wasi` target is experimental; the web backend is a
+later phase and requires a JS shim for WebGL2/WebAudio/DOM input. The
+architecture above is what makes it possible without an engine rewrite.
