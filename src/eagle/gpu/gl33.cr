@@ -434,10 +434,16 @@ module Eagle
         end
       end
 
-      # Returns RGBA8 rows top-to-bottom.
+      # Returns RGBA8 rows top-to-bottom. Render targets are stored top-row-first
+      # (Eagle renders into them with a flipped projection) so only the default
+      # framebuffer needs flipping.
       def read_pixels(x : Int32, y : Int32, w : Int32, h : Int32) : Bytes
         buf = Bytes.new(w * h * 4)
-        fb_h = (@bound_target.try(&.height) || @default_fbo_size[1])
+        if t = @bound_target
+          GL.read_pixels(x, y, w, h, GL::RGBA, GL::UNSIGNED_BYTE, buf.to_unsafe.as(Void*))
+          return buf
+        end
+        fb_h = @default_fbo_size[1]
         GL.read_pixels(x, fb_h - y - h, w, h, GL::RGBA, GL::UNSIGNED_BYTE, buf.to_unsafe.as(Void*))
         # flip vertically
         row = w * 4

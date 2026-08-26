@@ -134,6 +134,13 @@ module Eagle
     end
 
     def start : self
+      if @duration <= 0 && @delay <= 0
+        # Zero-length tweens complete synchronously (used for sequence callbacks).
+        @on_update.try(&.call(@ease.call(1_f32)))
+        @finished = true
+        @on_complete.each(&.call)
+        return self
+      end
       @@active << self unless @@active.includes?(self)
       self
     end

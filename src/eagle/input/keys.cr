@@ -14,8 +14,11 @@ module Eagle
 
     Count = 512
 
-    def self.parse?(name : String) : Key?
-      super(name) || super(name.capitalize)
+    # Case-insensitive lookup: "space", "Space", "SPACE".
+    def self.named?(name : String) : Key?
+      n = name.downcase
+      each { |k| return k if k.to_s.downcase == n }
+      nil
     end
   end
 

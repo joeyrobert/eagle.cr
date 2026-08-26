@@ -142,8 +142,9 @@ module Eagle
 
     # First descendant (depth-first) whose name matches.
     def find(name : String) : Node?
-      each_descendant { |n| return n if n.name == name }
-      nil
+      found : Node? = nil
+      each_descendant { |n| found = n if found.nil? && n.name == name }
+      found
     end
 
     # All descendants of a type.
@@ -195,7 +196,11 @@ module Eagle
     end
 
     def ancestor_of?(node : Node) : Bool
-      node.each_ancestor { |a| return true if a == self }
+      p = node.parent
+      while p
+        return true if p == self
+        p = p.parent
+      end
       false
     end
 

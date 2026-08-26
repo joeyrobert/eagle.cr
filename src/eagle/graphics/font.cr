@@ -47,7 +47,7 @@ module Eagle
     end
 
     # Word-wrap `text` into lines no wider than `max_width`.
-    def wrap(text : String, max_width : Float32) : Array(String)
+    def wrap(text : String, max_width : Number) : Array(String)
       out_lines = [] of String
       text.each_line do |para|
         line = ""
