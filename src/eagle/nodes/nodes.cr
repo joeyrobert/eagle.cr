@@ -1,0 +1,8 @@
+require "./node2d"
+require "./camera2d"
+require "./sprite2d"
+require "./animated_sprite2d"
+require "./label"
+require "./timer"
+require "./shapes2d"
+require "./tilemap"

@@ -119,7 +119,30 @@ module Eagle
     run(app, **opts)
   end
 
+  # Pass the App class to have it constructed *after* the window and GPU exist,
+  # so instance-variable initialisers may create textures etc.
+  def self.run(app_class : App.class, **opts) : Nil
+    init(app_class, **opts)
+    begin
+      main_loop
+    ensure
+      shutdown
+    end
+  end
+
+  def self.init(app_class : App.class, **opts) : Nil
+    init(App.new, **opts) { app_class.new }
+  end
+
   # Open the window and GPU without entering the loop (tests, tools). Pair with `shutdown`.
+  def self.init(app : App = App.new, **opts, &factory : -> App) : Nil
+    init(app, **opts) # opens everything with a placeholder app
+    real = factory.call
+    @@app = real
+    real._load
+    SceneTree.root.ready_tree
+  end
+
   def self.init(app : App = App.new, **opts) : Nil
     return if @@initialized
     setup_logging
@@ -229,7 +252,9 @@ module Eagle
     GPU.device.bind_render_target(nil)
     GPU.device.clear(@@config.clear_color, depth: true, stencil: true)
     g.begin_frame
+    g.camera = Camera2D.current
     SceneTree.root.draw_tree(g)
+    g.camera = nil
     app._draw(g)
     g.end_frame
 

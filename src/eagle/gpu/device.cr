@@ -188,7 +188,7 @@ module Eagle
     @@device : Device? = nil
 
     def self.device : Device
-      @@device || raise Error.new("No GPU device. Call Eagle.run or Eagle.init first.")
+      @@device || raise Error.new("No GPU device yet. Create textures, shaders and other GPU resources after the engine starts: in App#load, Node#ready, or by passing your App *class* to Eagle.run (e.g. `Eagle.run(MyGame)`) so it is constructed after init.")
     end
 
     def self.device=(d : Device?)

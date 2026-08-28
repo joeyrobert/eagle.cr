@@ -90,6 +90,7 @@ module Eagle
       @@deferred.clear
       @@groups.clear
       @@current_scene = nil
+      Camera2D.reset
     end
   end
 end
