@@ -57,7 +57,8 @@ macro signal(decl)
   {% if decl.is_a?(Call) %}
     {% name = decl.name %}
     {% types = decl.args.map(&.type) %}
-    getter {{name}} : ::Eagle::Emitter({{types.splat}}) { ::Eagle::Emitter({{types.splat}}).new }
+    @_sig_{{name}} : ::Eagle::Emitter({{types.splat}})? = nil
+    def {{name}} : ::Eagle::Emitter({{types.splat}}); @_sig_{{name}} ||= ::Eagle::Emitter({{types.splat}}).new; end
     def emit_{{name}}(*args) : Nil; {{name}}.emit(*args); end
     def on_{{name}}(&block : {{types.splat}} -> Nil) : Proc({{ (types + [Nil]).join(", ").id }}); {{name}}.connect(&block); end
   {% else %}
