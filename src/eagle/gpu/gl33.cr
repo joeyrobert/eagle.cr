@@ -132,6 +132,10 @@ module Eagle
         GL.polygon_mode(GL::FRONT_AND_BACK, enabled ? GL::LINE : GL::FILL)
       end
 
+      def front_face_ccw(ccw : Bool) : Nil
+        GL.front_face(ccw ? GL::CCW : GL::CW)
+      end
+
       def check_errors(where : String = "") : Nil
         GL.check!(where)
       end
@@ -413,6 +417,25 @@ module Eagle
         RenderTargetHandle.new(fbo, color, depth_id, w, h)
       end
 
+      def create_depth_target(w : Int32, h : Int32) : RenderTargetHandle
+        depth = create_texture(w, h, PixelFormat::Depth24, nil, Filter::Nearest, Wrap::Clamp, false)
+        GL.bind_texture(GL::TEXTURE_2D, depth)
+        GL.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_COMPARE_MODE, GL::NONE.to_i)
+        fbo = 0_u32
+        GL.gen_framebuffers(1, pointerof(fbo))
+        GL.bind_framebuffer(GL::FRAMEBUFFER, fbo)
+        GL.framebuffer_texture2d(GL::FRAMEBUFFER, GL::DEPTH_ATTACHMENT, GL::TEXTURE_2D, depth, 0)
+        none = GL::NONE
+        GL.draw_buffers(1, pointerof(none))
+        GL.read_buffer(GL::NONE)
+        status = GL.check_framebuffer_status(GL::FRAMEBUFFER)
+        GL.bind_framebuffer(GL::FRAMEBUFFER, 0_u32)
+        raise Error.new("Depth framebuffer incomplete: 0x#{status.to_s(16)}") if status != GL::FRAMEBUFFER_COMPLETE
+        RenderTargetHandle.new(fbo, 0_u32, depth, w, h, true)
+      end
+
+      def current_target : RenderTargetHandle?; @bound_target; end
+
       def bind_render_target(target : RenderTargetHandle?) : Nil
         @bound_target = target
         if t = target
@@ -427,10 +450,10 @@ module Eagle
       def delete_render_target(target : RenderTargetHandle) : Nil
         fbo = target.fbo
         GL.delete_framebuffers(1, pointerof(fbo))
-        delete_texture(target.color)
+        delete_texture(target.color) if target.color != 0
         if target.depth != 0
           d = target.depth
-          GL.delete_renderbuffers(1, pointerof(d))
+          target.depth_texture? ? delete_texture(d) : GL.delete_renderbuffers(1, pointerof(d))
         end
       end
 

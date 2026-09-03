@@ -47,11 +47,11 @@ module Eagle
     protected def clear_current; @current = false; end
 
     def enter_tree : Nil
-      make_current if @@current.nil?
+      make_current if Camera2D.current.nil?
     end
 
     def exit_tree : Nil
-      Camera2D.current = nil if @@current == self
+      Camera2D.current = nil if Camera2D.current == self
     end
 
     def viewport_size : Vec2; @viewport || Window.size; end

@@ -135,7 +135,9 @@ module Eagle
       getter depth : UInt32
       getter width : Int32
       getter height : Int32
-      def initialize(@fbo, @color, @depth, @width, @height); end
+      # True when `depth` is a sampleable depth texture (shadow maps).
+      getter? depth_texture : Bool
+      def initialize(@fbo, @color, @depth, @width, @height, @depth_texture = false); end
     end
 
     # Uniform value union.
@@ -154,6 +156,8 @@ module Eagle
       abstract def depth_test(enabled : Bool, write : Bool = true, func : DepthFunc = DepthFunc::Less) : Nil
       abstract def cull(mode : CullMode) : Nil
       abstract def wireframe(enabled : Bool) : Nil
+      # Winding order considered front-facing (true = counter-clockwise, the default).
+      abstract def front_face_ccw(ccw : Bool) : Nil
       abstract def check_errors(where : String = "") : Nil
 
       # --- programs ---
@@ -180,7 +184,10 @@ module Eagle
 
       # --- render targets ---
       abstract def create_render_target(w : Int32, h : Int32, depth : Bool, filter : Filter) : RenderTargetHandle
+      # Depth-only target whose depth buffer is a texture (for shadow maps).
+      abstract def create_depth_target(w : Int32, h : Int32) : RenderTargetHandle
       abstract def bind_render_target(target : RenderTargetHandle?) : Nil
+      abstract def current_target : RenderTargetHandle?
       abstract def delete_render_target(target : RenderTargetHandle) : Nil
       abstract def read_pixels(x : Int32, y : Int32, w : Int32, h : Int32) : Bytes
     end

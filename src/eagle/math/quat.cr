@@ -33,6 +33,7 @@ module Eagle
 
     def self.look_rotation(forward : Vec3, up : Vec3 = Vec3::UP) : Quat
       f = forward.normalized
+      up = (up.dot(f).abs > 0.999 ? (f.y.abs > 0.9 ? Vec3::BACK : Vec3::UP) : up)
       r = f.cross(up).normalized
       u = r.cross(f)
       # Rotation matrix columns: right, up, back (-forward), row-major mRC below.

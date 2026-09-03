@@ -35,21 +35,23 @@ Requirements gathered from the project owner (2026-09-18):
 - [x] Examples: smoke, sandbox2d
 
 ## Phase 2 — Audio, physics, particles
-- [ ] Audio mixer (Float32, main-thread queue), WAV codec, synth tones, Sound/Voice, AudioPlayer & AudioPlayer2D nodes
-- [ ] Physics2D: circle/box/polygon, SAT, impulse solver, spatial hash, raycast, queries; StaticBody2D/RigidBody2D/KinematicBody2D/Area2D/CollisionShape2D; move_and_slide
-- [ ] Particles2D
-- [ ] Specs for all of the above
+- [x] Audio mixer (Float32, main-thread queue), WAV codec, synth tones, Sound/Voice (pitch/pan/loop/fade), buses, streams, AudioPlayer & AudioPlayer2D nodes
+- [x] Physics2D: circle/box/polygon, SAT with clipped manifolds, manifold-level Jacobi impulse solver with Baumgarte bias, spatial hash, raycast, point/rect/shape queries, layers/masks, sensors, contact signals; StaticBody2D/RigidBody2D/KinematicBody2D(CharacterBody2D)/Area2D/CollisionShape2D/RayCast2D; move_and_slide with substeps + floor snap
+- [x] Particles2D (rate/burst/one-shot, gravity, damping, scale & colour over life, emission shapes, blend modes)
+- [x] Specs for all of the above; physics example verified visually
 
 ## Phase 3 — Fonts & UI
-- [ ] TrueType parser + rasteriser (cmap, glyf, hmtx, kern), glyph atlas, `Font.load`
-- [ ] UI: Control base (anchors, margins, focus, mouse/keyboard), Panel, Button, Label, CheckBox, Slider, ProgressBar, TextInput, VBox/HBox/Grid containers, Theme
-- [ ] Specs
+- [x] TrueType parser (cmap 0/4/6/12, glyf simple+composite, hmtx, kern, name, TTC) + font-rs style signed-area rasteriser, glyph atlases, `Font.load(path, size)`
+- [x] UI: Control (anchors, margins, focus, hover, mouse/keyboard), Panel, Label, Button (toggle/icon), CheckBox, Slider, ProgressBar, TextInput, ImageControl, VBox/HBox/GridContainer/Spacer, Theme (dark/light)
+- [x] Specs; UI example verified with Arial TTF
+- [!] CFF/OpenType outlines unsupported (glyf only). No GPOS kerning.
 
 ## Phase 4 — 3D
-- [ ] Mesh (interleaved P/N/UV/Color/Tangent), primitives (cube, sphere, plane, cylinder, capsule, torus), OBJ loader
-- [ ] Material (unlit/Blinn-Phong/PBR-lite), Camera3D, DirectionalLight/PointLight/SpotLight, fog, skybox, shadow map
-- [ ] Node3D, MeshInstance3D, Camera3D node, Light nodes, Renderer3D, Physics3D basics (AABB/sphere/raycast)
-- [ ] Specs (render to canvas and check pixels)
+- [x] Mesh (P/N/UV/Color), primitives (quad, plane, box, sphere, cylinder, cone, capsule, torus, grid, axes), OBJ import/export, normals, flat shading, append/transform
+- [x] Material (Blinn-Phong + metallic tint, unlit, textures, transparency, wireframe, custom shaders/uniforms), Camera3D (perspective/ortho, rays, projection, fly controls), Directional/Point/Spot lights, procedural sky, fog, PCF shadow map (directional)
+- [x] Node3D, MeshInstance3D, Scene3D collector, Renderer3D (sorted opaque/transparent passes)
+- [x] Specs incl. pixel checks for lighting and cast shadows; fly-through example verified
+- [ ] Physics3D basics (AABB/sphere/raycast helpers exist in math; a simple world is TODO)
 
 ## Phase 5 — Games & polish
 - [ ] 2D games: Chess, Breakout, Asteroids, Platformer, Snake
@@ -60,3 +62,4 @@ Requirements gathered from the project owner (2026-09-18):
 ## Log
 - 2026-09-18: project started; Phase 0 and Phase 1 landed (99 specs green). Smoke and sandbox2d screenshots verified visually.
 - 2026-09-18: decided `Eagle.run(AppClass)` constructs the app after init so GPU resources can live in ivars.
+- 2026-09-18: Phases 2–4 landed (152 specs). Findings: Crystal class vars are per-subclass (focus tracking moved to a module); `getter? x` + `signal x` clash in the parser (signal ivars are now `@_sig_*`); sequential contact impulses need manifold-level Jacobi to avoid drift; GL errors are sticky so the spec harness checks after every render; render targets are stored top-row-first by convention.

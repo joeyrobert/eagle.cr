@@ -51,6 +51,7 @@ module Eagle
 
     def lerp(o : Vec3, t : Number) : Vec3; self + (o - self) * t; end
     def abs : Vec3; Vec3.new(@x.abs, @y.abs, @z.abs); end
+    def zero? : Bool; @x == 0 && @y == 0 && @z == 0; end
     def min(o : Vec3) : Vec3; Vec3.new(Math.min(@x, o.x), Math.min(@y, o.y), Math.min(@z, o.z)); end
     def max(o : Vec3) : Vec3; Vec3.new(Math.max(@x, o.x), Math.max(@y, o.y), Math.max(@z, o.z)); end
     def reflect(n : Vec3) : Vec3; self - n * (2 * dot(n)); end

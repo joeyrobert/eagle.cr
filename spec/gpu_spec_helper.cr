@@ -22,6 +22,7 @@ module GPUSpec
     canvas = Eagle::Canvas.new(w, h)
     g.with_canvas(canvas, clear: clear) { block.call(g) }
     g.end_frame
+    Eagle::GPU.device.check_errors("GPUSpec.render")
     img = canvas.to_image
     canvas.dispose
     img

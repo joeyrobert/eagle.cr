@@ -252,6 +252,10 @@ module Eagle
     GPU.device.bind_render_target(nil)
     GPU.device.clear(@@config.clear_color, depth: true, stencil: true)
     g.begin_frame
+    if Camera3D.current
+      Scene3D.render
+      GPU.device.bind_render_target(nil)
+    end
     g.camera = Camera2D.current
     SceneTree.root.draw_tree(g)
     g.camera = nil
@@ -301,6 +305,9 @@ module Eagle
     return unless @@initialized
     @@app.try(&.unload)
     SceneTree.reset
+    Scene3D.reset
+    Control.reset_focus
+    Material.reset_shared
     Audio.shutdown
     @@graphics.try(&.dispose)
     @@graphics = nil

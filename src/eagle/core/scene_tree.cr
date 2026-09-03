@@ -91,6 +91,8 @@ module Eagle
       @@groups.clear
       @@current_scene = nil
       Camera2D.reset
+      Camera3D.reset
+      Control.reset_focus
     end
   end
 end

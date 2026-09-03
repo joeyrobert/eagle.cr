@@ -130,8 +130,10 @@ describe Eagle::Label do
   gpu_it "measures and draws text" do
     l = Label.new("Hi", v2(0, 0))
     l.size.should eq v2(2 * 6 * 2, 8 * 2)
+    l.wrap = true
     l.width = 30
     l.text = "one two"
+    l.layout
     l.size.y.should eq 2 * 16
     img = GPUSpec.render(32, 32) { |g| l.draw_tree(g) }
     img.average(0, 0, 32, 32).r.should be > 0.02
