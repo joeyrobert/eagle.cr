@@ -54,12 +54,26 @@ Requirements gathered from the project owner (2026-09-18):
 - [ ] Physics3D basics (AABB/sphere/raycast helpers exist in math; a simple world is TODO)
 
 ## Phase 5 — Games & polish
-- [ ] 2D games: Chess, Breakout, Asteroids, Platformer, Snake
-- [ ] 3D: feature fly-through, simple 3D game
-- [ ] CLI: `eagle new`, `eagle run`, `eagle view` (image/model/font viewer)
-- [ ] Windows/Linux link flags, docs, website
+- [x] 2D games: Chess (full rules, perft-verified move generator, alpha-beta AI), Checkers (1/2 players, forced captures, multi-jumps, kings, AI), Breakout, Asteroids, Platformer, Snake — all self-contained (procedural assets & sounds)
+- [x] 3D: feature fly-through (`flythrough3d`), Coin Rush game (`coinrush3d`)
+- [x] CLI: `eagle new/run/build/view/examples`; viewers for PNG/QOI/BMP, OBJ, TTF, WAV, GLSL (hot reload)
+- [x] README + docs/guide.md
+- [ ] Windows/Linux: link flags are in place (`@[Link("SDL2")]`) but untested on those platforms
+- [ ] Website
+- [ ] WebAssembly/WebGL2 backend (architecture ready; see 000-vision)
+
+## Known gaps / next steps
+- Physics3D: only math helpers (AABB, Ray, sphere tests); no 3D rigid-body world.
+- Audio: WAV only (no OGG/MP3); no reverb/effects.
+- Fonts: TrueType `glyf` only (no CFF/OpenType, no GPOS kerning, no colour emoji).
+- 3D: no skeletal animation, no cubemaps/IBL/PBR, single directional shadow cascade, no post-processing stack.
+- UI: no scroll containers, drop-downs, or rich text.
+- No scene serialisation / editor; no networking.
+- 2D text switches textures per glyph run (many draw calls with TTF); an atlas-with-white-pixel optimisation would fix it.
+- Windows/Linux builds untested; WASM backend not started.
 
 ## Log
 - 2026-09-18: project started; Phase 0 and Phase 1 landed (99 specs green). Smoke and sandbox2d screenshots verified visually.
 - 2026-09-18: decided `Eagle.run(AppClass)` constructs the app after init so GPU resources can live in ivars.
+- 2026-09-18: Phase 5 landed: 6 2D games + 2 3D programs, CLI, docs (167 specs). Findings: sphere/cylinder-cap winding was inverted (spec now checks winding for every primitive); `eagle view` doubles as a regression tool.
 - 2026-09-18: Phases 2–4 landed (152 specs). Findings: Crystal class vars are per-subclass (focus tracking moved to a module); `getter? x` + `signal x` clash in the parser (signal ivars are now `@_sig_*`); sequential contact impulses need manifold-level Jacobi to avoid drift; GL errors are sticky so the spec harness checks after every render; render targets are stored top-row-first by convention.

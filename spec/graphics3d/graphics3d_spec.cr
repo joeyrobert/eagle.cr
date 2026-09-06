@@ -17,10 +17,16 @@ describe Eagle::Mesh do
     # winding must agree with the normal (front face up)
     a, b, c = p.indices[0, 3].map { |i| p.positions[i] }
     (b - a).cross(c - a).dot(Vec3::UP).should be > 0
-    cube = Mesh.cube
-    (0...cube.indices.size).step(3) do |i|
-      x, y, z = cube.indices[i, 3].map { |k| cube.positions[k] }
-      (y - x).cross(z - x).dot(cube.normals[cube.indices[i]]).should be > 0
+    # every primitive: triangle winding must agree with its normals (else culling hides it)
+    {Mesh.cube, Mesh.sphere, Mesh.cylinder, Mesh.cone, Mesh.capsule, Mesh.torus, Mesh.plane, Mesh.quad, Mesh.box(1, 2, 3)}.each do |mesh|
+      bad = 0
+      (0...mesh.indices.size).step(3) do |i|
+        x, y, z = mesh.indices[i, 3].map { |k| mesh.positions[k] }
+        n = (y - x).cross(z - x)
+        next if n.length < 1e-8
+        bad += 1 if n.dot(mesh.normals[mesh.indices[i]]) < 0
+      end
+      bad.should eq 0
     end
     Mesh.cylinder.triangle_count.should be > 40
     Mesh.cone.vertex_count.should be > 20

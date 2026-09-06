@@ -83,6 +83,7 @@ class FlyThrough < App
   end
 
   def draw(g : Graphics)
+    g.rect(0, 0, Window.width, 30, color: Color.new(0, 0, 0, 0.45))
     g.print("Eagle 3D  fps #{Clock.fps.round}  draw calls #{Scene3D.renderer.draw_calls}  WASD/QE move, right-drag look, F wireframe, click to pick", 10, 10, Color::WHITE)
     if p = @picked
       if s = @cam.world_to_screen(p.global_position)

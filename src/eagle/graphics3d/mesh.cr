@@ -210,7 +210,7 @@ module Eagle
       rings.times do |r|
         segments.times do |s|
           i = (r * (segments + 1) + s).to_u32
-          m.add_quad(i, i + segments + 1, i + segments + 2, i + 1)
+          m.add_quad(i, i + 1, i + segments + 2, i + segments + 1) # counter-clockwise from outside
         end
       end
       m
@@ -244,9 +244,9 @@ module Eagle
         end
         segments.times do |s|
           if n.y > 0
-            m.add_triangle(center, ring[s], ring[s + 1])
-          else
             m.add_triangle(center, ring[s + 1], ring[s])
+          else
+            m.add_triangle(center, ring[s], ring[s + 1])
           end
         end
       end
