@@ -215,24 +215,12 @@ module Eagle
     @@last_time = now
 
     Input.begin_frame
-    pf.poll_events do |ev|
-      Input.handle(ev)
-      case ev
-      when QuitEvent
-        @@quit_requested = true if app.quit?
-      when WindowEvent
-        case ev.kind
-        when .resized?
-          Window.refresh(pf)
-          GPU.device.as(GPU::GL33).default_framebuffer_size = pf.drawable_size
-          app.resize(Window.width, Window.height)
-          SceneTree.root.each_descendant { |n| n.resized(Window.width, Window.height) }
-        when .focus_gained? then Window.focused = true
-        when .focus_lost? then Window.focused = false
-        end
-      end
-      app._input(ev)
-      SceneTree.dispatch_input(ev)
+    pf.poll_events { |ev| handle_event(ev) }
+    Script.tick
+    unless @@injected.empty?
+      queued = @@injected
+      @@injected = [] of Event
+      queued.each { |ev| handle_event(ev) }
     end
     Input.end_poll
 
@@ -283,6 +271,38 @@ module Eagle
     end
   end
 
+  @@injected = [] of Event
+
+  # Queue synthetic events for the next frame (tests, demos, replays, accessibility tools).
+  # They flow through exactly the same path as real input: Input state, App#input, the node tree.
+  def self.inject(*events : Event) : Nil
+    events.each { |e| @@injected << e }
+  end
+
+  # Route one event through Input, the App and the scene tree.
+  def self.handle_event(ev : Event) : Nil
+    pf = platform
+    app = self.app
+    Input.handle(ev)
+    case ev
+    when QuitEvent
+      @@quit_requested = true if app.quit?
+    when WindowEvent
+      case ev.kind
+      when .resized?
+        Window.refresh(pf)
+        GPU.device.as(GPU::GL33).default_framebuffer_size = pf.drawable_size
+        app.resize(Window.width, Window.height)
+        SceneTree.root.each_descendant { |n| n.resized(Window.width, Window.height) }
+      when .focus_gained? then Window.focused = true
+      when .focus_lost? then Window.focused = false
+      end
+    end
+    app._input(ev)
+    SceneTree.dispatch_input(ev)
+    Control.handle_focus_navigation(ev) unless ev.handled?
+  end
+
   # Capture the current back buffer (call after drawing, before swap), or the
   # last presented frame during a normal frame. Returns the image; saves if `path`.
   def self.screenshot(path : String? = nil) : Image
@@ -319,5 +339,7 @@ module Eagle
     @@running = false
     @@frame_hooks.clear
     @@frame_limit = nil
+    @@injected.clear
+    Script.clear
   end
 end

@@ -67,6 +67,38 @@ module Eagle
     # :nodoc:
     def self.reset_focus; Focus.current = nil; end
 
+    # All focusable, visible, enabled controls in tree order.
+    def self.focusable_controls(root : Node = SceneTree.root) : Array(Control)
+      list = [] of Control
+      root.each_descendant { |n| list << n if n.is_a?(Control) && n.focusable? && !n.disabled? && n.visible? && n.can_process? }
+      list
+    end
+
+    # Tab / Shift+Tab cycle focus; Escape clears it. Called by the engine for unhandled key events.
+    def self.handle_focus_navigation(ev : Event) : Nil
+      return unless ev.is_a?(KeyEvent) && ev.pressed?
+      case ev.key
+      when Key::Tab
+        list = focusable_controls
+        return if list.empty?
+        cur = Focus.current
+        idx = cur ? (list.index(cur) || -1) : -1
+        idx = ev.mods.shift? ? (idx - 1) % list.size : (idx + 1) % list.size
+        list[idx].grab_focus
+        ev.handled = true
+      when Key::Escape
+        Focus.current.try(&.release_focus)
+      end
+    end
+
+    # Move focus to the next/previous focusable control.
+    def focus_next : Nil
+      list = Control.focusable_controls
+      return if list.empty?
+      i = list.index(self) || -1
+      list[(i + 1) % list.size].grab_focus
+    end
+
     def initialize(name : String = "", position : Vec2 = Vec2::ZERO, size : Vec2? = nil)
       super(name, position)
       @size = size if size
@@ -158,6 +190,9 @@ module Eagle
       if @anchor.fill?
         @position = Vec2.new(b.x + @margin.x, b.y + @margin.y)
         self.size = Vec2.new(b.w - @margin.x - @margin.z, b.h - @margin.y - @margin.w).max(effective_min_size)
+      elsif @anchor.top_left?
+        # default anchor: `position` is used as-is
+        self.size = @size.max(effective_min_size)
       else
         f = @anchor.factors
         self.size = @size.max(effective_min_size)

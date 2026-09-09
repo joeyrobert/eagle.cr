@@ -18,7 +18,7 @@ module Eagle
       @color = color
       @label_font = font
       @mouse_enabled = false
-      @size = content_min_size unless size
+      @size = content_min_size if size.nil? && GPU.ready? # otherwise sized on first layout
     end
 
     def font : Font; @label_font || super; end
