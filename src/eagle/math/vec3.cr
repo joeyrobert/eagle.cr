@@ -1,5 +1,7 @@
 module Eagle
   struct Vec3
+    # Additive identity (lets `Enumerable#sum` work on vectors).
+    def self.zero : Vec3; Vec3.new(0, 0, 0); end
     property x : Float32
     property y : Float32
     property z : Float32
@@ -43,6 +45,7 @@ module Eagle
     def length : Float32; Math.sqrt(@x * @x + @y * @y + @z * @z).to_f32; end
     def length_squared : Float32; @x * @x + @y * @y + @z * @z; end
     def distance(o : Vec3) : Float32; (o - self).length; end
+    def distance_squared(o : Vec3) : Float32; (o - self).length_squared; end
 
     def normalized : Vec3
       l = length
@@ -71,6 +74,7 @@ module Eagle
   end
 
   struct Vec4
+    def self.zero : Vec4; Vec4.new(0, 0, 0, 0); end
     property x : Float32
     property y : Float32
     property z : Float32

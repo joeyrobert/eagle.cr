@@ -1,6 +1,8 @@
 module Eagle
   # 2D vector of Float32. Immutable struct; all operations return new values.
   struct Vec2
+    # Additive identity (lets `Enumerable#sum` work on vectors).
+    def self.zero : Vec2; Vec2.new(0, 0); end
     property x : Float32
     property y : Float32
 

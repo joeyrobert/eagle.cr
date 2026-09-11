@@ -1,6 +1,8 @@
 module Eagle
   # RGBA color with Float32 components in 0..1.
   struct Color
+    # Additive identity (lets `Enumerable#sum` work on vectors).
+    def self.zero : Color; Color.new(0, 0, 0, 0); end
     property r : Float32
     property g : Float32
     property b : Float32

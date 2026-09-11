@@ -282,6 +282,38 @@ module Eagle
   module Scene3D
     @@renderer : Renderer3D? = nil
     @@environment = Environment.new
+    @@debug_mesh : Mesh? = nil
+
+    # Immediate-mode debug lines, drawn (unlit) with the next render and then cleared.
+    def self.debug_line(a : Vec3, b : Vec3, color : Color = Color::GREEN) : Nil
+      m = (@@debug_mesh ||= Mesh.new("debug").tap(&.primitive = GPU::Primitive::Lines))
+      i = m.add_vertex(a, Vec3::UP, Vec2::ZERO, color)
+      j = m.add_vertex(b, Vec3::UP, Vec2::ZERO, color)
+      m.indices << i << j
+    end
+
+    def self.debug_box(center : Vec3, half : Vec3, rotation : Quat = Quat::IDENTITY, color : Color = Color::GREEN) : Nil
+      c = [] of Vec3
+      [-1, 1].each { |x| [-1, 1].each { |y| [-1, 1].each { |z| c << center + rotation * Vec3.new(half.x * x, half.y * y, half.z * z) } } }
+      [{0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3}, {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}].each { |(i, j)| debug_line(c[i], c[j], color) }
+    end
+
+    def self.debug_sphere(center : Vec3, radius : Float32, color : Color = Color::GREEN, segments : Int32 = 16) : Nil
+      segments.times do |i|
+        a0 = Math::PI * 2 * i / segments; a1 = Math::PI * 2 * (i + 1) / segments
+        debug_line(center + Vec3.new(Math.cos(a0) * radius, 0, Math.sin(a0) * radius), center + Vec3.new(Math.cos(a1) * radius, 0, Math.sin(a1) * radius), color)
+        debug_line(center + Vec3.new(Math.cos(a0) * radius, Math.sin(a0) * radius, 0), center + Vec3.new(Math.cos(a1) * radius, Math.sin(a1) * radius, 0), color)
+        debug_line(center + Vec3.new(0, Math.cos(a0) * radius, Math.sin(a0) * radius), center + Vec3.new(0, Math.cos(a1) * radius, Math.sin(a1) * radius), color)
+      end
+    end
+
+    # :nodoc:
+    def self.take_debug_item : DrawItem?
+      m = @@debug_mesh
+      return nil if m.nil? || m.indices.empty?
+      @@debug_mesh = nil
+      DrawItem.new(m, Material.unlit(Color::WHITE), Mat4.identity)
+    end
 
     def self.environment : Environment; @@environment; end
     def self.environment=(e : Environment); @@environment = e; renderer.environment = e; end
@@ -294,6 +326,7 @@ module Eagle
     def self.reset : Nil
       @@renderer.try(&.dispose)
       @@renderer = nil
+      @@debug_mesh = nil
       @@environment = Environment.new
       Camera3D.reset
     end
@@ -325,6 +358,10 @@ module Eagle
       cam = camera
       return unless cam
       items, lights = collect(root)
+      if dbg = take_debug_item
+        items << dbg
+        SceneTree.defer { dbg.mesh.dispose }
+      end
       renderer.render(cam.camera_view(target_size.x / target_size.y), items, lights, target_size, flip_y, clear)
     end
   end

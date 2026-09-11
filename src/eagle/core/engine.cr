@@ -226,6 +226,7 @@ module Eagle
 
     Clock.each_fixed_step do |fdt|
       Physics2D.world.step(fdt) if Physics2D.active?
+      Physics3D.world.step(fdt) if Physics3D.active?
       SceneTree.root.physics_process_tree(fdt)
       app._fixed_update(fdt)
     end
