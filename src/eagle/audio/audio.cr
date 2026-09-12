@@ -1,4 +1,5 @@
 require "./wav"
+require "./vorbis"
 
 module Eagle
   # PCM audio in memory: interleaved Float32 samples, -1..1.
@@ -36,8 +37,10 @@ module Eagle
     def self.decode(data : Bytes, hint : String = "") : Sound
       if Codecs::WAV.wav?(data)
         Sound.new(Codecs::WAV.decode(data), hint)
+      elsif Codecs::Vorbis.ogg?(data)
+        Sound.new(Codecs::Vorbis.decode(data), hint)
       else
-        raise AssetError.new("Unknown audio format#{hint.empty? ? "" : " for #{hint}"} (WAV supported)")
+        raise AssetError.new("Unknown audio format#{hint.empty? ? "" : " for #{hint}"} (WAV and Ogg Vorbis supported)")
       end
     end
 

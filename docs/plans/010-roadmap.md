@@ -63,14 +63,23 @@ Requirements gathered from the project owner (2026-09-18):
 - [ ] WebAssembly/WebGL2 backend (architecture ready; see 000-vision)
 
 ## Known gaps / next steps
-- Physics3D: only math helpers (AABB, Ray, sphere tests); no 3D rigid-body world.
-- Audio: WAV only (no OGG/MP3); no reverb/effects.
+- Physics3D: spheres + oriented boxes only (no capsules/meshes/joints); no sleeping.
+- Audio: WAV + Ogg Vorbis (Crystal decoder, bit-exact vs ffmpeg on libvorbis streams; ffmpeg's *experimental* built-in encoder's coupled stereo decodes with a wrong angle channel — likely an encoder quirk, unresolved); no MP3; no reverb/effects.
 - Fonts: TrueType `glyf` only (no CFF/OpenType, no GPOS kerning, no colour emoji).
 - 3D: no skeletal animation, no cubemaps/IBL/PBR, single directional shadow cascade, no post-processing stack.
 - UI: no scroll containers, drop-downs, or rich text.
 - No scene serialisation / editor; no networking.
 - 2D text switches textures per glyph run (many draw calls with TTF); an atlas-with-white-pixel optimisation would fix it.
 - Windows/Linux builds untested; WASM backend not started.
+
+## Phase 6 — Completeness pass (2026-09-18)
+- [x] Event injection (`Eagle.inject`) + `Script` scheduler; loop-driven integration specs; Tab focus navigation; interactions demo
+- [x] Cross-compile check (Windows MSVC, Linux x86_64/aarch64 objects build)
+- [x] Physics3D world + nodes + specs + example
+- [x] Ogg Vorbis decoder (floor 1, residues 0/1/2, coupling, FFT-based IMDCT) validated against ffmpeg
+- [ ] Roguelike example
+- [ ] WebAssembly/WebGL2 backend (Crystal 1.21's wasm stdlib needs a shim: `EventLoop::Wasi#run` is missing)
+- [ ] Marketing site + docs site (examples compiled for web, API docs)
 
 ## Log
 - 2026-09-18: project started; Phase 0 and Phase 1 landed (99 specs green). Smoke and sandbox2d screenshots verified visually.
