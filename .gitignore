@@ -7,3 +7,4 @@
 /screenshots/
 *.log
 .DS_Store
+/.wasm-toolchain/

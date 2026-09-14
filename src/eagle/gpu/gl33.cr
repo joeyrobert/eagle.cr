@@ -15,11 +15,14 @@ module Eagle
       @bound_target : RenderTargetHandle? = nil
 
       def initialize(&loader : String -> Void*)
-        missing = GL.load_all { |name| loader.call(name) }
-        unless missing.empty?
-          Eagle.log.warn { "GL functions not available: #{missing.join(", ")}" }
-        end
-        raise Error.new("Could not load core OpenGL functions") unless GL.loaded?
+        getter_proc = loader
+        {% unless flag?(:wasm32) %}
+          missing = GL.load_all { |name| getter_proc.call(name) }
+          unless missing.empty?
+            Eagle.log.warn { "GL functions not available: #{missing.join(", ")}" }
+          end
+          raise Error.new("Could not load core OpenGL functions") unless GL.loaded?
+        {% end %}
         mts = 0_i32
         GL.get_integerv(GL::MAX_TEXTURE_SIZE, pointerof(mts))
         @max_texture_size = mts
@@ -29,9 +32,8 @@ module Eagle
         GL.blend_func_separate(GL::SRC_ALPHA, GL::ONE_MINUS_SRC_ALPHA, GL::ONE, GL::ONE_MINUS_SRC_ALPHA)
         GL.pixel_storei(GL::UNPACK_ALIGNMENT, 1)
         GL.pixel_storei(GL::PACK_ALIGNMENT, 1)
-        GL.enable(GL::PROGRAM_POINT_SIZE)
-        {% if flag?(:darwin) %}
-          # macOS core profile requires a VAO to be bound for any draw.
+        {% unless flag?(:wasm32) %}
+          GL.enable(GL::PROGRAM_POINT_SIZE)
         {% end %}
       end
 
@@ -39,7 +41,11 @@ module Eagle
       def max_texture_size : Int32; @max_texture_size; end
 
       def shader_prelude(stage : Symbol) : String
-        "#version 330 core\n#define EAGLE_GL33 1\n"
+        {% if flag?(:wasm32) %}
+          stage == :vertex ? "#version 300 es\n#define EAGLE_WEBGL2 1\nprecision highp float;\n" : "#version 300 es\n#define EAGLE_WEBGL2 1\nprecision highp float;\nprecision highp int;\nprecision highp sampler2D;\n"
+        {% else %}
+          "#version 330 core\n#define EAGLE_GL33 1\n"
+        {% end %}
       end
 
       def default_framebuffer_size=(size : {Int32, Int32})

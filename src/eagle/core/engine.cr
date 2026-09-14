@@ -106,11 +106,16 @@ module Eagle
   # Run a game. `Eagle.run(MyGame.new, title: "x")` or `Eagle.run(title: "x") { |app| ... }`.
   def self.run(app : App = App.new, **opts) : Nil
     init(app, **opts)
-    begin
-      main_loop
-    ensure
-      shutdown
-    end
+    {% if flag?(:wasm32) %}
+      # The browser drives frames through `eagle_frame`; returning here hands control back to JS.
+      return
+    {% else %}
+      begin
+        main_loop
+      ensure
+        shutdown
+      end
+    {% end %}
   end
 
   def self.run(**opts, &block : App ->) : Nil
@@ -123,11 +128,15 @@ module Eagle
   # so instance-variable initialisers may create textures etc.
   def self.run(app_class : App.class, **opts) : Nil
     init(app_class, **opts)
-    begin
-      main_loop
-    ensure
-      shutdown
-    end
+    {% if flag?(:wasm32) %}
+      return
+    {% else %}
+      begin
+        main_loop
+      ensure
+        shutdown
+      end
+    {% end %}
   end
 
   def self.init(app_class : App.class, **opts) : Nil
@@ -151,7 +160,7 @@ module Eagle
     app.configure(@@config)
     apply_env(@@config)
 
-    pf = Platform::SDL.new
+    pf = {% if flag?(:wasm32) %} Platform::Web.new {% else %} Platform::SDL.new {% end %}
     @@platform = pf
     wc = Platform::WindowConfig.new
     wc.title = @@config.title; wc.width = @@config.width; wc.height = @@config.height
@@ -269,6 +278,7 @@ module Eagle
 
     if @@quit_requested
       @@running = false
+      {% if flag?(:wasm32) %} shutdown {% end %}
     end
   end
 

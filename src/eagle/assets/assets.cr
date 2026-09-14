@@ -1,4 +1,16 @@
+require "base64"
+
 module Eagle
+  # Embed every file under `dir` (relative to the project root) into the
+  # executable at compile time. Loading then works with no files on disk —
+  # required for single-file exports and web builds.
+  #
+  #   Eagle.embed_assets("assets")
+  #   Texture.load("res://player.png")   # served from memory
+  macro embed_assets(dir = "assets")
+    {{ run("./embed_list", dir) }}
+  end
+
   # Asset loading and caching. Paths may be absolute, relative to the assets
   # root, or `res://`-prefixed. The root is found from (in order):
   # `EAGLE_ASSETS`, `Config#assets_dir`, an `assets/` folder next to the
@@ -12,6 +24,25 @@ module Eagle
     @@fonts = {} of String => Font
     @@meshes = {} of String => Mesh
     @@search_paths = [] of String
+    @@embedded = {} of String => String # path -> base64 (decoded lazily)
+    @@embedded_bytes = {} of String => Bytes
+
+    # :nodoc: called by generated code from `Eagle.embed_assets`
+    def self.register_embedded(path : String, base64 : String) : Nil
+      @@embedded[path] = base64
+    end
+
+    def self.embedded?(p : String) : Bool
+      @@embedded.has_key?(p.lchop("res://"))
+    end
+
+    def self.embedded_paths : Array(String); @@embedded.keys; end
+
+    private def self.embedded_bytes(p : String) : Bytes?
+      key = p.lchop("res://")
+      return nil unless (b64 = @@embedded[key]?)
+      @@embedded_bytes[key] ||= Base64.decode(b64)
+    end
 
     def self.root : String
       @@root ||= detect_root
@@ -26,6 +57,9 @@ module Eagle
     end
 
     private def self.detect_root : String
+      {% if flag?(:wasm32) %}
+        return "/"
+      {% end %}
       if env = ENV["EAGLE_ASSETS"]?
         return env
       end
@@ -55,19 +89,29 @@ module Eagle
     end
 
     def self.exists?(p : String) : Bool
-      File.exists?(path(p))
+      return true if embedded?(p)
+      {% if flag?(:wasm32) %}
+        false
+      {% else %}
+        File.exists?(path(p))
+      {% end %}
     end
 
     def self.read(p : String) : String
-      full = path(p)
-      raise AssetError.new("Asset not found: #{p} (looked in #{full})") unless File.exists?(full)
-      File.read(full)
+      String.new(read_bytes(p))
     end
 
     def self.read_bytes(p : String) : Bytes
-      full = path(p)
-      raise AssetError.new("Asset not found: #{p} (looked in #{full})") unless File.exists?(full)
-      File.read(full).to_slice
+      if b = embedded_bytes(p)
+        return b
+      end
+      {% if flag?(:wasm32) %}
+        raise AssetError.new("Asset not found: #{p} (web builds only see embedded assets; use Eagle.embed_assets)")
+      {% else %}
+        full = path(p)
+        raise AssetError.new("Asset not found: #{p} (looked in #{full})") unless File.exists?(full)
+        File.read(full).to_slice
+      {% end %}
     end
 
     def self.image(p : String) : Image
@@ -101,6 +145,7 @@ module Eagle
       @@shaders.each_value(&.dispose)
       @@meshes.each_value(&.dispose)
       @@textures.clear; @@images.clear; @@shaders.clear; @@sounds.clear; @@fonts.clear; @@meshes.clear
+      @@embedded_bytes.clear
       Texture.reset_shared
       Font.reset_shared
     end

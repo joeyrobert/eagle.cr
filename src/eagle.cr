@@ -7,8 +7,13 @@ require "./eagle/core/signal"
 require "./eagle/core/events"
 require "./eagle/input/keys"
 require "./eagle/input/input"
+require "./eagle/platform/wasm_shim"
 require "./eagle/platform/base"
-require "./eagle/platform/sdl"
+{% if flag?(:wasm32) %}
+  require "./eagle/platform/web"
+{% else %}
+  require "./eagle/platform/sdl"
+{% end %}
 require "./eagle/gpu/device"
 require "./eagle/gpu/gl33"
 require "./eagle/assets/image"

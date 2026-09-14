@@ -1,0 +1,8 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>smoke</title>
+<style>html,body{margin:0;background:#111;color:#ddd;font-family:system-ui;height:100%}canvas{display:block;margin:0 auto;background:#000}</style></head>
+<body><canvas id="eagle"></canvas>
+<script type="module">
+import { runEagle } from "./eagle.js";
+runEagle("./smoke.wasm", document.getElementById("eagle"), { antialias: true });
+</script></body></html>

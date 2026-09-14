@@ -16,7 +16,7 @@ module Eagle
             when "none", "off"    then ::Log::Severity::None
             else                       ::Log::Severity::Info
             end
-    ::Log.setup(level, ::Log::IOBackend.new(STDERR, formatter: ::Log::Formatter.new { |entry, io|
+    ::Log.setup(level, ::Log::IOBackend.new(STDERR, dispatcher: ::Log::DispatchMode::Direct, formatter: ::Log::Formatter.new { |entry, io|
       io << "[eagle " << entry.severity.label.downcase << "] " << entry.message
       if ex = entry.exception
         io << " (" << ex.message << ")"

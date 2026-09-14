@@ -1,5 +1,4 @@
-require "compress/zlib"
-require "digest/crc32"
+require "./zlib"
 
 module Eagle
   module Codecs
@@ -56,10 +55,8 @@ module Eagle
                    end
         bpp = Math.max(1, (channels * bit_depth) // 8) # bytes per complete pixel (filter unit)
 
-        idat.rewind
-        raw = IO::Memory.new
-        Compress::Zlib::Reader.open(idat) { |z| IO.copy(z, raw) }
-        raw_bytes = raw.to_slice
+        expected = (width * channels * bit_depth // 8 + 1) * height
+        raw_bytes = Zlib.decompress(idat.to_slice, expected)
 
         img = Image.new(width, height)
         if interlace == 0
@@ -231,17 +228,31 @@ module Eagle
           raw.write(filtered)
           prev.copy_from(row)
         end
-        compressed = IO::Memory.new
-        Compress::Zlib::Writer.open(compressed, level: level) { |z| z.write(raw.to_slice) }
-        write_chunk(buf_out, "IDAT", compressed.to_slice)
+        write_chunk(buf_out, "IDAT", Zlib.compress(raw.to_slice, level))
         write_chunk(buf_out, "IEND", Bytes.empty)
         buf_out.to_slice
       end
 
+      CRC_TABLE = begin
+        t = Slice(UInt32).new(256)
+        256.times do |n|
+          c = n.to_u32
+          8.times { c = (c & 1) != 0 ? 0xEDB88320_u32 ^ (c >> 1) : c >> 1 }
+          t[n] = c
+        end
+        t
+      end
+
+      def self.crc32(data : Bytes, crc : UInt32 = 0_u32) : UInt32
+        c = crc ^ 0xFFFFFFFF_u32
+        data.each { |b| c = CRC_TABLE[(c ^ b) & 0xFF] ^ (c >> 8) }
+        c ^ 0xFFFFFFFF_u32
+      end
+
       private def self.write_chunk(io : IO, type : String, data : Bytes) : Nil
         io.write_bytes(data.size.to_u32, IO::ByteFormat::BigEndian)
-        crc = Digest::CRC32.checksum(type.to_slice)
-        crc = Digest::CRC32.update(data, crc)
+        crc = crc32(type.to_slice)
+        crc = crc32(data, crc)
         io.write(type.to_slice)
         io.write(data)
         io.write_bytes(crc, IO::ByteFormat::BigEndian)

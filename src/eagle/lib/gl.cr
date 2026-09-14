@@ -269,6 +269,34 @@ module Eagle
         }
       %}
 
+      {% if flag?(:wasm32) %}
+        # Web: every GL entry point is a JavaScript import (see web/eagle.js).
+        @[Link(wasm_import_module: "eagle")]
+        lib LibJSGL
+          {% for name, spec in funcs %}
+            {% if name != :get_string %}
+              fun gl_{{name}}({{ spec[1].map_with_index { |t, i| "a#{i} : #{t == Int64 ? Int32 : t}".id }.splat }}) : {{ spec[2] == Nil ? Void : spec[2] }}
+            {% end %}
+          {% end %}
+        end
+
+        {% for name, spec in funcs %}
+          {% if name != :get_string %}
+            @[AlwaysInline]
+            def self.{{name}}({{ spec[1].map_with_index { |t, i| "a#{i} : #{t}".id }.splat }})
+              LibJSGL.gl_{{name}}({{ spec[1].map_with_index { |t, i| (t == Int64 ? "a#{i}.to_i32" : "a#{i}").id }.splat }})
+            end
+          {% end %}
+        {% end %}
+
+        def self.load_all(&getter : String -> Void*) : Array(String)
+          [] of String
+        end
+
+        def self.loaded? : Bool
+          true
+        end
+      {% else %}
       {% for name, spec in funcs %}
         {% proc_type = "Proc(#{(spec[1] + [spec[2]]).join(", ").id})".id %}
         @@{{name}} : {{proc_type}}? = nil
@@ -299,6 +327,7 @@ module Eagle
       def self.loaded? : Bool
         !@@clear.nil?
       end
+      {% end %}
     {% end %}
 
     def self.check!(where = "") : Nil
@@ -316,8 +345,14 @@ module Eagle
     end
 
     def self.string(name : UInt32) : String
-      p = get_string(name)
-      p.null? ? "" : String.new(p)
+      {% if flag?(:wasm32) %}
+        buf = Bytes.new(256)
+        n = LibJS.gl_get_string(name, buf, buf.size)
+        String.new(buf[0, Math.max(n, 0)])
+      {% else %}
+        p = get_string(name)
+        p.null? ? "" : String.new(p)
+      {% end %}
     end
   end
 end
