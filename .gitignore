@@ -8,3 +8,6 @@
 *.log
 .DS_Store
 /.wasm-toolchain/
+/dist/
+/site/play/
+/site/docs/api/

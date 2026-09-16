@@ -15,6 +15,9 @@ module Eagle::CLI
       eagle view FILE           view an image (.png .qoi .bmp), model (.obj), font (.ttf), sound (.wav) or shader (.glsl)
       eagle examples            list bundled examples
       eagle examples NAME       run a bundled example
+      eagle export exe [FILE]   release build into dist/<name>/ (single executable; use Eagle.embed_assets for assets)
+      eagle export web [FILE]   WebAssembly bundle into dist/web/<name>/ (index.html + eagle.js + .wasm)
+      eagle export app [FILE]   macOS .app bundle into dist/<name>.app
       eagle version
 
     Environment for automated runs: EAGLE_FRAMES=n EAGLE_SCREENSHOT=out.png EAGLE_HEADLESS=1 EAGLE_SIZE=WxH
@@ -27,6 +30,7 @@ module Eagle::CLI
     when "build" then run_project(args[1]? || "src/main.cr", release: true, build_only: true)
     when "view" then view(args[1]? || abort("eagle view FILE"))
     when "examples" then examples(args[1]?)
+    when "export" then export(args[1]? || abort("eagle export exe|web|app [FILE]"), args[2]? || "src/main.cr")
     when "version", "-v", "--version" then puts "eagle #{Eagle::VERSION}"
     else puts USAGE
     end
@@ -91,6 +95,49 @@ module Eagle::CLI
     abort "build failed" unless status.success?
     return puts("built #{out_bin}") if build_only
     Process.run(out_bin, output: STDOUT, error: STDERR, input: STDIN)
+  end
+
+  def export(mode : String, file : String)
+    abort "#{file} not found" unless File.exists?(file)
+    name = File.basename(file) == "main.cr" ? File.basename(File.dirname(File.expand_path(file))) : File.basename(file, ".cr")
+    root = File.expand_path("..", __DIR__)
+    case mode
+    when "exe"
+      out_dir = "dist/#{name}"
+      Dir.mkdir_p(out_dir)
+      run_cmd(["crystal", "build", file, "--release", "-o", "#{out_dir}/#{name}"])
+      puts "exported #{out_dir}/#{name} (#{File.size("#{out_dir}/#{name}") // 1024} KB). Assets: embed with Eagle.embed_assets or ship an assets/ folder next to it."
+    when "web"
+      run_cmd(["sh", File.join(root, "script", "build-web.sh"), file, "dist/web/#{name}"])
+      puts "exported dist/web/#{name}/ — serve the folder over HTTP (e.g. python3 -m http.server)."
+    when "app"
+      {% if flag?(:darwin) %}
+        app = "dist/#{name}.app/Contents/MacOS"
+        Dir.mkdir_p(app)
+        run_cmd(["crystal", "build", file, "--release", "-o", "#{app}/#{name}"])
+        File.write("dist/#{name}.app/Contents/Info.plist", <<-PLIST)
+          <?xml version="1.0" encoding="UTF-8"?>
+          <plist version="1.0"><dict>
+            <key>CFBundleName</key><string>#{name}</string>
+            <key>CFBundleExecutable</key><string>#{name}</string>
+            <key>CFBundleIdentifier</key><string>cr.eagle.#{name}</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>NSHighResolutionCapable</key><true/>
+          </dict></plist>
+          PLIST
+        puts "exported dist/#{name}.app"
+      {% else %}
+        abort "app bundles are only produced on macOS"
+      {% end %}
+    else
+      abort "unknown export mode #{mode} (exe, web, app)"
+    end
+  end
+
+  private def run_cmd(cmd : Array(String))
+    puts "$ #{cmd.join(" ")}"
+    status = Process.run(cmd[0], cmd[1..], output: STDOUT, error: STDERR)
+    abort "command failed" unless status.success?
   end
 
   def examples(name : String?)

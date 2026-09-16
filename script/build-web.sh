@@ -9,11 +9,10 @@ if [ ! -d "$TOOL/libs" ]; then
   mkdir -p "$TOOL/libs"
   curl -sL https://github.com/lbguilherme/wasm-libs/releases/download/0.0.3/wasm32-wasi-libs.tar.gz | tar xz -C "$TOOL/libs"
 fi
-export PATH="/opt/homebrew/opt/lld/bin:/usr/lib/llvm-18/bin:$PATH"
+export PATH="$ROOT/script/wasm-bin:$PATH"
 mkdir -p "$OUT"
 NAME="$(basename "$OUT")"
-CRYSTAL_LIBRARY_PATH="$TOOL/libs" crystal build "$SRC" --target wasm32-unknown-wasi --release \
-  --link-flags "-L$TOOL/libs --export=eagle_frame -z stack-size=8388608 --initial-memory=67108864" \
+EAGLE_WASM_LIBS="$TOOL/libs" crystal build "$SRC" --target wasm32-unknown-wasi --release \
   -o "$OUT/$NAME.wasm" ${EAGLE_WASM_FLAGS:-}
 cp "$ROOT/web/eagle.js" "$OUT/eagle.js"
 if [ ! -f "$OUT/index.html" ]; then

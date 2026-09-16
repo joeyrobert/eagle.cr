@@ -156,6 +156,9 @@ module Eagle
       abstract def depth_test(enabled : Bool, write : Bool = true, func : DepthFunc = DepthFunc::Less) : Nil
       abstract def cull(mode : CullMode) : Nil
       abstract def wireframe(enabled : Bool) : Nil
+      # Backends without polygon fill modes (WebGL) report true so meshes can draw edges instead.
+      def emulate_wireframe? : Bool; false; end
+      def wireframe? : Bool; false; end
       # Winding order considered front-facing (true = counter-clockwise, the default).
       abstract def front_face_ccw(ccw : Bool) : Nil
       abstract def check_errors(where : String = "") : Nil

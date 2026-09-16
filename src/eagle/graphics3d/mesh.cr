@@ -114,6 +114,7 @@ module Eagle
 
     # Upload to the GPU (called automatically before drawing).
     def upload : Nil
+      @edge_dirty = true
       @geom = GPU.device.create_geometry(LAYOUT) if @geom == 0
       data = Slice(Float32).new(@positions.size * FLOATS)
       @positions.size.times do |i|
@@ -133,12 +134,49 @@ module Eagle
 
     def draw : Nil
       upload if @dirty || @geom == 0
-      GPU.device.draw(@geom, @primitive, @index_count, 0, indexed: true)
+      dev = GPU.device
+      if dev.wireframe? && dev.emulate_wireframe? && @primitive.triangles?
+        draw_edges
+      else
+        dev.draw(@geom, @primitive, @index_count, 0, indexed: true)
+      end
+    end
+
+    @edge_geom : UInt32 = 0_u32
+    @edge_count = 0
+    @edge_dirty = true
+
+    # Draw triangle edges as lines (used where polygon fill modes don't exist).
+    private def draw_edges
+      dev = GPU.device
+      if @edge_geom == 0 || @edge_dirty
+        @edge_geom = dev.create_geometry(LAYOUT) if @edge_geom == 0
+        edges = Slice(UInt32).new(@indices.size * 2)
+        (0...@indices.size).step(3) do |i|
+          a = @indices[i]; b = @indices[i + 1]; c = @indices[i + 2]
+          o = i * 2
+          edges[o] = a; edges[o + 1] = b; edges[o + 2] = b; edges[o + 3] = c; edges[o + 4] = c; edges[o + 5] = a
+        end
+        data = Slice(Float32).new(@positions.size * FLOATS)
+        @positions.size.times do |i|
+          o = i * FLOATS
+          p = @positions[i]; n = @normals[i]? || Vec3::UP; uv = @uvs[i]? || Vec2::ZERO; col = @colors[i]? || Color::WHITE
+          data[o] = p.x; data[o + 1] = p.y; data[o + 2] = p.z; data[o + 3] = n.x; data[o + 4] = n.y; data[o + 5] = n.z
+          data[o + 6] = uv.x; data[o + 7] = uv.y; data[o + 8] = col.r; data[o + 9] = col.g; data[o + 10] = col.b; data[o + 11] = col.a
+        end
+        dev.upload_vertices(@edge_geom, data, GPU::Usage::Static)
+        dev.upload_indices(@edge_geom, edges, GPU::Usage::Static)
+        @edge_count = edges.size
+        @edge_dirty = false
+      end
+      dev.draw(@edge_geom, GPU::Primitive::Lines, @edge_count, 0, indexed: true)
     end
 
     def dispose : Nil
       GPU.device.delete_geometry(@geom) if @geom != 0 && GPU.ready?
+      GPU.device.delete_geometry(@edge_geom) if @edge_geom != 0 && GPU.ready?
       @geom = 0_u32
+      @edge_geom = 0_u32
     end
 
     # --- primitives ----------------------------------------------------------

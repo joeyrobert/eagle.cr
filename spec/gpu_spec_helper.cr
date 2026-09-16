@@ -35,5 +35,6 @@ macro gpu_it(desc, &block)
   it {{desc}} do
     pending!("no GPU") unless GPU_OK
     {{block.body}}
+    Eagle::GPU.device.check_errors("after example: " + {{desc}})
   end
 end

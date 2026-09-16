@@ -69,6 +69,7 @@ describe Eagle::Mesh do
   gpu_it "uploads and draws" do
     m = Mesh.cube
     m.upload
+    Material.standard_shader.use # drawing needs a bound program
     m.draw
     m.dispose
   end

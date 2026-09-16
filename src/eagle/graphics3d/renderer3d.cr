@@ -135,9 +135,11 @@ module Eagle
       end
 
       dev.front_face_ccw(!flip_y)
+      dbg("pre-clear")
       if clear
         dev.clear(@environment.sky? ? nil : @environment.background, depth: true)
       end
+      dbg("clear")
       dev.depth_test(true, true, GPU::DepthFunc::LessEqual)
       draw_sky(camera, projection, lights) if @environment.sky? && clear
       dbg("sky")
@@ -229,6 +231,7 @@ module Eagle
       dev.depth_test(true, false, GPU::DepthFunc::LessEqual)
       dev.cull(GPU::CullMode::None)
       @sky_shader.use
+      dbg("sky: use")
       # remove translation from the view for direction reconstruction
       v = camera.view
       rot = Mat4.identity
@@ -241,7 +244,9 @@ module Eagle
       sun = lights.find(&.kind.directional?)
       @sky_shader["u_sun_dir"] = sun ? sun.direction : Vec3.new(0, -1, 0)
       @sky_shader["u_sun_color"] = sun ? Vec3.new(sun.color.r, sun.color.g, sun.color.b) * Math.min(sun.intensity, 1.5_f32) : Vec3::ZERO
+      dbg("sky: uniforms")
       dev.draw(@sky_geom, GPU::Primitive::Triangles, 6, 0, indexed: true)
+      dbg("sky: draw")
       @draw_calls += 1
       dev.depth_test(true, true, GPU::DepthFunc::LessEqual)
     end

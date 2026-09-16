@@ -134,8 +134,19 @@ module Eagle
         end
       end
 
+      @wireframe = false
+
       def wireframe(enabled : Bool) : Nil
-        GL.polygon_mode(GL::FRONT_AND_BACK, enabled ? GL::LINE : GL::FILL)
+        @wireframe = enabled
+        {% unless flag?(:wasm32) %}
+          GL.polygon_mode(GL::FRONT_AND_BACK, enabled ? GL::LINE : GL::FILL)
+        {% end %}
+      end
+
+      def wireframe? : Bool; @wireframe; end
+
+      def emulate_wireframe? : Bool
+        {% if flag?(:wasm32) %} true {% else %} false {% end %}
       end
 
       def front_face_ccw(ccw : Bool) : Nil
