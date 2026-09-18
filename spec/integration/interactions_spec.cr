@@ -1,8 +1,9 @@
 require "../gpu_spec_helper"
 
 # End-to-end: drive the real frame loop (Eagle.step) with injected events.
+# Fixed 60 Hz steps keep time-based checks independent of how fast the machine renders.
 private def frames(n)
-  n.times { Eagle.step }
+  n.times { Eagle.step(1 / 60) }
 end
 
 private class Mover < Node2D
@@ -80,7 +81,7 @@ describe "interactions through the engine loop" do
       end
     end
     Script.drag(v2(100, 100), v2(300, 200), seconds: 0.2, steps: 5)
-    30.times { Eagle.step }
+    frames(30)
     n.position.approx?(v2(300, 200), 0.5).should be_true
     dragged.size.should be >= 5
   end

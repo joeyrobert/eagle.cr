@@ -15,7 +15,7 @@ end
 describe Eagle::Control do
   before_each { SceneTree.reset }
 
-  it "anchors inside its parent" do
+  gpu_it "anchors inside its parent" do
     panel = Panel.new(size: v2(200, 100))
     b = Panel.new(size: v2(50, 20))
     b.anchor = Anchor::BottomRight
@@ -66,7 +66,7 @@ describe Eagle::Control do
     hits.should eq 3
   end
 
-  it "toggles buttons and checkboxes" do
+  gpu_it "toggles buttons and checkboxes" do
     b = Button.new("T", size: v2(40, 20))
     b.toggle_mode = true
     states = [] of Bool
@@ -107,7 +107,7 @@ describe Eagle::Control do
     changes.size.should eq 5
   end
 
-  it "edits text input" do
+  gpu_it "edits text input" do
     t = TextInput.new("", "type here", size: v2(200, 30))
     SceneTree.root.add(t)
     submitted = [] of String
@@ -135,7 +135,7 @@ describe Eagle::Control do
     t.focused?.should be_false
   end
 
-  it "lays out boxes and grids" do
+  gpu_it "lays out boxes and grids" do
     v = VBox.new(size: v2(200, 300))
     a = Button.new("A", size: v2(50, 30))
     b = Button.new("B", size: v2(50, 30))
