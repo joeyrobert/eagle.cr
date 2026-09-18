@@ -1,35 +1,60 @@
 module Eagle
-  # Sky, ambient light and fog settings for a 3D scene.
+  # Scene-wide 3D settings: sky, ambient light, fog and shadows. The active one is
+  # `Scene3D.environment`.
+  #
+  # ```
+  # env = Scene3D.environment
+  # env.fog(15, 60, Color.gray(0.7))                # fade to gray between 15 and 60 units
+  # env.sky = false
+  # env.background = Color::BLACK                   # space
+  # env.shadow_distance = 25                        # sharper shadows over a smaller area
+  # ```
   class Environment
+    # Light that reaches everything, even in shadow. Raise it if shadows look too black.
     property ambient : Color = Color.new(0.25, 0.27, 0.32)
+    # Sky color overhead.
     property sky_top : Color = Color.hex("#3b6fd6")
+    # Sky color at the horizon.
     property sky_horizon : Color = Color.hex("#b9d4f5")
+    # Color below the horizon.
     property sky_bottom : Color = Color.hex("#3a3a44")
+    # Draw the gradient sky. When off, `background` is used.
     property? sky = true
-    # Flat background when sky is off.
+    # Flat background color when the sky is off.
     property background : Color = Color.hex("#202430")
+    # Color distant things fade toward.
     property fog_color : Color = Color.hex("#b9d4f5")
+    # Distance where fog begins.
     property fog_start : Float32 = 0_f32
+    # Distance where fog is total. Fog is off when this is not greater than `fog_start`.
     property fog_end : Float32 = 0_f32 # <= start disables fog
+    # Master switch for shadows.
     property? shadows = true
+    # Shadow map resolution in pixels. Higher is sharper and slower.
     property shadow_size : Int32 = 2048
+    # How far from the camera shadows are drawn. Smaller values give sharper shadows.
     property shadow_distance : Float32 = 40_f32
+    # Offset that stops surfaces from shadowing themselves ("shadow acne"). Raise it slightly if
+    # you see stripes, and lower it if shadows detach from objects.
     property shadow_bias : Float32 = 0.002_f32
 
+    # Turns on fog between *start* and *finish*, optionally changing its color. Returns self.
     def fog(start : Number, finish : Number, color : Color? = nil) : self
       @fog_start = start.to_f32; @fog_end = finish.to_f32
       @fog_color = color if color
       self
     end
 
+    # Sets the three sky colors at once. Returns self.
     def sky_colors(top : Color, horizon : Color, bottom : Color) : self
       @sky_top = top; @sky_horizon = horizon; @sky_bottom = bottom
       self
     end
   end
 
-  # A light as seen by the renderer (nodes produce these each frame).
+  # A light as the renderer sees it. The light nodes produce these each frame.
   struct LightData
+    # Directional, point or spot.
     enum Kind
       Directional = 0
       Point = 1
@@ -46,20 +71,23 @@ module Eagle
     getter? shadows : Bool
     def initialize(@kind, @position, @direction, @color, @intensity, @range = 10_f32, @spot_inner = 0.5_f32, @spot_outer = 0.6_f32, @shadows = false); end
 
+    # A directional light.
     def self.directional(direction : Vec3, color : Color = Color::WHITE, intensity : Number = 1, shadows : Bool = true) : LightData
       new(Kind::Directional, Vec3::ZERO, direction.normalized, color, intensity.to_f32, shadows: shadows)
     end
 
+    # A point light.
     def self.point(position : Vec3, color : Color = Color::WHITE, intensity : Number = 1, range : Number = 10) : LightData
       new(Kind::Point, position, Vec3::DOWN, color, intensity.to_f32, range.to_f32)
     end
 
+    # A spot light.
     def self.spot(position : Vec3, direction : Vec3, color : Color = Color::WHITE, intensity : Number = 1, range : Number = 10, angle : Number = 0.6, softness : Number = 0.1) : LightData
       new(Kind::Spot, position, direction.normalized, color, intensity.to_f32, range.to_f32, Math.cos(angle.to_f32 - softness.to_f32).to_f32, Math.cos(angle).to_f32)
     end
   end
 
-  # One thing to draw: a mesh with a material and a world transform.
+  # One thing to draw: a mesh, a material and a world transform.
   struct DrawItem
     getter mesh : Mesh
     getter material : Material
@@ -67,7 +95,7 @@ module Eagle
     def initialize(@mesh, @material, @transform); end
   end
 
-  # Camera parameters used by the renderer (Camera3D nodes provide these).
+  # The camera parameters the renderer needs.
   struct CameraView
     getter view : Mat4
     getter projection : Mat4
@@ -75,10 +103,14 @@ module Eagle
     def initialize(@view, @projection, @position); end
   end
 
-  # Forward renderer: shadow pass, sky, opaque then transparent meshes.
-  # Use through Camera3D + MeshInstance3D nodes, or call `render` directly.
+  # The forward renderer: shadow pass, sky, opaque meshes, then transparent meshes.
+  #
+  # The scene tree drives it through `Scene3D.render`. Call `render` directly to draw meshes
+  # without nodes, for tools and special effects.
   class Renderer3D
+    # The settings used when rendering.
     property environment : Environment
+    # Draw calls in the last render.
     getter stats_draw_calls = 0
     @depth_shader : Shader
     @sky_shader : Shader
@@ -90,13 +122,16 @@ module Eagle
     # Set EAGLE_GL_DEBUG=1 to check for GL errors after every stage/draw.
     @@debug : Bool = ENV["EAGLE_GL_DEBUG"]? == "1"
 
+    # The shadow map from the last render, for debugging.
     def shadow_texture : Texture?; @shadow_texture; end
+    # The light-space matrix used for shadows.
     def light_matrix : Mat4; @light_matrix; end
 
     private def dbg(where : String)
       GPU.device.check_errors(where) if @@debug
     end
 
+    # Creates a renderer.
     def initialize(@environment : Environment = Environment.new)
       @depth_shader = Shader.new(Shaders3D::DEPTH_VERTEX, Shaders3D::DEPTH_FRAGMENT, Shader::ATTRIBS_3D)
       @sky_shader = Shader.new(Shaders3D::SKY_VERTEX, Shaders3D::SKY_FRAGMENT, Shader::ATTRIBS_2D)
@@ -109,6 +144,7 @@ module Eagle
       GPU.device.upload_indices(@sky_geom, Slice[0_u32, 1_u32, 2_u32, 0_u32, 2_u32, 3_u32], GPU::Usage::Static)
     end
 
+    # Frees GPU resources.
     def dispose : Nil
       @depth_shader.dispose
       @sky_shader.dispose
@@ -117,8 +153,8 @@ module Eagle
       @shadow_target = nil
     end
 
-    # Render items with lights from a camera into the current target
-    # (`flip_y` when rendering into a Canvas; `clear` clears color+depth first).
+    # Renders *items* lit by *lights* from *camera* into the current target. Set *flip_y* when
+    # rendering into a `Canvas`, and *clear* to clear color and depth first.
     def render(camera : CameraView, items : Array(DrawItem), lights : Array(LightData), target_size : Vec2, flip_y : Bool = false, clear : Bool = true) : Nil
       @draw_calls = 0
       dev = GPU.device
@@ -288,6 +324,7 @@ module Eagle
       true
     end
 
+    # Same as `stats_draw_calls`.
     def draw_calls : Int32; @stats_draw_calls; end
   end
 end

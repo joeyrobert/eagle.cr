@@ -1,5 +1,5 @@
 module Eagle
-  # Built-in 3D shader sources (GLSL 330 core / 300 es common subset).
+  # :nodoc:
   module Shaders3D
     MAX_LIGHTS = 8
 
@@ -184,42 +184,74 @@ module Eagle
       GLSL
   end
 
-  # Surface appearance for 3D meshes.
+  # How a mesh's surface looks: color, texture, shininess, glow, transparency and shadows.
   #
-  #   mat = Material.new(albedo: Color::RED, shininess: 64)
-  #   mat.texture = Texture.load("res://crate.png")
+  # Materials use Blinn-Phong lighting with support for directional, point and spot lights.
+  # Share one material between many meshes when they look the same.
+  #
+  # ```
+  # brick = Material.new(texture: Texture.load("res://brick.png"))
+  # brick.uv_scale = v2(4, 4)                       # repeat the texture
+  #
+  # gold = Material.new(Color.hex("#e3a537"), shininess: 96, specular: 0.8, metallic: 0.6)
+  # lamp = Material.new(Color::YELLOW, emissive: Color::YELLOW) # glows, ignores darkness
+  # hud = Material.unlit(Color::GREEN)             # flat color, no lighting
+  # ghost = Material.new(Color::WHITE.alpha(0.3), transparent: true)
+  # ghost.double_sided = true
+  # ```
+  #
+  # For fully custom looks, assign a `shader`. The standard uniforms are still provided,
+  # and extra values go through `[]=`.
   class Material
+    # Base color, multiplied with the texture and vertex colors.
     property albedo : Color
+    # Color texture, or `nil`.
     property texture : Texture? = nil
+    # Light the surface gives off by itself. It is added after lighting, so it glows in the dark.
     property emissive : Color = Color::BLACK
+    # Strength of highlights, from 0 to 1.
     property specular : Float32 = 0.3_f32
+    # Tightness of highlights: higher values give smaller, sharper highlights.
     property shininess : Float32 = 32_f32
+    # How metal-like the surface is, from 0 to 1: diffuse color fades out and highlights take on the albedo color.
     property metallic : Float32 = 0_f32
+    # Ignore lights and show the albedo and texture as they are.
     property? unlit = false
+    # Draw back faces too, for leaves, flags and thin glass.
     property? double_sided = false
+    # Blend with what's behind. Transparent meshes draw after opaque ones, sorted back to front.
     property? transparent = false
+    # Draw triangle edges only.
     property? wireframe = false
+    # Whether meshes with this material cast shadows.
     property? cast_shadows = true
+    # Whether shadows fall on meshes with this material.
     property? receive_shadows = true
+    # Pixels with alpha below this are discarded, for cut-out textures like foliage.
     property alpha_cutoff : Float32 = 0.01_f32
+    # Texture repeat factor.
     property uv_scale : Vec2 = Vec2::ONE
+    # Texture offset. Animate it for scrolling water or conveyor belts.
     property uv_offset : Vec2 = Vec2::ZERO
+    # Blend mode for transparent materials.
     property blend : GPU::BlendMode = GPU::BlendMode::Alpha
-    # Custom shader (must accept the standard uniforms it uses). nil = standard.
+    # A custom shader, or `nil` for the standard one.
     property shader : Shader? = nil
-    # Extra uniforms for custom shaders.
+    # Extra uniforms passed to a custom shader.
     getter uniforms = {} of String => GPU::UniformValue
-    # Render order tweak (higher = later within its pass).
+    # Draw order within a pass: higher draws later.
     property priority : Int32 = 0
 
     @@standard : Shader? = nil
 
+    # Creates a material.
     def initialize(@albedo : Color = Color::WHITE, texture : Texture? = nil, shininess : Number = 32, specular : Number = 0.3, unlit : Bool = false, emissive : Color = Color::BLACK, metallic : Number = 0, transparent : Bool = false)
       @texture = texture
       @shininess = shininess.to_f32; @specular = specular.to_f32
       @unlit = unlit; @emissive = emissive; @metallic = metallic.to_f32; @transparent = transparent
     end
 
+    # The built-in lit shader.
     def self.standard_shader : Shader
       @@standard ||= Shader.new(Shaders3D::STANDARD_VERTEX, Shaders3D::STANDARD_FRAGMENT, Shader::ATTRIBS_3D)
     end
@@ -227,15 +259,18 @@ module Eagle
     # :nodoc:
     def self.reset_shared; @@standard = nil; end
 
+    # A material that ignores lighting.
     def self.unlit(color : Color = Color::WHITE, texture : Texture? = nil) : Material
       new(color, texture, unlit: true)
     end
 
+    # Sets an extra uniform for a custom shader.
     def []=(name : String, v : GPU::UniformValue); @uniforms[name] = v; end
 
+    # The shader this material draws with.
     def effective_shader : Shader; @shader || Material.standard_shader; end
 
-    # Upload material uniforms (the shader must be in use).
+    # Uploads this material's uniforms to *sh*, which must be in use.
     def apply(sh : Shader) : Nil
       sh["u_albedo"] = @albedo
       if t = @texture

@@ -1,62 +1,99 @@
 module Eagle
-  # Triangle mesh with interleaved position/normal/uv/color vertices.
-  # Build procedurally, from primitives, or load OBJ files.
+  # 3D geometry: vertices with positions, normals, texture coordinates and colors, plus
+  # triangle indices.
+  #
+  # Use the built-in primitives (`cube`, `sphere`, `plane`, `cylinder`, `capsule`, `torus` and
+  # more), load an OBJ file, or build your own vertex by vertex. Show a mesh with a
+  # `MeshInstance3D`.
+  #
+  # ```
+  # floor = Mesh.plane(20, 20, uv_scale: 10)
+  # rock = Mesh.sphere(1, segments: 8, rings: 6).flat_shaded # low-poly look
+  # ship = Mesh.load("res://models/ship.obj")
+  #
+  # tri = Mesh.new("triangle")
+  # a = tri.add_vertex(v3(0, 1, 0), c: Color::RED)
+  # b = tri.add_vertex(v3(-1, 0, 0), c: Color::GREEN)
+  # c = tri.add_vertex(v3(1, 0, 0), c: Color::BLUE)
+  # tri.add_triangle(a, b, c)
+  # tri.compute_normals
+  # ```
+  #
+  # Meshes upload to the GPU on first draw, and again after you change them.
   class Mesh
+    # :nodoc:
     LAYOUT = GPU::VertexLayout.new.float("a_position", 3).float("a_normal", 3).float("a_uv", 2).float("a_color", 4)
+    # :nodoc:
     FLOATS = 12
 
+    # Vertex positions.
     getter positions = [] of Vec3
+    # Vertex normals, used for lighting.
     getter normals = [] of Vec3
+    # Texture coordinates.
     getter uvs = [] of Vec2
+    # Vertex colors, multiplied with the material.
     getter colors = [] of Color
+    # Triangle indices, three per triangle.
     getter indices = [] of UInt32
+    # A label for debugging.
     getter name : String
+    # How indices are drawn: triangles, or lines for grids and wireframes.
     property primitive : GPU::Primitive = GPU::Primitive::Triangles
     @geom : UInt32 = 0_u32
     @index_count = 0
     @dirty = true
     @bounds : AABB? = nil
 
+    # Creates an empty mesh.
     def initialize(@name : String = "mesh")
     end
 
+    # Parses OBJ text into a mesh.
     def self.decode(text : String, hint : String = "") : Mesh
       Codecs::OBJ.decode(text, hint)
     end
 
+    # Loads an OBJ file through the asset cache.
     def self.load(path : String) : Mesh
       Assets.mesh(path)
     end
 
+    # Number of vertices.
     def vertex_count : Int32; @positions.size; end
+    # Number of triangles.
     def triangle_count : Int32; @indices.size // 3; end
 
-    # Add a vertex; returns its index.
+    # Adds a vertex and returns its index.
     def add_vertex(p : Vec3, n : Vec3 = Vec3::UP, uv : Vec2 = Vec2::ZERO, c : Color = Color::WHITE) : UInt32
       @positions << p; @normals << n; @uvs << uv; @colors << c
       @dirty = true
       (@positions.size - 1).to_u32
     end
 
+    # Adds a triangle from three vertex indices, counter-clockwise when seen from the front.
     def add_triangle(a : UInt32, b : UInt32, c : UInt32) : Nil
       @indices << a << b << c
       @dirty = true
     end
 
+    # Adds a quad as two triangles.
     def add_quad(a : UInt32, b : UInt32, c : UInt32, d : UInt32) : Nil
       add_triangle(a, b, c); add_triangle(a, c, d)
     end
 
+    # Removes all geometry.
     def clear : Nil
       @positions.clear; @normals.clear; @uvs.clear; @colors.clear; @indices.clear
       @dirty = true; @bounds = nil
     end
 
+    # The bounding box of every vertex.
     def bounds : AABB
       @bounds ||= @positions.empty? ? AABB.new(Vec3::ZERO, Vec3::ZERO) : AABB.from_points(@positions)
     end
 
-    # Recompute smooth per-vertex normals from the triangles.
+    # Recomputes smooth normals from the triangles. Returns self.
     def compute_normals : self
       acc = Array(Vec3).new(@positions.size, Vec3::ZERO)
       (0...@indices.size).step(3) do |i|
@@ -70,7 +107,7 @@ module Eagle
       self
     end
 
-    # Duplicate vertices per face so each triangle gets a flat normal.
+    # A copy with separate vertices per face, so each triangle is lit flat. Gives a faceted, low-poly look.
     def flat_shaded : Mesh
       m = Mesh.new(@name)
       (0...@indices.size).step(3) do |i|
@@ -84,6 +121,7 @@ module Eagle
       m
     end
 
+    # Transforms every vertex in place. Returns self.
     def transform!(mat : Mat4) : self
       nm = mat.to_mat3.inverse.transposed
       @positions.map! { |p| mat.transform_point(p) }
@@ -92,13 +130,14 @@ module Eagle
       self
     end
 
+    # Sets every vertex color. Returns self.
     def color!(c : Color) : self
       @colors.fill(c)
       @dirty = true
       self
     end
 
-    # Append another mesh's geometry (optionally transformed).
+    # Appends another mesh's geometry, optionally transformed, to merge static props into one draw call.
     def append(other : Mesh, mat : Mat4? = nil) : self
       base = @positions.size.to_u32
       nm = mat ? mat.to_mat3.inverse.transposed : Mat3.identity
@@ -112,7 +151,7 @@ module Eagle
       self
     end
 
-    # Upload to the GPU (called automatically before drawing).
+    # Sends the geometry to the GPU. It happens automatically before drawing.
     def upload : Nil
       @edge_dirty = true
       @geom = GPU.device.create_geometry(LAYOUT) if @geom == 0
@@ -132,6 +171,7 @@ module Eagle
       @dirty = false
     end
 
+    # Draws the mesh with whatever shader is bound. Normally `MeshInstance3D` and the renderer do this.
     def draw : Nil
       upload if @dirty || @geom == 0
       dev = GPU.device
@@ -172,6 +212,7 @@ module Eagle
       dev.draw(@edge_geom, GPU::Primitive::Lines, @edge_count, 0, indexed: true)
     end
 
+    # Frees the GPU buffers.
     def dispose : Nil
       GPU.device.delete_geometry(@geom) if @geom != 0 && GPU.ready?
       GPU.device.delete_geometry(@edge_geom) if @edge_geom != 0 && GPU.ready?
@@ -180,6 +221,7 @@ module Eagle
     end
 
     # --- primitives ----------------------------------------------------------
+    # A flat rectangle in the XY plane, facing +Z.
     def self.quad(w : Number = 1, h : Number = 1, color : Color = Color::WHITE) : Mesh
       m = new("quad")
       hw = w / 2; hh = h / 2
@@ -191,7 +233,7 @@ module Eagle
       m
     end
 
-    # Ground plane in XZ facing up.
+    # A flat rectangle on the ground (the XZ plane), facing up. *uv_scale* repeats the texture.
     def self.plane(w : Number = 1, d : Number = 1, subdivisions : Int32 = 1, color : Color = Color::WHITE, uv_scale : Number = 1) : Mesh
       m = new("plane")
       n = Math.max(1, subdivisions)
@@ -210,10 +252,12 @@ module Eagle
       m
     end
 
+    # A cube with sides of *size*.
     def self.cube(size : Number = 1, color : Color = Color::WHITE) : Mesh
       box(size, size, size, color)
     end
 
+    # A box of *w* by *h* by *d*.
     def self.box(w : Number, h : Number, d : Number, color : Color = Color::WHITE) : Mesh
       m = new("box")
       hx = w / 2; hy = h / 2; hz = d / 2
@@ -235,6 +279,7 @@ module Eagle
       m
     end
 
+    # A UV sphere. More segments and rings make it smoother.
     def self.sphere(radius : Number = 0.5, segments : Int32 = 24, rings : Int32 = 16, color : Color = Color::WHITE) : Mesh
       m = new("sphere")
       (0..rings).each do |r|
@@ -254,6 +299,7 @@ module Eagle
       m
     end
 
+    # A capped cylinder. Set *top_radius* for a tapered shape.
     def self.cylinder(radius : Number = 0.5, height : Number = 1, segments : Int32 = 24, color : Color = Color::WHITE, top_radius : Number? = nil) : Mesh
       m = new("cylinder")
       hh = height / 2
@@ -291,10 +337,12 @@ module Eagle
       m
     end
 
+    # A cone pointing up.
     def self.cone(radius : Number = 0.5, height : Number = 1, segments : Int32 = 24, color : Color = Color::WHITE) : Mesh
       cylinder(radius, height, segments, color, top_radius: 0)
     end
 
+    # A capsule: a cylinder with rounded ends, the usual character shape.
     def self.capsule(radius : Number = 0.5, height : Number = 1, segments : Int32 = 16, color : Color = Color::WHITE) : Mesh
       m = cylinder(radius, height, segments, color)
       top = sphere(radius, segments, segments // 2, color)
@@ -303,6 +351,7 @@ module Eagle
       m
     end
 
+    # A torus (donut).
     def self.torus(radius : Number = 1, tube : Number = 0.3, segments : Int32 = 32, rings : Int32 = 16, color : Color = Color::WHITE) : Mesh
       m = new("torus")
       (0..segments).each do |s|
@@ -324,7 +373,7 @@ module Eagle
       m
     end
 
-    # Lines: a wireframe grid on XZ (draw with a LineMaterial / unlit).
+    # A line grid on the ground, drawn as lines. Use an unlit material.
     def self.grid(size : Number = 10, divisions : Int32 = 10, color : Color = Color.gray(0.4)) : Mesh
       m = new("grid")
       m.primitive = GPU::Primitive::Lines
@@ -340,6 +389,7 @@ module Eagle
       m
     end
 
+    # Red, green and blue lines along X, Y and Z, for orientation while debugging.
     def self.axes(length : Number = 1) : Mesh
       m = new("axes")
       m.primitive = GPU::Primitive::Lines
@@ -353,8 +403,10 @@ module Eagle
   end
 
   module Codecs
-    # Wavefront OBJ: v / vt / vn / f (triangles, quads, n-gons). Materials ignored.
+    # Wavefront OBJ reading and writing: positions, texture coordinates, normals, and faces
+    # with any number of sides. Material files are ignored.
     module OBJ
+      # Parses OBJ text.
       def self.decode(text : String, hint : String = "") : Mesh
         mesh = Mesh.new(File.basename(hint, ".obj"))
         vs = [] of Vec3; vts = [] of Vec2; vns = [] of Vec3
@@ -391,6 +443,7 @@ module Eagle
         i < 0 ? count + i : i - 1
       end
 
+      # Writes a mesh as OBJ text.
       def self.encode(mesh : Mesh) : String
         String.build do |io|
           io << "# eagle\n"
