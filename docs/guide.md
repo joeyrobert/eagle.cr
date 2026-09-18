@@ -6,12 +6,10 @@
 `App`, calls `load`, then every frame:
 
 1. polls events → `Input` state, `App#input`, `Node#input` (children first)
-2. runs zero or more **fixed** steps (`Config#fixed_fps`, default 60):
-   physics world step → `Node#physics_process` → `App#fixed_update`
+2. runs zero or more **fixed** steps (`Config#fixed_fps`, default 60): physics world step → `Node#physics_process` → `App#fixed_update`
 3. `Node#process` → tweens → `App#update(dt)`
 4. mixes audio
-5. clears, renders 3D (if a `Camera3D` is current), draws the 2D scene tree
-   (with the current `Camera2D`), then `App#draw(g)`
+5. clears, renders 3D (if a `Camera3D` is current), draws the 2D scene tree (with the current `Camera2D`), then `App#draw(g)`
 
 `Clock.delta`, `Clock.elapsed`, `Clock.fps`, `Clock.scale` (slow motion) are
 available anywhere.
@@ -143,3 +141,17 @@ for GL errors after every 3D stage.
 are abstract; `Platform::SDL` + `GPU::GL33` are the desktop implementations.
 A WebGL2/WebAudio backend for `wasm32` is designed for but not yet implemented —
 shaders and formats are already restricted to the WebGL2 subset.
+
+## Exporting
+
+```sh
+eagle export exe examples/snake/main.cr   # dist/snake/snake — release build; add Eagle.embed_assets("assets") for a true single file
+eagle export web examples/snake/main.cr   # dist/web/snake/ — index.html + eagle.js + snake.wasm, serve over HTTP
+eagle export app examples/snake/main.cr   # dist/snake.app (macOS bundle)
+```
+
+Web builds need `lld` (`brew install lld`); the script downloads Crystal's wasm libraries on first use. Everything the desktop build does works in the browser except file-system access (embed assets), threads, and clipboard.
+
+## Site
+
+`script/build-site.sh` compiles every example to WebAssembly, generates the API reference with `crystal docs`, and writes the marketing + docs site to `site/`.

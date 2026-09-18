@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eagle — Crystal game engine · Eagle</title>
+<link rel="stylesheet" href="assets/site.css">
+<link rel="icon" href="assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="index.html"><img src="assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="index.html" class="active">Home</a><a href="play/index.html">Play</a><a href="docs/guide.html">Guide</a><a href="docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><section class="hero"><div>
+<h1>The <span>Crystal-native</span> game engine</h1>
+<p class="lead">2D and 3D games in Crystal with a node tree, signals, physics, audio, UI and a WebAssembly target. A library, an engine and a viewer that compile to one executable.</p>
+<a class="btn" href="play/index.html">Play the examples</a><a class="btn alt" href="docs/guide.html">Read the guide</a>
+<p style="margin-top:22px"><code>brew install sdl2 && git clone https://github.com/joeyrobert/eagle.cr && cd eagle.cr && shards build && bin/eagle examples asteroids</code></p>
+</div><div><a href="play/flythrough3d/index.html"><img src="assets/screenshots/flythrough3d.png" alt="Eagle 3D fly-through"></a></div></section>
+<h2 class="section">What's in the box <small>Everything below is implemented in Crystal and covered by specs.</small></h2>
+<div class="grid"><div class="card"><h3>Crystal all the way down</h3><p>PNG/QOI/BMP, WAV and Ogg Vorbis codecs, zlib, TrueType rasteriser, audio mixer, physics, particles, UI, 3D renderer — all Crystal. Only SDL2 and OpenGL underneath.</p></div><div class="card"><h3>Easy things easy</h3><p>A LÖVE-style <code>load / update / draw</code> loop, immediate-mode drawing and a Godot-style node tree with signals. Pick either or mix.</p></div><div class="card"><h3>2D and 3D</h3><p>Batched sprites, cameras, tile maps and particles; meshes, materials, lights, PCF shadows, fog and a procedural sky.</p></div><div class="card"><h3>Physics that stacks</h3><p>2D SAT with clipped manifolds and 3D oriented boxes/spheres, kinematic characters with <code>move_and_slide</code>, raycasts and sensors.</p></div><div class="card"><h3>Runs in the browser</h3><p>Compile to WebAssembly + WebGL2 with one command. Same code, same rendering, embedded assets.</p></div><div class="card"><h3>Ships as one file</h3><p><code>eagle export exe</code> bakes assets into a single executable; <code>eagle export web</code> makes a static bundle; macOS <code>.app</code> too.</p></div><div class="card"><h3>Tested end to end</h3><p>220+ specs including GPU pixel tests, perft-verified chess, bit-exact Vorbis decoding, and integration specs that drive the real frame loop with injected input.</p></div><div class="card"><h3>Tools included</h3><p>An <code>eagle</code> CLI with project scaffolding, viewers for images, OBJ, TTF, WAV and hot-reloading GLSL, screenshot/frame-limited runs for CI.</p></div></div>
+<h2 class="section">Screenshots <small>Every one is a playable example; click to run it in your browser.</small></h2>
+<div class="shots"><figure><a href="play/flythrough3d/index.html"><img src="assets/screenshots/flythrough3d.png" alt="3D fly-through"></a><figcaption><b>3D fly-through</b> — Every 3D feature: primitives, textures, lights, shadows, fog, transparency, wireframe, picking.</figcaption></figure><figure><a href="play/coinrush3d/index.html"><img src="assets/screenshots/coinrush3d.png" alt="Coin Rush (3D)"></a><figcaption><b>Coin Rush (3D)</b> — Roll a ball around a lit, shadowed arena collecting coins before the timer runs out.</figcaption></figure><figure><a href="play/chess/index.html"><img src="assets/screenshots/chess.png" alt="Chess"></a><figcaption><b>Chess</b> — Full rules with castling, en passant, promotion; perft-verified move generator and an alpha-beta AI.</figcaption></figure><figure><a href="play/platformer/index.html"><img src="assets/screenshots/platformer.png" alt="Platformer"></a><figcaption><b>Platformer</b> — ASCII level to TileMap + colliders, coyote time, jump buffering, enemies you can stomp, coins and a goal.</figcaption></figure><figure><a href="play/physics3d/index.html"><img src="assets/screenshots/physics3d.png" alt="3D physics"></a><figcaption><b>3D physics</b> — Spheres and boxes with SAT contacts, stacking pyramid, kinematic ramp.</figcaption></figure><figure><a href="play/roguelike/index.html"><img src="assets/screenshots/roguelike.png" alt="Roguelike"></a><figcaption><b>Roguelike</b> — Procedural dungeons, shadowcasting field of view, monsters that chase, items, five levels.</figcaption></figure><figure><a href="play/ui/index.html"><img src="assets/screenshots/ui.png" alt="UI toolkit"></a><figcaption><b>UI toolkit</b> — Panels, buttons, sliders, checkboxes, text input, grids and themes.</figcaption></figure><figure><a href="play/interactions/index.html"><img src="assets/screenshots/interactions.png" alt="Interactions"></a><figcaption><b>Interactions</b> — Every input pattern with a live event log: clicks, drags, wheel zoom, text, gamepads, signals, timers.</figcaption></figure><figure><a href="play/asteroids/index.html"><img src="assets/screenshots/asteroids.png" alt="Asteroids"></a><figcaption><b>Asteroids</b> — Vector ship, splitting rocks, wrap-around space and thruster particles.</figcaption></figure><figure><a href="play/breakout/index.html"><img src="assets/screenshots/breakout.png" alt="Breakout"></a><figcaption><b>Breakout</b> — Paddle, ball, bricks with hit points, particles, camera shake and synthesized sounds.</figcaption></figure><figure><a href="play/physics/index.html"><img src="assets/screenshots/physics.png" alt="2D physics"></a><figcaption><b>2D physics</b> — Rigid bodies, stacking, ramps, sensors and additive particle bursts.</figcaption></figure><figure><a href="play/checkers/index.html"><img src="assets/screenshots/checkers.png" alt="Checkers"></a><figcaption><b>Checkers</b> — One or two players, forced captures, multi-jumps, kings and a quiescence-searching AI.</figcaption></figure></div>
+<h2 class="section">Code <small>Easy things are easy, hard things are possible.</small></h2>
+<div class="tabs"><button class="on" data-tab="0">Hello, sprite</button><button class="" data-tab="1">Scene tree & signals</button><button class="" data-tab="2">2D physics</button><button class="" data-tab="3">3D scene</button><button class="" data-tab="4">UI</button><button class="" data-tab="5">Shaders & canvases</button></div><div class="tabpane on" data-pane="0"><pre><code class="lang-crystal">require &quot;eagle&quot;
+include Eagle
+
+class Game &lt; App
+  @player = Sprite2D.new(Texture.load(&quot;res://player.png&quot;), Window.center)
+
+  def load
+    Input.map &quot;left&quot;, Key::A, Key::Left, Input.axis(GamepadAxis::LeftX, -1)
+    Input.map &quot;right&quot;, Key::D, Key::Right, Input.axis(GamepadAxis::LeftX, 1)
+    SceneTree.root.add(@player)
+  end
+
+  def update(dt : Float32)
+    @player.x += Input.axis(&quot;left&quot;, &quot;right&quot;) * 250 * dt
+  end
+
+  def draw(g : Graphics)
+    g.print(&quot;score #{@score}&quot;, 10, 10)
+  end
+end
+
+Eagle.run(Game, title: &quot;My Game&quot;, width: 960, height: 540)</code></pre></div><div class="tabpane " data-pane="1"><pre><code class="lang-crystal">class Enemy &lt; Area2D
+  signal died(points : Int32)
+
+  def initialize(pos : Vec2)
+    super(&quot;Enemy&quot;, pos)
+    circle(12)
+    add(AnimatedSprite2D.new.tap { |s| s.add_animation(&quot;idle&quot;, sheet.frames(32, 32), fps: 8) })
+    on_body_entered { |other| hit if other.is_a?(Bullet) }
+  end
+
+  def hit
+    emit_died(100)
+    Tween.value(1.0, 0.0, 0.2) { |a| modulate = Color::WHITE.with_alpha(a) }.on_complete { queue_free }
+  end
+end
+
+enemy = Enemy.new(v2(300, 200))
+enemy.on_died { |points| @score += points; Sounds.explode.play }
+SceneTree.root.add(enemy)</code></pre></div><div class="tabpane " data-pane="2"><pre><code class="lang-crystal">ground = StaticBody2D.new(position: v2(400, 580)).box(800, 40)
+ball   = RigidBody2D.new(position: v2(400, 0)).circle(16)
+ball.restitution = 0.6
+ball.on_body_entered { |other| Sounds.bounce.play }
+
+player = KinematicBody2D.new(position: v2(100, 100)).box(24, 40)
+
+def physics_process(dt : Float32)
+  player.velocity += v2(0, 1400 * dt)                    # gravity
+  player.velocity = v2(Input.axis(&quot;left&quot;, &quot;right&quot;) * 220, player.velocity.y)
+  player.velocity = v2(player.velocity.x, -520) if Input.pressed?(&quot;jump&quot;) &amp;&amp; player.on_floor?
+  player.move_and_slide(dt)
+end
+
+hit = Physics2D.world.raycast(player.position, v2(1, 0), 200)</code></pre></div><div class="tabpane " data-pane="3"><pre><code class="lang-crystal">root = SceneTree.root
+root.add(Camera3D.new(position: v3(0, 3, 8)).tap(&amp;.look_at(Vec3::ZERO)))
+root.add(DirectionalLight3D.new(v3(-0.5, -1, -0.3)))          # casts PCF shadows
+root.add(MeshInstance3D.new(Mesh.plane(40, 40), Material.new(texture: Texture.load(&quot;res://grass.png&quot;))))
+crate = MeshInstance3D.new(Mesh.cube, Material.new(Color::ORANGE, shininess: 48), position: v3(0, 0.5, 0))
+root.add(crate)
+
+Scene3D.environment.fog(20, 80)
+Scene3D.environment.sky_colors(Color.hex(&quot;#3b6fd6&quot;), Color.hex(&quot;#b9d4f5&quot;), Color.hex(&quot;#3a3a44&quot;))
+
+# picking
+if (hit = cam.mouse_ray.intersect_aabb(crate.global_bounds.not_nil!))
+  crate.material.albedo = Color::RED
+end</code></pre></div><div class="tabpane " data-pane="4"><pre><code class="lang-crystal">hud = CanvasLayer.new
+panel = Panel.new(size: v2(320, 0)).tap { |p| p.anchor = Anchor::Center; p.fit_content = true }
+box = VBox.new(size: v2(300, 0)).tap { |b| b.position = v2(10, 10); b.fit_content = true }
+box.add(Label.new(&quot;Settings&quot;),
+        Slider.new(0, 100, 50).tap { |s| s.on_value_changed { |v| Audio.volume = v / 100 } },
+        CheckBox.new(&quot;Fullscreen&quot;, false).tap { |c| c.on_toggled { |on| Window.fullscreen = on } },
+        TextInput.new(&quot;&quot;, &quot;player name&quot;).tap { |t| t.on_submitted { |name| save(name) } },
+        Button.new(&quot;Start&quot;) { SceneTree.change_scene(Level.new) })
+panel.add(box); hud.add(panel); SceneTree.root.add(hud)
+Theme.default.font = Font.load(&quot;res://Inter.ttf&quot;, 18)</code></pre></div><div class="tabpane " data-pane="5"><pre><code class="lang-crystal">glow = Shader.effect(&lt;&lt;-GLSL)
+  uniform float u_strength;
+  vec4 effect(vec4 color, sampler2D tex, vec2 uv, vec2 screen) {
+    vec4 c = texture(tex, uv);
+    float pulse = 0.5 + 0.5 * sin(u_time * 4.0);
+    return c * color + c.a * pulse * u_strength;
+  }
+  GLSL
+
+canvas = Canvas.new(320, 180)              # low-res render target
+g.with_canvas(canvas) { draw_world(g) }
+g.with_shader(glow) { glow[&quot;u_strength&quot;] = 0.3; g.draw(canvas, Rect.new(0, 0, Window.width, Window.height)) }</code></pre></div>
+<h2 class="section">API reference <small>Generated from the source with <code>crystal docs</code>; every public class and method.</small></h2>
+<h3>Core</h3><ul class="api-list"><li><a href="docs/api/Eagle/App.html"><code>Eagle::App</code></a></li><li><a href="docs/api/Eagle/Config.html"><code>Eagle::Config</code></a></li><li><a href="docs/api/Eagle/Clock.html"><code>Eagle::Clock</code></a></li><li><a href="docs/api/Eagle/Node.html"><code>Eagle::Node</code></a></li><li><a href="docs/api/Eagle/Node2D.html"><code>Eagle::Node2D</code></a></li><li><a href="docs/api/Eagle/Node3D.html"><code>Eagle::Node3D</code></a></li><li><a href="docs/api/Eagle/SceneTree.html"><code>Eagle::SceneTree</code></a></li><li><a href="docs/api/Eagle/Emitter.html"><code>Eagle::Emitter</code></a></li><li><a href="docs/api/Eagle/Tween.html"><code>Eagle::Tween</code></a></li><li><a href="docs/api/Eagle/Ease.html"><code>Eagle::Ease</code></a></li><li><a href="docs/api/Eagle/Script.html"><code>Eagle::Script</code></a></li><li><a href="docs/api/Eagle/Window.html"><code>Eagle::Window</code></a></li><li><a href="docs/api/Eagle/Input.html"><code>Eagle::Input</code></a></li></ul><h3>2D</h3><ul class="api-list"><li><a href="docs/api/Eagle/Graphics.html"><code>Eagle::Graphics</code></a></li><li><a href="docs/api/Eagle/Texture.html"><code>Eagle::Texture</code></a></li><li><a href="docs/api/Eagle/TextureRegion.html"><code>Eagle::TextureRegion</code></a></li><li><a href="docs/api/Eagle/Canvas.html"><code>Eagle::Canvas</code></a></li><li><a href="docs/api/Eagle/Shader.html"><code>Eagle::Shader</code></a></li><li><a href="docs/api/Eagle/Font.html"><code>Eagle::Font</code></a></li><li><a href="docs/api/Eagle/TrueTypeFont.html"><code>Eagle::TrueTypeFont</code></a></li><li><a href="docs/api/Eagle/Camera2D.html"><code>Eagle::Camera2D</code></a></li><li><a href="docs/api/Eagle/Sprite2D.html"><code>Eagle::Sprite2D</code></a></li><li><a href="docs/api/Eagle/AnimatedSprite2D.html"><code>Eagle::AnimatedSprite2D</code></a></li><li><a href="docs/api/Eagle/TileMap.html"><code>Eagle::TileMap</code></a></li><li><a href="docs/api/Eagle/Particles2D.html"><code>Eagle::Particles2D</code></a></li><li><a href="docs/api/Eagle/Polygon2D.html"><code>Eagle::Polygon2D</code></a></li><li><a href="docs/api/Eagle/Line2D.html"><code>Eagle::Line2D</code></a></li><li><a href="docs/api/Eagle/CanvasLayer.html"><code>Eagle::CanvasLayer</code></a></li><li><a href="docs/api/Eagle/Timer.html"><code>Eagle::Timer</code></a></li></ul><h3>Physics</h3><ul class="api-list"><li><a href="docs/api/Eagle/Physics2D/World.html"><code>Eagle::Physics2D::World</code></a></li><li><a href="docs/api/Eagle/Physics2D/Body.html"><code>Eagle::Physics2D::Body</code></a></li><li><a href="docs/api/Eagle/RigidBody2D.html"><code>Eagle::RigidBody2D</code></a></li><li><a href="docs/api/Eagle/StaticBody2D.html"><code>Eagle::StaticBody2D</code></a></li><li><a href="docs/api/Eagle/KinematicBody2D.html"><code>Eagle::KinematicBody2D</code></a></li><li><a href="docs/api/Eagle/Area2D.html"><code>Eagle::Area2D</code></a></li><li><a href="docs/api/Eagle/RayCast2D.html"><code>Eagle::RayCast2D</code></a></li><li><a href="docs/api/Eagle/Physics3D/World.html"><code>Eagle::Physics3D::World</code></a></li><li><a href="docs/api/Eagle/RigidBody3D.html"><code>Eagle::RigidBody3D</code></a></li><li><a href="docs/api/Eagle/KinematicBody3D.html"><code>Eagle::KinematicBody3D</code></a></li><li><a href="docs/api/Eagle/Area3D.html"><code>Eagle::Area3D</code></a></li></ul><h3>3D</h3><ul class="api-list"><li><a href="docs/api/Eagle/Mesh.html"><code>Eagle::Mesh</code></a></li><li><a href="docs/api/Eagle/Material.html"><code>Eagle::Material</code></a></li><li><a href="docs/api/Eagle/Renderer3D.html"><code>Eagle::Renderer3D</code></a></li><li><a href="docs/api/Eagle/Environment.html"><code>Eagle::Environment</code></a></li><li><a href="docs/api/Eagle/Camera3D.html"><code>Eagle::Camera3D</code></a></li><li><a href="docs/api/Eagle/MeshInstance3D.html"><code>Eagle::MeshInstance3D</code></a></li><li><a href="docs/api/Eagle/DirectionalLight3D.html"><code>Eagle::DirectionalLight3D</code></a></li><li><a href="docs/api/Eagle/PointLight3D.html"><code>Eagle::PointLight3D</code></a></li><li><a href="docs/api/Eagle/SpotLight3D.html"><code>Eagle::SpotLight3D</code></a></li><li><a href="docs/api/Eagle/Scene3D.html"><code>Eagle::Scene3D</code></a></li></ul><h3>UI</h3><ul class="api-list"><li><a href="docs/api/Eagle/Control.html"><code>Eagle::Control</code></a></li><li><a href="docs/api/Eagle/Panel.html"><code>Eagle::Panel</code></a></li><li><a href="docs/api/Eagle/Label.html"><code>Eagle::Label</code></a></li><li><a href="docs/api/Eagle/Button.html"><code>Eagle::Button</code></a></li><li><a href="docs/api/Eagle/CheckBox.html"><code>Eagle::CheckBox</code></a></li><li><a href="docs/api/Eagle/Slider.html"><code>Eagle::Slider</code></a></li><li><a href="docs/api/Eagle/ProgressBar.html"><code>Eagle::ProgressBar</code></a></li><li><a href="docs/api/Eagle/TextInput.html"><code>Eagle::TextInput</code></a></li><li><a href="docs/api/Eagle/VBox.html"><code>Eagle::VBox</code></a></li><li><a href="docs/api/Eagle/HBox.html"><code>Eagle::HBox</code></a></li><li><a href="docs/api/Eagle/GridContainer.html"><code>Eagle::GridContainer</code></a></li><li><a href="docs/api/Eagle/Theme.html"><code>Eagle::Theme</code></a></li></ul><h3>Audio & assets</h3><ul class="api-list"><li><a href="docs/api/Eagle/Audio.html"><code>Eagle::Audio</code></a></li><li><a href="docs/api/Eagle/Sound.html"><code>Eagle::Sound</code></a></li><li><a href="docs/api/Eagle/Voice.html"><code>Eagle::Voice</code></a></li><li><a href="docs/api/Eagle/AudioPlayer.html"><code>Eagle::AudioPlayer</code></a></li><li><a href="docs/api/Eagle/AudioPlayer2D.html"><code>Eagle::AudioPlayer2D</code></a></li><li><a href="docs/api/Eagle/Assets.html"><code>Eagle::Assets</code></a></li><li><a href="docs/api/Eagle/Image.html"><code>Eagle::Image</code></a></li><li><a href="docs/api/Eagle/Codecs/PNG.html"><code>Eagle::Codecs::PNG</code></a></li><li><a href="docs/api/Eagle/Codecs/Vorbis.html"><code>Eagle::Codecs::Vorbis</code></a></li><li><a href="docs/api/Eagle/Codecs/Zlib.html"><code>Eagle::Codecs::Zlib</code></a></li></ul><h3>Math</h3><ul class="api-list"><li><a href="docs/api/Eagle/Vec2.html"><code>Eagle::Vec2</code></a></li><li><a href="docs/api/Eagle/Vec3.html"><code>Eagle::Vec3</code></a></li><li><a href="docs/api/Eagle/Vec4.html"><code>Eagle::Vec4</code></a></li><li><a href="docs/api/Eagle/Mat4.html"><code>Eagle::Mat4</code></a></li><li><a href="docs/api/Eagle/Quat.html"><code>Eagle::Quat</code></a></li><li><a href="docs/api/Eagle/Rect.html"><code>Eagle::Rect</code></a></li><li><a href="docs/api/Eagle/AABB.html"><code>Eagle::AABB</code></a></li><li><a href="docs/api/Eagle/Ray.html"><code>Eagle::Ray</code></a></li><li><a href="docs/api/Eagle/Color.html"><code>Eagle::Color</code></a></li><li><a href="docs/api/Eagle/Transform2D.html"><code>Eagle::Transform2D</code></a></li><li><a href="docs/api/Eagle/Mathf.html"><code>Eagle::Mathf</code></a></li></ul>
+<p><a class="btn" href="docs/api/index.html">Browse the full API</a><a class="btn alt" href="docs/guide.html">Guide</a><a class="btn alt" href="docs/architecture.html">Architecture</a></p>
+<script>
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('on'));b.classList.add('on');document.querySelector('.tabpane[data-pane="'+b.dataset.tab+'"]').classList.add('on');}));
+</script></main>
+<footer>Eagle is MIT licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

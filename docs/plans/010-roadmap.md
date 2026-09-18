@@ -70,16 +70,18 @@ Requirements gathered from the project owner (2026-09-18):
 - UI: no scroll containers, drop-downs, or rich text.
 - No scene serialisation / editor; no networking.
 - 2D text switches textures per glyph run (many draw calls with TTF); an atlas-with-white-pixel optimisation would fix it.
-- Windows/Linux builds untested; WASM backend not started.
+- Windows/Linux: objects cross-compile but no full link/run test on those OSes.
+- Web: no file system, clipboard or threads; wireframe is emulated with edge lines; text input uses keydown (no IME); audio starts after the first click (browser policy).
 
 ## Phase 6 — Completeness pass (2026-09-18)
 - [x] Event injection (`Eagle.inject`) + `Script` scheduler; loop-driven integration specs; Tab focus navigation; interactions demo
 - [x] Cross-compile check (Windows MSVC, Linux x86_64/aarch64 objects build)
 - [x] Physics3D world + nodes + specs + example
 - [x] Ogg Vorbis decoder (floor 1, residues 0/1/2, coupling, FFT-based IMDCT) validated against ffmpeg
-- [ ] Roguelike example
-- [ ] WebAssembly/WebGL2 backend (Crystal 1.21's wasm stdlib needs a shim: `EventLoop::Wasi#run` is missing)
-- [ ] Marketing site + docs site (examples compiled for web, API docs)
+- [x] Roguelike example (procedural dungeon, shadowcasting FOV, AI, items; unit-tested core)
+- [x] WebAssembly/WebGL2 backend: stdlib shims (event loop, threads, monitor, timezone), `web/eagle.js` (WASI polyfill, WebGL2 object tables, WebAudio queue, input/gamepads), `Platform::Web`, wasm GL bindings from the same function table, pure-Crystal zlib (no libz), wasm-ld wrapper for exports; all 16 examples run in headless Chrome
+- [x] Exports: `eagle export exe|web|app`, compile-time asset embedding (`Eagle.embed_assets`)
+- [x] Marketing site + docs site (`script/build-site.sh` → `site/`): screenshots, code tabs, API groups, playable examples with source, guide/architecture/roadmap pages, `crystal docs` API reference
 
 ## Log
 - 2026-09-18: project started; Phase 0 and Phase 1 landed (99 specs green). Smoke and sandbox2d screenshots verified visually.

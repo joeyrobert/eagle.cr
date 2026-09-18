@@ -23,6 +23,24 @@ class RoguelikeApp < App
     Input.map "down", Key::Down, Key::S, Key::J, Input.axis(GamepadAxis::LeftY, 1)
     Input.map "wait", Key::Space, Key::Period, GamepadButton::B
     Input.map "descend", Key::Period, Key::Enter, GamepadButton::A
+    if ENV["EAGLE_DEMO"]? == "1"
+      # explore a bit for screenshots: walk in the direction with most open floor
+      @game = Rogue::Game.new(4)
+      40.times { |i| Script.at(0.05 * i) { auto_step } }
+    end
+  end
+
+  private def auto_step
+    d = @game.dungeon; p = @game.player
+    best = {1, 0}; best_score = -1
+    [{1, 0}, {-1, 0}, {0, 1}, {0, -1}].each do |(dx, dy)|
+      score = 0
+      (1..6).each { |k| break unless d.walkable?(p.x + dx * k, p.y + dy * k); score += d.explored?(p.x + dx * k, p.y + dy * k) ? 1 : 3 }
+      if score > best_score
+        best_score = score; best = {dx, dy}
+      end
+    end
+    @game.move_player(best[0], best[1]) || @game.wait_turn
   end
 
   def update(dt : Float32)
@@ -97,7 +115,7 @@ class RoguelikeApp < App
     @game.messages.last(5).each_with_index do |m, i|
       g.print(m, 10, my + i * 18, Color.gray(0.55 + i * 0.1))
     end
-    g.print("arrows/WASD/hjkl move · space wait · Enter descend on > · R restart", Window.width - 10, Window.height - 20, Color.gray(0.4), align: TextAlign::Right)
+    g.print("arrows/WASD/hjkl move - space wait - Enter descends on > - R restart", Window.width - 10, Window.height - 20, Color.gray(0.4), align: TextAlign::Right)
     g.rect(0, 0, Window.width, Window.height, color: Color::RED.with_alpha(@flash * 1.5)) if @flash > 0
     if @game.game_over?
       g.rect(0, 0, Window.width, Window.height, color: Color.new(0, 0, 0, 0.6))

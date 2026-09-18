@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Readme · Eagle</title>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="icon" href="../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../index.html">Home</a><a href="../play/index.html">Play</a><a href="../docs/guide.html">Guide</a><a href="../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><article class="doc"><h1 id="eagle">Eagle</h1>
+<p>A Crystal-native 2D/3D game engine: library, engine and viewer in one shard, compiling to a single executable. Inspired by LÖVE (immediate-mode drawing, <code>load/update/draw</code>) and Godot (scene tree, nodes, signals, action map).</p>
+<p>Only two native dependencies: <strong>SDL2</strong> and the platform&#39;s <strong>OpenGL 3.3</strong>. Everything else — PNG/QOI/BMP/WAV codecs, TrueType fonts, audio mixer, physics, particles, UI, 3D renderer with shadows — is written in Crystal.</p>
+<pre><code class="lang-crystal">require &quot;eagle&quot;
+include Eagle
+
+class Game &lt; App
+  @player = Sprite2D.new(Texture.new(Image.circle(32, Color::YELLOW)), Window.center)
+
+  def load
+    Input.map &quot;left&quot;, Key::A, Key::Left, Input.axis(GamepadAxis::LeftX, -1)
+    Input.map &quot;right&quot;, Key::D, Key::Right, Input.axis(GamepadAxis::LeftX, 1)
+    SceneTree.root.add(@player)
+  end
+
+  def update(dt : Float32)
+    @player.x += Input.axis(&quot;left&quot;, &quot;right&quot;) * 250 * dt
+  end
+
+  def draw(g : Graphics)
+    g.print(&quot;Hello, Eagle!&quot;, 10, 10)
+  end
+end
+
+Eagle.run(Game, title: &quot;My Game&quot;, width: 960, height: 540)</code></pre>
+<h2 id="features">Features</h2>
+<table><tr><th>Area</th><th>What you get</th></tr><tr><td>Core</td><td><code>App</code> callbacks, fixed + variable timestep, <code>Clock</code>, logging, headless/screenshot runs for CI</td></tr><tr><td>Scene tree</td><td><code>Node</code>, <code>Node2D</code>, <code>Node3D</code>, <code>SceneTree</code>, groups, deferred calls, pause modes, <code>signal</code> macro</td></tr><tr><td>2D</td><td>Batched <code>Graphics</code> (sprites, shapes, thick lines, concave polygons, text), <code>Camera2D</code>, <code>CanvasLayer</code>, <code>Canvas</code> render targets, blend modes, scissor, custom shaders (LÖVE-style <code>effect</code>)</td></tr><tr><td>Nodes</td><td><code>Sprite2D</code>, <code>AnimatedSprite2D</code>, <code>Label</code>, <code>Timer</code>, <code>TileMap</code>, <code>Polygon2D</code>, <code>Line2D</code>, <code>Particles2D</code>, <code>AudioPlayer(2D)</code></td></tr><tr><td>Input</td><td>Keyboard, mouse, gamepads (SDL GameController), action map with analog strengths, text input</td></tr><tr><td>Audio</td><td>Float32 mixer, WAV + Ogg Vorbis (Crystal decoder), procedural tones, voices with pitch/pan/fade, buses, streams</td></tr><tr><td>Physics 2D</td><td>Circles/boxes/polygons, SAT, impulse solver, spatial hash, raycasts, layers, sensors, <code>RigidBody2D</code>, <code>StaticBody2D</code>, <code>KinematicBody2D</code> (<code>move_and_slide</code>), <code>Area2D</code>, <code>RayCast2D</code></td></tr><tr><td>Physics 3D</td><td>Spheres and oriented boxes, SAT manifolds, impulse solver, raycasts, <code>RigidBody3D</code>, <code>StaticBody3D</code>, <code>KinematicBody3D</code>, <code>Area3D</code>, <code>RayCast3D</code></td></tr><tr><td>Web</td><td><code>wasm32-wasi</code> build with a WebGL2/WebAudio/DOM runtime (<code>web/eagle.js</code>); every example runs in the browser</td></tr><tr><td>Export</td><td>Single executable with compile-time embedded assets, web bundle, macOS app</td></tr><tr><td>Fonts</td><td>Built-in pixel font, TrueType parser + anti-aliased rasteriser, glyph atlases, kerning</td></tr><tr><td>UI</td><td><code>Control</code>, <code>Panel</code>, <code>Label</code>, <code>Button</code>, <code>CheckBox</code>, <code>Slider</code>, <code>ProgressBar</code>, <code>TextInput</code>, <code>VBox</code>/<code>HBox</code>/<code>GridContainer</code>, themes, focus &amp; keyboard navigation</td></tr><tr><td>3D</td><td><code>Mesh</code> primitives + OBJ, <code>Material</code> (Blinn-Phong, textures, transparency, wireframe, custom shaders), <code>Camera3D</code>, directional/point/spot lights, PCF shadow maps, procedural sky, fog</td></tr><tr><td>Tween</td><td><code>Tween.to/value/after/sequence</code> with 17 easings</td></tr><tr><td>Tools</td><td><code>eagle new/run/build/view/examples</code> CLI; viewers for images, OBJ, TTF, WAV, GLSL (hot reload)</td></tr></table>
+<h2 id="getting-started">Getting started</h2>
+<pre><code class="lang-sh">brew install sdl2            # macOS (Linux: libsdl2-dev; Windows: SDL2 dev libs on the lib path)
+git clone https://github.com/joeyrobert/eagle.cr &amp;&amp; cd eagle.cr
+shards build                 # builds bin/eagle
+bin/eagle examples           # list examples
+bin/eagle examples asteroids # run one
+bin/eagle new mygame &amp;&amp; cd mygame &amp;&amp; shards install &amp;&amp; ../bin/eagle run</code></pre>
+<p>Add to an existing project&#39;s <code>shard.yml</code>:</p>
+<pre><code class="lang-yaml">dependencies:
+  eagle:
+    github: joeyrobert/eagle.cr</code></pre>
+<h2 id="examples">Examples</h2>
+<p><code>examples/</code> contains complete, self-contained programs (no external assets):</p>
+<ul><li><strong>Games (2D):</strong> <code>chess</code> (full rules + alpha-beta AI), <code>checkers</code> (1 or 2 players, AI), <code>breakout</code>, <code>asteroids</code>, <code>platformer</code>, <code>snake</code>, <code>roguelike</code></li><li><strong>Games (3D):</strong> <code>coinrush3d</code></li><li><strong>Feature tests:</strong> <code>smoke</code>, <code>sandbox2d</code>, <code>physics</code>, <code>physics3d</code>, <code>ui</code>, <code>interactions</code>, <code>embedded</code>, <code>flythrough3d</code></li></ul>
+<p>Every example supports <code>EAGLE_FRAMES=60 EAGLE_SCREENSHOT=out.png</code> for automated verification.</p>
+<h2 id="web-and-exports">Web and exports</h2>
+<pre><code class="lang-sh">bin/eagle export web examples/breakout/main.cr    # WebAssembly + WebGL2 bundle in dist/web/breakout/
+bin/eagle export exe examples/breakout/main.cr    # single release executable (embed assets with Eagle.embed_assets)
+bin/eagle export app examples/breakout/main.cr    # macOS .app
+script/build-site.sh                              # marketing + docs site with every example playable in the browser</code></pre>
+<p>Web builds need <code>brew install lld</code>; Crystal&#39;s wasm libraries are fetched automatically.</p>
+<h2 id="testing">Testing</h2>
+<pre><code class="lang-sh">crystal spec                 # ~210 specs incl. GPU-backed pixel tests (hidden window)
+EAGLE_NO_GPU=1 crystal spec  # skip GPU specs (CI without a display)</code></pre>
+<h2 id="documentation">Documentation</h2>
+<ul><li><code>docs/guide.md</code> — concepts and API tour</li><li><code>docs/plans/</code> — architecture, roadmap, findings</li><li><code>crystal docs</code> — API reference</li></ul>
+<h2 id="license">License</h2>
+<p>MIT</p>
+</article></main>
+<footer>Eagle is MIT licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>
