@@ -82,8 +82,11 @@ Requirements gathered from the project owner (2026-09-18):
 - [x] WebAssembly/WebGL2 backend: stdlib shims (event loop, threads, monitor, timezone), `web/eagle.js` (WASI polyfill, WebGL2 object tables, WebAudio queue, input/gamepads), `Platform::Web`, wasm GL bindings from the same function table, pure-Crystal zlib (no libz), wasm-ld wrapper for exports; all 16 examples run in headless Chrome
 - [x] Exports: `eagle export exe|web|app`, compile-time asset embedding (`Eagle.embed_assets`)
 - [x] Marketing site + docs site (`script/build-site.sh` → `site/`): screenshots, code tabs, API groups, playable examples with source, guide/architecture/roadmap pages, `crystal docs` API reference
+- [x] Site redesign (eagle palette, Crystal syntax highlighting via the compiler's lexer, themed API reference) published to GitHub Pages from `gh-pages` (`script/publish-site.sh`)
+- [x] Usage docs on every public type: overview, when to use it, and an example; 125 doc examples type-checked by `script/check_doc_examples.cr`
 
 ## Log
+- 2026-09-18: API docs pass. Findings: `Voice`/`AudioPlayback` setters only took `Float32`, so `voice.pitch = 0.8 + x` didn't compile (added `Number` setters); `CanvasLayer#layer` is not used for ordering (documented; order is tree order + `z_index`); the guide's Sprite2D example assigned locals instead of `self.position`; the full spec suite crashes intermittently inside a GL call (seen at the pre-docs commit too, roughly 1 run in 8), unresolved.
 - 2026-09-18: project started; Phase 0 and Phase 1 landed (99 specs green). Smoke and sandbox2d screenshots verified visually.
 - 2026-09-18: decided `Eagle.run(AppClass)` constructs the app after init so GPU resources can live in ivars.
 - 2026-09-18: Phase 5 landed: 6 2D games + 2 3D programs, CLI, docs (167 specs). Findings: sphere/cylinder-cap winding was inverted (spec now checks winding for every primitive); `eagle view` doubles as a regression tool.
