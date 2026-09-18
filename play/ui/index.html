@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI toolkit · Eagle</title>
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><div class="play-wrap"><h1>UI toolkit</h1><p class="lead">Panels, buttons, sliders, checkboxes, text input, grids and themes.</p><canvas id="eagle"></canvas><p class="controls">Click around; Tab cycles focus</p>
+<details><summary>Source — examples/ui/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+include Eagle
+
+# UI showcase: containers, buttons, sliders, text input, themes, TrueType font.
+class UIDemo &lt; App
+  @status = Label.new(&quot;Ready.&quot;)
+  @ttf : Font? = nil
+
+  def load
+    ttf_path = [&quot;/System/Library/Fonts/Supplemental/Arial.ttf&quot;, &quot;/System/Library/Fonts/Geneva.ttf&quot;, &quot;/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf&quot;].find { |p| File.exists?(p) }
+    if ttf_path
+      @ttf = Font.load(ttf_path, 18)
+      Theme.default.font = @ttf
+    end
+    layer = CanvasLayer.new
+    SceneTree.root.add(layer)
+
+    panel = Panel.new(size: v2(440, 0))
+    panel.anchor = Anchor::Center
+    panel.fit_content = true
+    vbox = VBox.new(size: v2(420, 0))
+    vbox.position = v2(10, 10)
+    vbox.fit_content = true
+    panel.add(vbox)
+    layer.add(panel)
+
+    title = Label.new(&quot;Eagle UI&quot;, align: TextAlign::Center)
+    title.font_scale = 1.4
+    vbox.add(title)
+    vbox.add(Label.new(&quot;Widgets laid out by a VBox inside a centred Panel.&quot;, color: Color.gray(0.7)))
+
+    row = HBox.new
+    row.add(Button.new(&quot;Primary&quot;) { @status.text = &quot;Primary pressed&quot; })
+    row.add(Button.new(&quot;Toggle&quot;).tap { |b| b.toggle_mode = true; b.on_toggled { |on| @status.text = &quot;Toggle #{on ? &quot;on&quot; : &quot;off&quot;}&quot; } })
+    d = Button.new(&quot;Disabled&quot;); d.disabled = true
+    row.add(d)
+    vbox.add(row)
+
+    vbox.add(CheckBox.new(&quot;Enable shadows&quot;, true).tap { |c| c.on_toggled { |v| @status.text = &quot;Shadows #{v}&quot; } })
+    slider_row = HBox.new
+    slabel = Label.new(&quot;Volume 50%&quot;)
+    slider = Slider.new(0, 100, 50, step: 1)
+    slider.size_flags = SizeFlags::ExpandX
+    slider.on_value_changed { |v| slabel.text = &quot;Volume #{v.to_i}%&quot;; @status.text = &quot;Volume #{v.to_i}&quot; }
+    slider_row.add(slider, slabel)
+    vbox.add(slider_row)
+
+    bar = ProgressBar.new(0.0)
+    vbox.add(bar)
+    Tween.value(0, 1, 3.0, ease: :quad_in_out) { |v| bar.value = v }.loop = true
+
+    input = TextInput.new(&quot;&quot;, &quot;Type your name and press Enter&quot;)
+    input.on_submitted { |t| @status.text = &quot;Hello, #{t}!&quot; }
+    vbox.add(input)
+
+    grid = GridContainer.new(3)
+    9.times { |i| grid.add(Button.new(&quot;#{i + 1}&quot;) { @status.text = &quot;Grid #{i + 1}&quot; }) }
+    vbox.add(grid)
+
+    theme_row = HBox.new
+    theme_row.add(Button.new(&quot;Dark&quot;) { panel.theme = nil; @status.text = &quot;Dark theme&quot; })
+    theme_row.add(Button.new(&quot;Light&quot;) { panel.theme = Theme.default.light; @status.text = &quot;Light theme&quot; })
+    vbox.add(theme_row)
+    vbox.add(@status)
+  end
+
+  def draw(g : Graphics)
+    g.print(&quot;fps #{Clock.fps.round}  draw calls #{g.draw_calls}  focused: #{Control.focused.try(&amp;.class.name) || &quot;-&quot;}&quot;, 10, Window.height - 24, Color::GRAY)
+  end
+end
+
+Eagle.run(UIDemo, title: &quot;Eagle UI&quot;, width: 900, height: 640)
+</code></pre></details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./ui.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

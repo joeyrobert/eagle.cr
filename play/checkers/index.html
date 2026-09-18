@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkers · Eagle</title>
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><div class="play-wrap"><h1>Checkers</h1><p class="lead">One or two players, forced captures, multi-jumps, kings and a quiescence-searching AI.</p><canvas id="eagle"></canvas><p class="controls">Pick a mode, then click pieces. U undo · R restart · M menu</p>
+<details><summary>Source — examples/checkers/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+require &quot;./checkers&quot;
+include Eagle
+
+# Checkers. Red (bottom) moves first. Captures are mandatory, multi-jumps supported.
+# Menu: pick 1 player (vs AI) or 2 players. Keys: R restart, M menu, U undo, 1-8 AI depth.
+class CheckersGame &lt; App
+  SIZE = 70
+  ORIGIN = v2(50, 50)
+
+  @board = Checkers::Board.new
+  @ai = Checkers::AI.new(6)
+  @selected : Int32? = nil
+  @legal = [] of Checkers::Move
+  @mode : Symbol = :menu
+  @last : Checkers::Move? = nil
+  @menu = CanvasLayer.new
+  @status = &quot;&quot;
+  @snd : Sound? = nil
+
+  def load
+    @snd = Sound.tone(330, 0.07, Sound::Wave::Triangle, 0.35)
+    SceneTree.root.add(@menu)
+    build_menu
+    # `checkers ai` / `checkers two` skips the menu
+    start(:ai) if ARGV.includes?(&quot;ai&quot;)
+    start(:two) if ARGV.includes?(&quot;two&quot;)
+  end
+
+  def build_menu
+    @menu.clear_children
+    panel = Panel.new(size: v2(360, 0))
+    panel.anchor = Anchor::Center
+    panel.fit_content = true
+    box = VBox.new(size: v2(340, 0))
+    box.position = v2(10, 10)
+    box.fit_content = true
+    title = Label.new(&quot;Checkers&quot;, align: TextAlign::Center)
+    title.font_scale = 1.5
+    box.add(title)
+    box.add(Button.new(&quot;1 player (vs AI)&quot;) { start(:ai) })
+    box.add(Button.new(&quot;2 players&quot;) { start(:two) })
+    depth_label = Label.new(&quot;AI depth #{@ai.depth}&quot;)
+    depth = Slider.new(1, 8, @ai.depth, step: 1)
+    depth.on_value_changed { |v| @ai.depth = v.to_i; depth_label.text = &quot;AI depth #{v.to_i}&quot; }
+    box.add(depth_label, depth)
+    panel.add(box)
+    @menu.add(panel)
+    @menu.visible = true
+  end
+
+  def start(mode : Symbol)
+    @mode = mode
+    @board = Checkers::Board.new
+    @selected = nil; @legal.clear; @last = nil
+    @menu.visible = false
+    update_status
+  end
+
+  def square_at(p : Vec2) : Int32?
+    l = p - ORIGIN
+    return nil if l.x &lt; 0 || l.y &lt; 0 || l.x &gt;= SIZE * 8 || l.y &gt;= SIZE * 8
+    (7 - (l.y / SIZE).to_i) * 8 + (l.x / SIZE).to_i
+  end
+
+  def square_pos(i : Int32) : Vec2
+    ORIGIN + v2((i % 8) * SIZE, (7 - i // 8) * SIZE)
+  end
+
+  def human_turn? : Bool
+    @mode == :two || @board.turn.red?
+  end
+
+  def input(e : Event)
+    return if @mode == :menu
+    if e.is_a?(MouseButtonEvent) &amp;&amp; e.pressed? &amp;&amp; e.button.left? &amp;&amp; human_turn? &amp;&amp; !@board.game_over?
+      sq = square_at(e.position)
+      return unless sq
+      if @selected &amp;&amp; (mv = @legal.find { |m| m.to == sq })
+        @board.play(mv)
+        @last = mv
+        @snd.try(&amp;.play)
+        @selected = nil; @legal.clear
+        update_status
+      elsif (c = @board[sq]) &amp;&amp; c.side == @board.turn
+        @selected = sq
+        @legal = @board.legal_moves_from(sq)
+      else
+        @selected = nil; @legal.clear
+      end
+    elsif e.is_a?(KeyEvent) &amp;&amp; e.pressed?
+      case e.key
+      when Key::R then start(@mode)
+      when Key::M then @mode = :menu; build_menu
+      when Key::U then undo
+      end
+    end
+  end
+
+  def undo
+    n = (@mode == :ai &amp;&amp; @board.history.size &gt;= 2) ? 2 : 1
+    return if @board.history.size &lt; n
+    hist = @board.history[0...-n]
+    @board = Checkers::Board.new
+    hist.each { |m| @board.apply(m) }
+    @last = hist.last?
+    @selected = nil; @legal.clear
+    update_status
+  end
+
+  def update(dt : Float32)
+    if @mode == :ai &amp;&amp; @board.turn.black? &amp;&amp; !@board.game_over?
+      if mv = @ai.best_move(@board)
+        @board.apply(mv)
+        @last = mv
+        @snd.try(&amp;.play(pitch: 0.8))
+        update_status
+      end
+    end
+    Eagle.quit if Input.pressed?(Key::Escape)
+  end
+
+  def update_status
+    @status = case @board.status
+              when .red_wins? then &quot;Red wins!&quot;
+              when .black_wins? then &quot;Black wins!&quot;
+              when .draw? then &quot;Draw&quot;
+              else &quot;#{@board.turn.red? ? &quot;Red&quot; : &quot;Black&quot;} to move#{@board.legal_moves.first?.try(&amp;.capture?) ? &quot; — must capture&quot; : &quot;&quot;}&quot;
+              end
+  end
+
+  def draw(g : Graphics)
+    return if @mode == :menu
+    64.times do |i|
+      p = square_pos(i)
+      c = Checkers.dark?(i) ? Color.hex(&quot;#6b4f3a&quot;) : Color.hex(&quot;#e8d8c0&quot;)
+      c = c.lerp(Color::YELLOW, 0.35) if (l = @last) &amp;&amp; (l.path.includes?(i))
+      c = c.lerp(Color::GREEN, 0.4) if @selected == i
+      g.rect(p.x, p.y, SIZE, SIZE, color: c)
+    end
+    @legal.each { |m| p = square_pos(m.to) + v2(SIZE / 2, SIZE / 2); g.circle(p, 10, color: Color.new(0, 0, 0, 0.3)) }
+    64.times do |i|
+      c = @board[i]
+      next unless c
+      p = square_pos(i) + v2(SIZE / 2, SIZE / 2)
+      base = c.side.red? ? Color.hex(&quot;#c0392b&quot;) : Color.hex(&quot;#2c2c2c&quot;)
+      g.circle(p + v2(2, 3), SIZE * 0.38, color: Color.new(0, 0, 0, 0.35))
+      g.circle(p, SIZE * 0.38, color: base)
+      g.circle(p, SIZE * 0.3, DrawMode::Line, color: base.lighten(0.3))
+      g.print(&quot;K&quot;, p.x, p.y - 8, Color::YELLOW, align: TextAlign::Center) if c.king?
+    end
+    g.print(@status, ORIGIN.x, ORIGIN.y + SIZE * 8 + 14, Color::WHITE)
+    g.print(&quot;red #{@board.count(Checkers::Side::Red)}  black #{@board.count(Checkers::Side::Black)}   #{@mode == :ai ? &quot;vs AI depth #{@ai.depth}, nodes #{@ai.nodes}&quot; : &quot;two players&quot;}   U undo  R restart  M menu&quot;, ORIGIN.x, ORIGIN.y + SIZE * 8 + 38, Color::GRAY)
+  end
+end
+
+Eagle.run(CheckersGame, title: &quot;Eagle Checkers&quot;, width: 900, height: 700)
+</code></pre><h3>checkers.cr</h3><pre><code># Checkers (English draughts) rules + AI, independent of rendering.
+# 8x8 board, dark squares only, forced captures, multi-jumps, kings.
+module Checkers
+  enum Side : Int8
+    Red = 0   # moves up (increasing row)
+    Black = 1 # moves down
+    def other : Side; red? ? Black : Red; end
+  end
+
+  struct Cell
+    getter side : Side
+    getter? king : Bool
+    def initialize(@side, @king = false); end
+    def crowned : Cell; Cell.new(@side, true); end
+  end
+
+  struct Move
+    getter path : Array(Int32)       # squares visited (from ... to)
+    getter captures : Array(Int32)   # captured squares
+    def initialize(@path, @captures = [] of Int32); end
+    def from : Int32; @path.first; end
+    def to : Int32; @path.last; end
+    def capture? : Bool; !@captures.empty?; end
+    def to_s : String; @path.map { |i| Checkers.name(i) }.join(capture? ? &quot;x&quot; : &quot;-&quot;); end
+    def ==(o : Move) : Bool; @path == o.path; end
+  end
+
+  def self.name(i : Int32) : String; &quot;#{(&#39;a&#39;.ord + i % 8).chr}#{i // 8 + 1}&quot;; end
+  def self.index(name : String) : Int32; (name[0].ord - &#39;a&#39;.ord) + (name[1].to_i - 1) * 8; end
+  def self.dark?(i : Int32) : Bool; (i % 8 + i // 8).even?; end
+
+  enum Status
+    Playing
+    RedWins
+    BlackWins
+    Draw
+  end
+
+  class Board
+    getter cells : Array(Cell?)
+    getter turn : Side
+    getter history = [] of Move
+    getter quiet_moves = 0 # moves without capture/crowning (draw at 40 each side)
+
+    def initialize
+      @cells = Array(Cell?).new(64, nil)
+      @turn = Side::Red
+      setup
+    end
+
+    protected def initialize(@cells, @turn, @history, @quiet_moves); end
+
+    def clone : Board; Board.new(@cells.dup, @turn, @history.dup, @quiet_moves); end
+
+    def setup : Nil
+      @cells.fill(nil)
+      64.times do |i|
+        next unless Checkers.dark?(i)
+        r = i // 8
+        @cells[i] = Cell.new(Side::Red) if r &lt; 3
+        @cells[i] = Cell.new(Side::Black) if r &gt; 4
+      end
+    end
+
+    # Layout from 8 text rows, top row first: r/R red (R = king), b/B black, . empty
+    def self.from_layout(rows : Array(String), turn : Side = Side::Red) : Board
+      b = new
+      b.cells.fill(nil)
+      rows.each_with_index do |row, ri|
+        r = 7 - ri
+        row.each_char.with_index do |c, f|
+          i = r * 8 + f
+          case c
+          when &#39;r&#39; then b.cells[i] = Cell.new(Side::Red)
+          when &#39;R&#39; then b.cells[i] = Cell.new(Side::Red, true)
+          when &#39;b&#39; then b.cells[i] = Cell.new(Side::Black)
+          when &#39;B&#39; then b.cells[i] = Cell.new(Side::Black, true)
+          end
+        end
+      end
+      b.set_turn(turn)
+      b
+    end
+
+    # :nodoc:
+    def set_turn(@turn); end
+
+    def [](i : Int32) : Cell?; @cells[i]; end
+    def count(side : Side) : Int32; @cells.count { |c| c &amp;&amp; c.side == side }; end
+
+    private def dirs(c : Cell) : Array({Int32, Int32})
+      return [{1, 1}, {-1, 1}, {1, -1}, {-1, -1}] if c.king?
+      c.side.red? ? [{1, 1}, {-1, 1}] : [{1, -1}, {-1, -1}]
+    end
+
+    # All legal moves (captures are mandatory).
+    def legal_moves : Array(Move)
+      captures = [] of Move
+      simple = [] of Move
+      64.times do |i|
+        c = @cells[i]
+        next unless c &amp;&amp; c.side == @turn
+        jumps(i, c, [i], [] of Int32, captures)
+        next unless captures.empty?
+        dirs(c).each do |(df, dr)|
+          f = i % 8 + df; r = i // 8 + dr
+          next unless (0 &lt;= f &lt;= 7) &amp;&amp; (0 &lt;= r &lt;= 7)
+          t = r * 8 + f
+          simple &lt;&lt; Move.new([i, t]) if @cells[t].nil?
+        end
+      end
+      captures.empty? ? simple : captures
+    end
+
+    private def jumps(i, c, path, caps, out_moves)
+      found = false
+      dirs(c).each do |(df, dr)|
+        f = i % 8 + df; r = i // 8 + dr
+        f2 = f + df; r2 = r + dr
+        next unless (0 &lt;= f2 &lt;= 7) &amp;&amp; (0 &lt;= r2 &lt;= 7)
+        mid = r * 8 + f; t = r2 * 8 + f2
+        m = @cells[mid]
+        next unless m &amp;&amp; m.side != c.side &amp;&amp; !caps.includes?(mid)
+        next unless @cells[t].nil? || t == path.first
+        found = true
+        # stop multi-jump when a man reaches the king row
+        last_row = c.side.red? ? 7 : 0
+        if !c.king? &amp;&amp; r2 == last_row
+          out_moves &lt;&lt; Move.new(path + [t], caps + [mid])
+        else
+          jumps(t, c, path + [t], caps + [mid], out_moves)
+        end
+      end
+      out_moves &lt;&lt; Move.new(path, caps) if !found &amp;&amp; caps.size &gt; 0
+    end
+
+    def legal_moves_from(i : Int32) : Array(Move)
+      legal_moves.select { |m| m.from == i }
+    end
+
+    def apply(m : Move) : Nil
+      c = @cells[m.from].not_nil!
+      @cells[m.from] = nil
+      m.captures.each { |x| @cells[x] = nil }
+      last_row = c.side.red? ? 7 : 0
+      crowned = !c.king? &amp;&amp; m.to // 8 == last_row
+      @cells[m.to] = crowned ? c.crowned : c
+      @quiet_moves = (m.capture? || crowned) ? 0 : @quiet_moves + 1
+      @history &lt;&lt; m
+      @turn = @turn.other
+    end
+
+    def play(m : Move) : Bool
+      real = legal_moves.find { |lm| lm == m }
+      return false unless real
+      apply(real)
+      true
+    end
+
+    def play(path : String) : Bool
+      squares = path.split(/[-x]/).map { |n| Checkers.index(n) }
+      play(Move.new(squares))
+    end
+
+    def status : Status
+      return Status::Draw if @quiet_moves &gt;= 80
+      if legal_moves.empty?
+        return @turn.red? ? Status::BlackWins : Status::RedWins
+      end
+      Status::Playing
+    end
+
+    def game_over? : Bool; !status.playing?; end
+
+    def to_s(io : IO) : Nil
+      7.downto(0) do |r|
+        8.times do |f|
+          c = @cells[r * 8 + f]
+          io &lt;&lt; (c ? (c.side.red? ? (c.king? ? &#39;R&#39; : &#39;r&#39;) : (c.king? ? &#39;B&#39; : &#39;b&#39;)) : (Checkers.dark?(r * 8 + f) ? &#39;.&#39; : &#39; &#39;)) &lt;&lt; &#39; &#39;
+        end
+        io &lt;&lt; &#39;\n&#39;
+      end
+    end
+  end
+
+  class AI
+    property depth : Int32
+    getter nodes = 0
+
+    def initialize(@depth = 6); end
+
+    def evaluate(b : Board) : Int32
+      score = 0
+      64.times do |i|
+        c = b[i]
+        next unless c
+        v = c.king? ? 300 : 100
+        # advancement bonus for men
+        r = i // 8
+        v += (c.side.red? ? r : 7 - r) * 3 unless c.king?
+        # edge safety
+        v += 4 if i % 8 == 0 || i % 8 == 7
+        score += c.side.red? ? v : -v
+      end
+      b.turn.red? ? score : -score
+    end
+
+    def best_move(b : Board) : Move?
+      @nodes = 0
+      moves = b.legal_moves
+      return nil if moves.empty?
+      return moves[0] if moves.size == 1
+      best = moves[0]; best_score = Int32::MIN
+      alpha = -1_000_000; beta = 1_000_000
+      moves.each do |m|
+        c = b.clone; c.apply(m)
+        s = -search(c, @depth - 1, -beta, -alpha)
+        if s &gt; best_score
+          best_score = s; best = m
+        end
+        alpha = Math.max(alpha, s)
+      end
+      best
+    end
+
+    private def search(b : Board, depth : Int32, alpha : Int32, beta : Int32) : Int32
+      @nodes += 1
+      moves = b.legal_moves
+      return -100_000 - depth if moves.empty?
+      # extend search while captures are available (quiescence)
+      return evaluate(b) if depth &lt;= 0 &amp;&amp; !moves[0].capture?
+      return evaluate(b) if depth &lt;= -4
+      moves.each do |m|
+        c = b.clone; c.apply(m)
+        s = -search(c, depth - 1, -beta, -alpha)
+        return beta if s &gt;= beta
+        alpha = Math.max(alpha, s)
+      end
+      alpha
+    end
+  end
+end
+</code></pre></details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./checkers.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

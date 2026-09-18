@@ -1,0 +1,3077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Crystal Docs 1.18.2">
+<meta name="crystal_docs.project_version" content="main-dev">
+<meta name="crystal_docs.project_name" content="eagle">
+
+
+
+<link href="../css/style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/doc.js"></script>
+
+  <meta name="repository-name" content="eagle">
+  <title>Eagle::Graphics - eagle main-dev</title>
+  <script type="text/javascript">
+    CrystalDocs.base_path = "../";
+  </script>
+</head>
+<body>
+
+<svg class="hidden">
+  <symbol id="octicon-link" viewBox="0 0 16 16">
+    <path fill="currentColor" fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+  </symbol>
+</svg>
+<input type="checkbox" id="sidebar-btn">
+<label for="sidebar-btn" id="sidebar-btn-label">
+  <svg class="open" xmlns="http://www.w3.org/2000/svg" height="2em" width="2em" viewBox="0 0 512 512"><title>Open Sidebar</title><path fill="currentColor" d="M80 96v64h352V96H80zm0 112v64h352v-64H80zm0 112v64h352v-64H80z"></path></svg>
+  <svg class="close" xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" viewBox="0 0 512 512"><title>Close Sidebar</title><path fill="currentColor" d="m118.6 73.4-45.2 45.2L210.7 256 73.4 393.4l45.2 45.2L256 301.3l137.4 137.3 45.2-45.2L301.3 256l137.3-137.4-45.2-45.2L256 210.7Z"></path></svg>
+</label>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="search-box">
+      <input type="search" class="search-input" placeholder="Search..." spellcheck="false" aria-label="Search">
+    </div>
+
+    <div class="project-summary">
+      <h1 class="project-name">
+        <a href="../index.html">
+          eagle
+        </a>
+      </h1>
+
+      <span class="project-version">
+        main-dev
+      </span>
+    </div>
+  </div>
+
+  <div class="search-results hidden">
+    <ul class="search-list"></ul>
+  </div>
+
+  <div class="types-list">
+    <ul>
+  
+  <li class=" " data-id="eagle/toplevel" data-name="top level namespace">
+      <a href="../toplevel.html">Top Level Namespace</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="eagle/Eagle" data-name="eagle">
+      <a href="../Eagle.html">Eagle</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/AABB" data-name="eagle::aabb">
+      <a href="../Eagle/AABB.html">AABB</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Anchor" data-name="eagle::anchor">
+      <a href="../Eagle/Anchor.html">Anchor</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/AnimatedSprite2D" data-name="eagle::animatedsprite2d">
+      <a href="../Eagle/AnimatedSprite2D.html">AnimatedSprite2D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/AnimatedSprite2D/Animation" data-name="eagle::animatedsprite2d::animation">
+      <a href="../Eagle/AnimatedSprite2D/Animation.html">Animation</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/App" data-name="eagle::app">
+      <a href="../Eagle/App.html">App</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Area2D" data-name="eagle::area2d">
+      <a href="../Eagle/Area2D.html">Area2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Area3D" data-name="eagle::area3d">
+      <a href="../Eagle/Area3D.html">Area3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AssetError" data-name="eagle::asseterror">
+      <a href="../Eagle/AssetError.html">AssetError</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Assets" data-name="eagle::assets">
+      <a href="../Eagle/Assets.html">Assets</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Audio" data-name="eagle::audio">
+      <a href="../Eagle/Audio.html">Audio</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Audio/Bus" data-name="eagle::audio::bus">
+      <a href="../Eagle/Audio/Bus.html">Bus</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioBuffer" data-name="eagle::audiobuffer">
+      <a href="../Eagle/AudioBuffer.html">AudioBuffer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioPlayback" data-name="eagle::audioplayback">
+      <a href="../Eagle/AudioPlayback.html">AudioPlayback</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioPlayer" data-name="eagle::audioplayer">
+      <a href="../Eagle/AudioPlayer.html">AudioPlayer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioPlayer2D" data-name="eagle::audioplayer2d">
+      <a href="../Eagle/AudioPlayer2D.html">AudioPlayer2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioStream" data-name="eagle::audiostream">
+      <a href="../Eagle/AudioStream.html">AudioStream</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/BitmapFont" data-name="eagle::bitmapfont">
+      <a href="../Eagle/BitmapFont.html">BitmapFont</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/BoxContainer" data-name="eagle::boxcontainer">
+      <a href="../Eagle/BoxContainer.html">BoxContainer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Button" data-name="eagle::button">
+      <a href="../Eagle/Button.html">Button</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Camera2D" data-name="eagle::camera2d">
+      <a href="../Eagle/Camera2D.html">Camera2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Camera3D" data-name="eagle::camera3d">
+      <a href="../Eagle/Camera3D.html">Camera3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CameraView" data-name="eagle::cameraview">
+      <a href="../Eagle/CameraView.html">CameraView</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Canvas" data-name="eagle::canvas">
+      <a href="../Eagle/Canvas.html">Canvas</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CanvasLayer" data-name="eagle::canvaslayer">
+      <a href="../Eagle/CanvasLayer.html">CanvasLayer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CharacterBody2D" data-name="eagle::characterbody2d">
+      <a href="../Eagle/CharacterBody2D.html">CharacterBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CharacterBody3D" data-name="eagle::characterbody3d">
+      <a href="../Eagle/CharacterBody3D.html">CharacterBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CheckBox" data-name="eagle::checkbox">
+      <a href="../Eagle/CheckBox.html">CheckBox</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Clock" data-name="eagle::clock">
+      <a href="../Eagle/Clock.html">Clock</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Codecs" data-name="eagle::codecs">
+      <a href="../Eagle/Codecs.html">Codecs</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/BMP" data-name="eagle::codecs::bmp">
+      <a href="../Eagle/Codecs/BMP.html">BMP</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/OBJ" data-name="eagle::codecs::obj">
+      <a href="../Eagle/Codecs/OBJ.html">OBJ</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/PNG" data-name="eagle::codecs::png">
+      <a href="../Eagle/Codecs/PNG.html">PNG</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/QOI" data-name="eagle::codecs::qoi">
+      <a href="../Eagle/Codecs/QOI.html">QOI</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Codecs/Vorbis" data-name="eagle::codecs::vorbis">
+      <a href="../Eagle/Codecs/Vorbis.html">Vorbis</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/BitReader" data-name="eagle::codecs::vorbis::bitreader">
+      <a href="../Eagle/Codecs/Vorbis/BitReader.html">BitReader</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Codebook" data-name="eagle::codecs::vorbis::codebook">
+      <a href="../Eagle/Codecs/Vorbis/Codebook.html">Codebook</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/DecodeError" data-name="eagle::codecs::vorbis::decodeerror">
+      <a href="../Eagle/Codecs/Vorbis/DecodeError.html">DecodeError</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Decoder" data-name="eagle::codecs::vorbis::decoder">
+      <a href="../Eagle/Codecs/Vorbis/Decoder.html">Decoder</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/FFT" data-name="eagle::codecs::vorbis::fft">
+      <a href="../Eagle/Codecs/Vorbis/FFT.html">FFT</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Floor1" data-name="eagle::codecs::vorbis::floor1">
+      <a href="../Eagle/Codecs/Vorbis/Floor1.html">Floor1</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/IMDCT" data-name="eagle::codecs::vorbis::imdct">
+      <a href="../Eagle/Codecs/Vorbis/IMDCT.html">IMDCT</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Mapping" data-name="eagle::codecs::vorbis::mapping">
+      <a href="../Eagle/Codecs/Vorbis/Mapping.html">Mapping</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Mode" data-name="eagle::codecs::vorbis::mode">
+      <a href="../Eagle/Codecs/Vorbis/Mode.html">Mode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Residue" data-name="eagle::codecs::vorbis::residue">
+      <a href="../Eagle/Codecs/Vorbis/Residue.html">Residue</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/WAV" data-name="eagle::codecs::wav">
+      <a href="../Eagle/Codecs/WAV.html">WAV</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Codecs/Zlib" data-name="eagle::codecs::zlib">
+      <a href="../Eagle/Codecs/Zlib.html">Zlib</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Zlib/Error" data-name="eagle::codecs::zlib::error">
+      <a href="../Eagle/Codecs/Zlib/Error.html">Error</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CollisionObject2D" data-name="eagle::collisionobject2d">
+      <a href="../Eagle/CollisionObject2D.html">CollisionObject2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CollisionObject3D" data-name="eagle::collisionobject3d">
+      <a href="../Eagle/CollisionObject3D.html">CollisionObject3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CollisionShape2D" data-name="eagle::collisionshape2d">
+      <a href="../Eagle/CollisionShape2D.html">CollisionShape2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Color" data-name="eagle::color">
+      <a href="../Eagle/Color.html">Color</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Config" data-name="eagle::config">
+      <a href="../Eagle/Config.html">Config</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Container" data-name="eagle::container">
+      <a href="../Eagle/Container.html">Container</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Control" data-name="eagle::control">
+      <a href="../Eagle/Control.html">Control</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/DirectionalLight3D" data-name="eagle::directionallight3d">
+      <a href="../Eagle/DirectionalLight3D.html">DirectionalLight3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Drawable" data-name="eagle::drawable">
+      <a href="../Eagle/Drawable.html">Drawable</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/DrawItem" data-name="eagle::drawitem">
+      <a href="../Eagle/DrawItem.html">DrawItem</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/DrawMode" data-name="eagle::drawmode">
+      <a href="../Eagle/DrawMode.html">DrawMode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Ease" data-name="eagle::ease">
+      <a href="../Eagle/Ease.html">Ease</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Emitter" data-name="eagle::emitter(*t)">
+      <a href="../Eagle/Emitter.html">Emitter</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Environment" data-name="eagle::environment">
+      <a href="../Eagle/Environment.html">Environment</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Error" data-name="eagle::error">
+      <a href="../Eagle/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Event" data-name="eagle::event">
+      <a href="../Eagle/Event.html">Event</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/FileDropEvent" data-name="eagle::filedropevent">
+      <a href="../Eagle/FileDropEvent.html">FileDropEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Focus" data-name="eagle::focus">
+      <a href="../Eagle/Focus.html">Focus</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Font" data-name="eagle::font">
+      <a href="../Eagle/Font.html">Font</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Font/Glyph" data-name="eagle::font::glyph">
+      <a href="../Eagle/Font/Glyph.html">Glyph</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadAxis" data-name="eagle::gamepadaxis">
+      <a href="../Eagle/GamepadAxis.html">GamepadAxis</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadAxisEvent" data-name="eagle::gamepadaxisevent">
+      <a href="../Eagle/GamepadAxisEvent.html">GamepadAxisEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadButton" data-name="eagle::gamepadbutton">
+      <a href="../Eagle/GamepadButton.html">GamepadButton</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadButtonEvent" data-name="eagle::gamepadbuttonevent">
+      <a href="../Eagle/GamepadButtonEvent.html">GamepadButtonEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadConnectionEvent" data-name="eagle::gamepadconnectionevent">
+      <a href="../Eagle/GamepadConnectionEvent.html">GamepadConnectionEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Geometry" data-name="eagle::geometry">
+      <a href="../Eagle/Geometry.html">Geometry</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/GL" data-name="eagle::gl">
+      <a href="../Eagle/GL.html">GL</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Bitfield" data-name="eagle::gl::bitfield">
+      <a href="../Eagle/GL/Bitfield.html">Bitfield</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Boolean" data-name="eagle::gl::boolean">
+      <a href="../Eagle/GL/Boolean.html">Boolean</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Enum" data-name="eagle::gl::enum">
+      <a href="../Eagle/GL/Enum.html">Enum</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Float" data-name="eagle::gl::float">
+      <a href="../Eagle/GL/Float.html">Float</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Int" data-name="eagle::gl::int">
+      <a href="../Eagle/GL/Int.html">Int</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Intptr" data-name="eagle::gl::intptr">
+      <a href="../Eagle/GL/Intptr.html">Intptr</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Sizei" data-name="eagle::gl::sizei">
+      <a href="../Eagle/GL/Sizei.html">Sizei</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Sizeiptr" data-name="eagle::gl::sizeiptr">
+      <a href="../Eagle/GL/Sizeiptr.html">Sizeiptr</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Uint" data-name="eagle::gl::uint">
+      <a href="../Eagle/GL/Uint.html">Uint</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/GPU" data-name="eagle::gpu">
+      <a href="../Eagle/GPU.html">GPU</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/AttribType" data-name="eagle::gpu::attribtype">
+      <a href="../Eagle/GPU/AttribType.html">AttribType</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/BlendMode" data-name="eagle::gpu::blendmode">
+      <a href="../Eagle/GPU/BlendMode.html">BlendMode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/CullMode" data-name="eagle::gpu::cullmode">
+      <a href="../Eagle/GPU/CullMode.html">CullMode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/DepthFunc" data-name="eagle::gpu::depthfunc">
+      <a href="../Eagle/GPU/DepthFunc.html">DepthFunc</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Device" data-name="eagle::gpu::device">
+      <a href="../Eagle/GPU/Device.html">Device</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Filter" data-name="eagle::gpu::filter">
+      <a href="../Eagle/GPU/Filter.html">Filter</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/GL33" data-name="eagle::gpu::gl33">
+      <a href="../Eagle/GPU/GL33.html">GL33</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/PixelFormat" data-name="eagle::gpu::pixelformat">
+      <a href="../Eagle/GPU/PixelFormat.html">PixelFormat</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Primitive" data-name="eagle::gpu::primitive">
+      <a href="../Eagle/GPU/Primitive.html">Primitive</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/RenderTargetHandle" data-name="eagle::gpu::rendertargethandle">
+      <a href="../Eagle/GPU/RenderTargetHandle.html">RenderTargetHandle</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/UniformValue" data-name="eagle::gpu::uniformvalue">
+      <a href="../Eagle/GPU/UniformValue.html">UniformValue</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Usage" data-name="eagle::gpu::usage">
+      <a href="../Eagle/GPU/Usage.html">Usage</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/VertexAttrib" data-name="eagle::gpu::vertexattrib">
+      <a href="../Eagle/GPU/VertexAttrib.html">VertexAttrib</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/VertexLayout" data-name="eagle::gpu::vertexlayout">
+      <a href="../Eagle/GPU/VertexLayout.html">VertexLayout</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Wrap" data-name="eagle::gpu::wrap">
+      <a href="../Eagle/GPU/Wrap.html">Wrap</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" current" data-id="eagle/Eagle/Graphics" data-name="eagle::graphics">
+      <a href="../Eagle/Graphics.html">Graphics</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GridContainer" data-name="eagle::gridcontainer">
+      <a href="../Eagle/GridContainer.html">GridContainer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/HBox" data-name="eagle::hbox">
+      <a href="../Eagle/HBox.html">HBox</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Image" data-name="eagle::image">
+      <a href="../Eagle/Image.html">Image</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/ImageControl" data-name="eagle::imagecontrol">
+      <a href="../Eagle/ImageControl.html">ImageControl</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Input" data-name="eagle::input">
+      <a href="../Eagle/Input.html">Input</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Input/AxisBinding" data-name="eagle::input::axisbinding">
+      <a href="../Eagle/Input/AxisBinding.html">AxisBinding</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Input/Binding" data-name="eagle::input::binding">
+      <a href="../Eagle/Input/Binding.html">Binding</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Input/Gamepad" data-name="eagle::input::gamepad">
+      <a href="../Eagle/Input/Gamepad.html">Gamepad</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Key" data-name="eagle::key">
+      <a href="../Eagle/Key.html">Key</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KeyEvent" data-name="eagle::keyevent">
+      <a href="../Eagle/KeyEvent.html">KeyEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KeyMod" data-name="eagle::keymod">
+      <a href="../Eagle/KeyMod.html">KeyMod</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KinematicBody2D" data-name="eagle::kinematicbody2d">
+      <a href="../Eagle/KinematicBody2D.html">KinematicBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KinematicBody3D" data-name="eagle::kinematicbody3d">
+      <a href="../Eagle/KinematicBody3D.html">KinematicBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Label" data-name="eagle::label">
+      <a href="../Eagle/Label.html">Label</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Light3D" data-name="eagle::light3d">
+      <a href="../Eagle/Light3D.html">Light3D</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/LightData" data-name="eagle::lightdata">
+      <a href="../Eagle/LightData.html">LightData</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/LightData/Kind" data-name="eagle::lightdata::kind">
+      <a href="../Eagle/LightData/Kind.html">Kind</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Line2D" data-name="eagle::line2d">
+      <a href="../Eagle/Line2D.html">Line2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mat3" data-name="eagle::mat3">
+      <a href="../Eagle/Mat3.html">Mat3</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mat4" data-name="eagle::mat4">
+      <a href="../Eagle/Mat4.html">Mat4</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Material" data-name="eagle::material">
+      <a href="../Eagle/Material.html">Material</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mathf" data-name="eagle::mathf">
+      <a href="../Eagle/Mathf.html">Mathf</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mesh" data-name="eagle::mesh">
+      <a href="../Eagle/Mesh.html">Mesh</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MeshInstance3D" data-name="eagle::meshinstance3d">
+      <a href="../Eagle/MeshInstance3D.html">MeshInstance3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseButton" data-name="eagle::mousebutton">
+      <a href="../Eagle/MouseButton.html">MouseButton</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseButtonEvent" data-name="eagle::mousebuttonevent">
+      <a href="../Eagle/MouseButtonEvent.html">MouseButtonEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseMotionEvent" data-name="eagle::mousemotionevent">
+      <a href="../Eagle/MouseMotionEvent.html">MouseMotionEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseWheelEvent" data-name="eagle::mousewheelevent">
+      <a href="../Eagle/MouseWheelEvent.html">MouseWheelEvent</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Node" data-name="eagle::node">
+      <a href="../Eagle/Node.html">Node</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Node/ProcessMode" data-name="eagle::node::processmode">
+      <a href="../Eagle/Node/ProcessMode.html">ProcessMode</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Node2D" data-name="eagle::node2d">
+      <a href="../Eagle/Node2D.html">Node2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Node3D" data-name="eagle::node3d">
+      <a href="../Eagle/Node3D.html">Node3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Panel" data-name="eagle::panel">
+      <a href="../Eagle/Panel.html">Panel</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Particles2D" data-name="eagle::particles2d">
+      <a href="../Eagle/Particles2D.html">Particles2D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Particles2D/EmissionShape" data-name="eagle::particles2d::emissionshape">
+      <a href="../Eagle/Particles2D/EmissionShape.html">EmissionShape</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Particles2D/Particle" data-name="eagle::particles2d::particle">
+      <a href="../Eagle/Particles2D/Particle.html">Particle</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Physics2D" data-name="eagle::physics2d">
+      <a href="../Eagle/Physics2D.html">Physics2D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Body" data-name="eagle::physics2d::body">
+      <a href="../Eagle/Physics2D/Body.html">Body</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/BodyType" data-name="eagle::physics2d::bodytype">
+      <a href="../Eagle/Physics2D/BodyType.html">BodyType</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Circle" data-name="eagle::physics2d::circle">
+      <a href="../Eagle/Physics2D/Circle.html">Circle</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Collision" data-name="eagle::physics2d::collision">
+      <a href="../Eagle/Physics2D/Collision.html">Collision</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Manifold" data-name="eagle::physics2d::manifold">
+      <a href="../Eagle/Physics2D/Manifold.html">Manifold</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Polygon" data-name="eagle::physics2d::polygon">
+      <a href="../Eagle/Physics2D/Polygon.html">Polygon</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/RayHit" data-name="eagle::physics2d::rayhit">
+      <a href="../Eagle/Physics2D/RayHit.html">RayHit</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Shape" data-name="eagle::physics2d::shape">
+      <a href="../Eagle/Physics2D/Shape.html">Shape</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/World" data-name="eagle::physics2d::world">
+      <a href="../Eagle/Physics2D/World.html">World</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Physics3D" data-name="eagle::physics3d">
+      <a href="../Eagle/Physics3D.html">Physics3D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Body" data-name="eagle::physics3d::body">
+      <a href="../Eagle/Physics3D/Body.html">Body</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/BodyType" data-name="eagle::physics3d::bodytype">
+      <a href="../Eagle/Physics3D/BodyType.html">BodyType</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Collision" data-name="eagle::physics3d::collision">
+      <a href="../Eagle/Physics3D/Collision.html">Collision</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Cuboid" data-name="eagle::physics3d::cuboid">
+      <a href="../Eagle/Physics3D/Cuboid.html">Cuboid</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Manifold" data-name="eagle::physics3d::manifold">
+      <a href="../Eagle/Physics3D/Manifold.html">Manifold</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/RayHit" data-name="eagle::physics3d::rayhit">
+      <a href="../Eagle/Physics3D/RayHit.html">RayHit</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Shape" data-name="eagle::physics3d::shape">
+      <a href="../Eagle/Physics3D/Shape.html">Shape</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Sphere" data-name="eagle::physics3d::sphere">
+      <a href="../Eagle/Physics3D/Sphere.html">Sphere</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/World" data-name="eagle::physics3d::world">
+      <a href="../Eagle/Physics3D/World.html">World</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/WorldShape" data-name="eagle::physics3d::worldshape">
+      <a href="../Eagle/Physics3D/WorldShape.html">WorldShape</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Platform" data-name="eagle::platform">
+      <a href="../Eagle/Platform.html">Platform</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Platform/Base" data-name="eagle::platform::base">
+      <a href="../Eagle/Platform/Base.html">Base</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Platform/SDL" data-name="eagle::platform::sdl">
+      <a href="../Eagle/Platform/SDL.html">SDL</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Platform/WindowConfig" data-name="eagle::platform::windowconfig">
+      <a href="../Eagle/Platform/WindowConfig.html">WindowConfig</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/PointLight3D" data-name="eagle::pointlight3d">
+      <a href="../Eagle/PointLight3D.html">PointLight3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Polygon2D" data-name="eagle::polygon2d">
+      <a href="../Eagle/Polygon2D.html">Polygon2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/ProgressBar" data-name="eagle::progressbar">
+      <a href="../Eagle/ProgressBar.html">ProgressBar</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Quat" data-name="eagle::quat">
+      <a href="../Eagle/Quat.html">Quat</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/QuitEvent" data-name="eagle::quitevent">
+      <a href="../Eagle/QuitEvent.html">QuitEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Ray" data-name="eagle::ray">
+      <a href="../Eagle/Ray.html">Ray</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RayCast2D" data-name="eagle::raycast2d">
+      <a href="../Eagle/RayCast2D.html">RayCast2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RayCast3D" data-name="eagle::raycast3d">
+      <a href="../Eagle/RayCast3D.html">RayCast3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Rect" data-name="eagle::rect">
+      <a href="../Eagle/Rect.html">Rect</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Renderer3D" data-name="eagle::renderer3d">
+      <a href="../Eagle/Renderer3D.html">Renderer3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RigidBody2D" data-name="eagle::rigidbody2d">
+      <a href="../Eagle/RigidBody2D.html">RigidBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RigidBody3D" data-name="eagle::rigidbody3d">
+      <a href="../Eagle/RigidBody3D.html">RigidBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Scene3D" data-name="eagle::scene3d">
+      <a href="../Eagle/Scene3D.html">Scene3D</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/SceneTree" data-name="eagle::scenetree">
+      <a href="../Eagle/SceneTree.html">SceneTree</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/SceneTree/RootNode" data-name="eagle::scenetree::rootnode">
+      <a href="../Eagle/SceneTree/RootNode.html">RootNode</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Script" data-name="eagle::script">
+      <a href="../Eagle/Script.html">Script</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Script/Step" data-name="eagle::script::step">
+      <a href="../Eagle/Script/Step.html">Step</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Shader" data-name="eagle::shader">
+      <a href="../Eagle/Shader.html">Shader</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/ShaderError" data-name="eagle::shadererror">
+      <a href="../Eagle/ShaderError.html">ShaderError</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Shaders3D" data-name="eagle::shaders3d">
+      <a href="../Eagle/Shaders3D.html">Shaders3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/SizeFlags" data-name="eagle::sizeflags">
+      <a href="../Eagle/SizeFlags.html">SizeFlags</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Slider" data-name="eagle::slider">
+      <a href="../Eagle/Slider.html">Slider</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Sound" data-name="eagle::sound">
+      <a href="../Eagle/Sound.html">Sound</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Sound/Wave" data-name="eagle::sound::wave">
+      <a href="../Eagle/Sound/Wave.html">Wave</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Spacer" data-name="eagle::spacer">
+      <a href="../Eagle/Spacer.html">Spacer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/SpotLight3D" data-name="eagle::spotlight3d">
+      <a href="../Eagle/SpotLight3D.html">SpotLight3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Sprite2D" data-name="eagle::sprite2d">
+      <a href="../Eagle/Sprite2D.html">Sprite2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/StaticBody2D" data-name="eagle::staticbody2d">
+      <a href="../Eagle/StaticBody2D.html">StaticBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/StaticBody3D" data-name="eagle::staticbody3d">
+      <a href="../Eagle/StaticBody3D.html">StaticBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextAlign" data-name="eagle::textalign">
+      <a href="../Eagle/TextAlign.html">TextAlign</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextEvent" data-name="eagle::textevent">
+      <a href="../Eagle/TextEvent.html">TextEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextInput" data-name="eagle::textinput">
+      <a href="../Eagle/TextInput.html">TextInput</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Texture" data-name="eagle::texture">
+      <a href="../Eagle/Texture.html">Texture</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextureRegion" data-name="eagle::textureregion">
+      <a href="../Eagle/TextureRegion.html">TextureRegion</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Theme" data-name="eagle::theme">
+      <a href="../Eagle/Theme.html">Theme</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TileMap" data-name="eagle::tilemap">
+      <a href="../Eagle/TileMap.html">TileMap</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Timer" data-name="eagle::timer">
+      <a href="../Eagle/Timer.html">Timer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Transform2D" data-name="eagle::transform2d">
+      <a href="../Eagle/Transform2D.html">Transform2D</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/TrueType" data-name="eagle::truetype">
+      <a href="../Eagle/TrueType.html">TrueType</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/Accumulator" data-name="eagle::truetype::accumulator">
+      <a href="../Eagle/TrueType/Accumulator.html">Accumulator</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/Bitmap" data-name="eagle::truetype::bitmap">
+      <a href="../Eagle/TrueType/Bitmap.html">Bitmap</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/GlyphOutline" data-name="eagle::truetype::glyphoutline">
+      <a href="../Eagle/TrueType/GlyphOutline.html">GlyphOutline</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/HMetric" data-name="eagle::truetype::hmetric">
+      <a href="../Eagle/TrueType/HMetric.html">HMetric</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/Point" data-name="eagle::truetype::point">
+      <a href="../Eagle/TrueType/Point.html">Point</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueTypeFont" data-name="eagle::truetypefont">
+      <a href="../Eagle/TrueTypeFont.html">TrueTypeFont</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Tween" data-name="eagle::tween">
+      <a href="../Eagle/Tween.html">Tween</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Tween/Sequence" data-name="eagle::tween::sequence">
+      <a href="../Eagle/Tween/Sequence.html">Sequence</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/VBox" data-name="eagle::vbox">
+      <a href="../Eagle/VBox.html">VBox</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Vec2" data-name="eagle::vec2">
+      <a href="../Eagle/Vec2.html">Vec2</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Vec3" data-name="eagle::vec3">
+      <a href="../Eagle/Vec3.html">Vec3</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Vec4" data-name="eagle::vec4">
+      <a href="../Eagle/Vec4.html">Vec4</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Voice" data-name="eagle::voice">
+      <a href="../Eagle/Voice.html">Voice</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Window" data-name="eagle::window">
+      <a href="../Eagle/Window.html">Window</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/WindowEvent" data-name="eagle::windowevent">
+      <a href="../Eagle/WindowEvent.html">WindowEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/WindowEventKind" data-name="eagle::windoweventkind">
+      <a href="../Eagle/WindowEventKind.html">WindowEventKind</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Number" data-name="number">
+      <a href="../Number.html">Number</a>
+      
+    </li>
+  
+</ul>
+
+  </div>
+</div>
+
+
+<div class="main-content">
+<h1 class="type-name">
+
+  <span class="kind">
+    class
+  </span> Eagle::<wbr>Graphics
+
+</h1>
+
+
+  <ul class="superclass-hierarchy"><li class="superclass"><a href="../Eagle/Graphics.html">Eagle::Graphics</a></li><li class="superclass">Reference</li><li class="superclass">Object</li></ul>
+
+
+
+
+  <h2>
+    <a id="overview" class="anchor" href="#overview">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Overview
+  </h2>
+
+  <p>Immediate-mode 2D drawing (LÖVE-style), batched into as few draw calls as
+possible. Coordinates are in logical points with (0,0) top-left.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="defined-in" class="anchor" href="#defined-in">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Defined in:
+  </h2>
+  
+    
+      eagle/graphics/graphics.cr
+    
+    <br/>
+  
+
+
+
+  
+    <h2>
+      <a id="constant-summary" class="anchor" href="#constant-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+      Constant Summary
+    </h2>
+  
+  <dl>
+    
+      <dt class="entry-const" id="MAX_VERTICES">
+        <strong>MAX_VERTICES</strong> = <code><span class="n">65532</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="VERTEX_FLOATS">
+        <strong>VERTEX_FLOATS</strong> = <code><span class="n">8</span></code>
+      </dt>
+      
+    
+  </dl>
+
+
+
+  
+  <h2>
+    <a id="constructors" class="anchor" href="#constructors">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructors
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#new-class-method" class="signature"><strong>.new</strong></a>
+        
+      </li>
+    
+  </ul>
+
+
+  
+
+  
+
+  
+  <h2>
+    <a id="instance-method-summary" class="anchor" href="#instance-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#apply%28t%3ATransform2D%29%3ANil-instance-method" class="signature"><strong>#apply</strong>(t : Transform2D) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#arc%28x%3ANumber%2Cy%3ANumber%2Cradius%3ANumber%2Ca0%3ANumber%2Ca1%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#arc</strong>(x : Number, y : Number, radius : Number, a0 : Number, a1 : Number, mode : DrawMode = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : Color = @color) : Nil</a>
+        
+          <div class="summary"><p>Pie slice / arc from <code>a0</code> to <code>a1</code> radians.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#begin_frame%3ANil-instance-method" class="signature"><strong>#begin_frame</strong> : Nil</a>
+        
+          <div class="summary"><p>--- frame --------------------------------------------------------------- :nodoc:</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#blend%3AGPU%3A%3ABlendMode-instance-method" class="signature"><strong>#blend</strong> : GPU::BlendMode</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#blend%3D%28mode%3AGPU%3A%3ABlendMode%29-instance-method" class="signature"><strong>#blend=</strong>(mode : GPU::BlendMode)</a>
+        
+          <div class="summary"><p>--- state ---------------------------------------------------------------</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#camera%3ACamera2D%7CNil-instance-method" class="signature"><strong>#camera</strong> : Camera2D | Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#camera%3D%28cam%3ACamera2D%7CNil%29-instance-method" class="signature"><strong>#camera=</strong>(cam : Camera2D | Nil)</a>
+        
+          <div class="summary"><p>Use a camera for subsequent drawing (world space).</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#canvas%3ACanvas%7CNil-instance-method" class="signature"><strong>#canvas</strong> : Canvas | Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#circle%28x%3ANumber%2Cy%3ANumber%2Cradius%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%2Csegments%3AInt32%7CNil%3Dnil%29%3ANil-instance-method" class="signature"><strong>#circle</strong>(x : Number, y : Number, radius : Number, mode : DrawMode = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : Color = @color, segments : Int32 | Nil = <span class="n">nil</span>) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#circle%28center%3AVec2%2Cradius%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#circle</strong>(center : Vec2, radius : Number, mode : DrawMode = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : Color = @color) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#circle_line%28x%3ANumber%2Cy%3ANumber%2Cradius%3ANumber%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#circle_line</strong>(x : Number, y : Number, radius : Number, color : Color = @color) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#circle_segments%3AInt32%7CNil-instance-method" class="signature"><strong>#circle_segments</strong> : Int32 | Nil</a>
+        
+          <div class="summary"><p>Anti-aliased circle segment count is derived from radius; override here.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#circle_segments%3D%28circle_segments%3AInt32%7CNil%29-instance-method" class="signature"><strong>#circle_segments=</strong>(circle_segments : Int32 | Nil)</a>
+        
+          <div class="summary"><p>Anti-aliased circle segment count is derived from radius; override here.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#clear%28color%3AColor%3DColor%3A%3ABLACK%29%3ANil-instance-method" class="signature"><strong>#clear</strong>(color : Color = <span class="t">Color</span><span class="t">::</span><span class="t">BLACK</span>) : Nil</a>
+        
+          <div class="summary"><p>Clear the current target.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#color%3AColor-instance-method" class="signature"><strong>#color</strong> : Color</a>
+        
+          <div class="summary"><p>Current tint; multiplies everything drawn.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#color%3D%28color%3AColor%29-instance-method" class="signature"><strong>#color=</strong>(color : Color)</a>
+        
+          <div class="summary"><p>Current tint; multiplies everything drawn.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#dispose%3ANil-instance-method" class="signature"><strong>#dispose</strong> : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw%28d%3ADrawable%2Cx%3ANumber%3D0%2Cy%3ANumber%3D0%2Crotation%3ANumber%3D0%2Csx%3ANumber%3D1%2Csy%3ANumber%3Dsx%2Cox%3ANumber%3D0%2Coy%3ANumber%3D0%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#draw</strong>(d : Drawable, x : Number = <span class="n">0</span>, y : Number = <span class="n">0</span>, rotation : Number = <span class="n">0</span>, sx : Number = <span class="n">1</span>, sy : Number = sx, ox : Number = <span class="n">0</span>, oy : Number = <span class="n">0</span>, color : Color = @color) : Nil</a>
+        
+          <div class="summary"><p>--- sprites ------------------------------------------------------------- Draw a texture/region at (x, y) with rotation (radians), scale and origin offset (in texture pixels).</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw%28d%3ADrawable%2Cposition%3AVec2%2Crotation%3ANumber%3D0%2Cscale%3AVec2%3DVec2%3A%3AONE%2Corigin%3AVec2%3DVec2%3A%3AZERO%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#draw</strong>(d : Drawable, position : Vec2, rotation : Number = <span class="n">0</span>, scale : Vec2 = <span class="t">Vec2</span><span class="t">::</span><span class="t">ONE</span>, origin : Vec2 = <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>, color : Color = @color) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw%28d%3ADrawable%2Cdest%3ARect%2Ccolor%3AColor%3D%40color%2Crotation%3ANumber%3D0%29%3ANil-instance-method" class="signature"><strong>#draw</strong>(d : Drawable, dest : Rect, color : Color = @color, rotation : Number = <span class="n">0</span>) : Nil</a>
+        
+          <div class="summary"><p>Draw stretched into <code>dest</code>.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw%28c%3ACanvas%2Cx%3ANumber%3D0%2Cy%3ANumber%3D0%2Crotation%3ANumber%3D0%2Csx%3ANumber%3D1%2Csy%3ANumber%3Dsx%2Cox%3ANumber%3D0%2Coy%3ANumber%3D0%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#draw</strong>(c : Canvas, x : Number = <span class="n">0</span>, y : Number = <span class="n">0</span>, rotation : Number = <span class="n">0</span>, sx : Number = <span class="n">1</span>, sy : Number = sx, ox : Number = <span class="n">0</span>, oy : Number = <span class="n">0</span>, color : Color = @color) : Nil</a>
+        
+          <div class="summary"><p>Draw a canvas (its texture is stored top-row-first, so no flip needed).</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw%28c%3ACanvas%2Cdest%3ARect%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#draw</strong>(c : Canvas, dest : Rect, color : Color = @color) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw_calls%3AInt32-instance-method" class="signature"><strong>#draw_calls</strong> : Int32</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw_centered%28d%3ADrawable%2Cx%3ANumber%2Cy%3ANumber%2Crotation%3ANumber%3D0%2Csx%3ANumber%3D1%2Csy%3ANumber%3Dsx%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#draw_centered</strong>(d : Drawable, x : Number, y : Number, rotation : Number = <span class="n">0</span>, sx : Number = <span class="n">1</span>, sy : Number = sx, color : Color = @color) : Nil</a>
+        
+          <div class="summary"><p>Draw a texture centred at a point.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw_centered%28d%3ADrawable%2Cp%3AVec2%2Crotation%3ANumber%3D0%2Csx%3ANumber%3D1%2Csy%3ANumber%3Dsx%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#draw_centered</strong>(d : Drawable, p : Vec2, rotation : Number = <span class="n">0</span>, sx : Number = <span class="n">1</span>, sy : Number = sx, color : Color = @color) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw_tiled%28tex%3ATexture%2Cdest%3ARect%2Coffset%3AVec2%3DVec2%3A%3AZERO%2Cscale%3ANumber%3D1%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#draw_tiled</strong>(tex : Texture, dest : Rect, offset : Vec2 = <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>, scale : Number = <span class="n">1</span>, color : Color = @color) : Nil</a>
+        
+          <div class="summary"><p>Tiled fill of a rectangle with a texture (requires Wrap::Repeat on the texture).</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#ellipse%28x%3ANumber%2Cy%3ANumber%2Crx%3ANumber%2Cry%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#ellipse</strong>(x : Number, y : Number, rx : Number, ry : Number, mode : DrawMode = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : Color = @color) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#flush%3ANil-instance-method" class="signature"><strong>#flush</strong> : Nil</a>
+        
+          <div class="summary"><p>Flush pending geometry to the GPU.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#font%3AFont-instance-method" class="signature"><strong>#font</strong> : Font</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#font%3D%28font%3AFont%29-instance-method" class="signature"><strong>#font=</strong>(font : Font)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#line%28x1%3ANumber%2Cy1%3ANumber%2Cx2%3ANumber%2Cy2%3ANumber%2Ccolor%3AColor%3D%40color%2Cwidth%3ANumber%3D%40line_width%29%3ANil-instance-method" class="signature"><strong>#line</strong>(x1 : Number, y1 : Number, x2 : Number, y2 : Number, color : Color = @color, width : Number = @line_width) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#line%28a%3AVec2%2Cb%3AVec2%2Ccolor%3AColor%3D%40color%2Cwidth%3ANumber%3D%40line_width%29%3ANil-instance-method" class="signature"><strong>#line</strong>(a : Vec2, b : Vec2, color : Color = @color, width : Number = @line_width) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#line_width%3AFloat32-instance-method" class="signature"><strong>#line_width</strong> : Float32</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#line_width%3D%28line_width%3AFloat32%29-instance-method" class="signature"><strong>#line_width=</strong>(line_width : Float32)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#origin%3ANil-instance-method" class="signature"><strong>#origin</strong> : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#point%28x%3ANumber%2Cy%3ANumber%2Ccolor%3AColor%3D%40color%2Csize%3ANumber%3D1%29%3ANil-instance-method" class="signature"><strong>#point</strong>(x : Number, y : Number, color : Color = @color, size : Number = <span class="n">1</span>) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#points%28pts%3AArray%28Vec2%29%2Ccolor%3AColor%3D%40color%2Csize%3ANumber%3D1%29%3ANil-instance-method" class="signature"><strong>#points</strong>(pts : Array(Vec2), color : Color = @color, size : Number = <span class="n">1</span>) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#polygon%28points%3AArray%28Vec2%29%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#polygon</strong>(points : Array(Vec2), mode : DrawMode = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : Color = @color) : Nil</a>
+        
+          <div class="summary"><p>Filled (convex or simple concave via ear clipping) or outlined polygon.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#polyline%28points%3AArray%28Vec2%29%2Ccolor%3AColor%3D%40color%2Cwidth%3ANumber%3D%40line_width%2Cclosed%3ABool%3Dfalse%29%3ANil-instance-method" class="signature"><strong>#polyline</strong>(points : Array(Vec2), color : Color = @color, width : Number = @line_width, closed : Bool = <span class="n">false</span>) : Nil</a>
+        
+          <div class="summary"><p>Connected line segments with mitred joins.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#pop%3ANil-instance-method" class="signature"><strong>#pop</strong> : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#print%28text%3AString%2Cx%3ANumber%3D0%2Cy%3ANumber%3D0%2Ccolor%3AColor%3D%40color%2Cfont%3AFont%3D%40font%2Cscale%3ANumber%3D1%2Calign%3ATextAlign%3DTextAlign%3A%3ALeft%29%3ANil-instance-method" class="signature"><strong>#print</strong>(text : String, x : Number = <span class="n">0</span>, y : Number = <span class="n">0</span>, color : Color = @color, font : Font = @font, scale : Number = <span class="n">1</span>, align : TextAlign = <span class="t">TextAlign</span><span class="t">::</span><span class="t">Left</span>) : Nil</a>
+        
+          <div class="summary"><p>--- text ---------------------------------------------------------------- Draw text at (x, y) = top-left of the first line.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#print%28text%3AString%2Cpos%3AVec2%2Ccolor%3AColor%3D%40color%2Cfont%3AFont%3D%40font%2Cscale%3ANumber%3D1%2Calign%3ATextAlign%3DTextAlign%3A%3ALeft%29%3ANil-instance-method" class="signature"><strong>#print</strong>(text : String, pos : Vec2, color : Color = @color, font : Font = @font, scale : Number = <span class="n">1</span>, align : TextAlign = <span class="t">TextAlign</span><span class="t">::</span><span class="t">Left</span>) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#printf%28text%3AString%2Cx%3ANumber%2Cy%3ANumber%2Cwidth%3ANumber%2Calign%3ATextAlign%3DTextAlign%3A%3ALeft%2Ccolor%3AColor%3D%40color%2Cfont%3AFont%3D%40font%2Cscale%3ANumber%3D1%29%3ANil-instance-method" class="signature"><strong>#printf</strong>(text : String, x : Number, y : Number, width : Number, align : TextAlign = <span class="t">TextAlign</span><span class="t">::</span><span class="t">Left</span>, color : Color = @color, font : Font = @font, scale : Number = <span class="n">1</span>) : Nil</a>
+        
+          <div class="summary"><p>Word-wrapped text inside <code>width</code>.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#push%3ANil-instance-method" class="signature"><strong>#push</strong> : Nil</a>
+        
+          <div class="summary"><p>--- transform stack -----------------------------------------------------</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#push%28%26%29%3ANil-instance-method" class="signature"><strong>#push</strong>(&) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#quad_raw%28tex%3ATexture%2Cp0%3AVec2%2Cp1%3AVec2%2Cp2%3AVec2%2Cp3%3AVec2%2Cuv0%3AVec2%2Cuv1%3AVec2%2Cuv2%3AVec2%2Cuv3%3AVec2%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#quad_raw</strong>(tex : Texture, p0 : Vec2, p1 : Vec2, p2 : Vec2, p3 : Vec2, uv0 : Vec2, uv1 : Vec2, uv2 : Vec2, uv3 : Vec2, color : Color = @color) : Nil</a>
+        
+          <div class="summary"><p>--- low level ----------------------------------------------------------- Push an arbitrary textured quad (corners in order, with UVs).</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#rect%28x%3ANumber%2Cy%3ANumber%2Cw%3ANumber%2Ch%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#rect</strong>(x : Number, y : Number, w : Number, h : Number, mode : DrawMode = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : Color = @color) : Nil</a>
+        
+          <div class="summary"><p>--- shapes --------------------------------------------------------------</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#rect%28r%3ARect%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#rect</strong>(r : Rect, mode : DrawMode = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : Color = @color) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#rect_line%28x%3ANumber%2Cy%3ANumber%2Cw%3ANumber%2Ch%3ANumber%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#rect_line</strong>(x : Number, y : Number, w : Number, h : Number, color : Color = @color) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#rect_line%28r%3ARect%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#rect_line</strong>(r : Rect, color : Color = @color) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#rotate%28rad%3ANumber%29%3ANil-instance-method" class="signature"><strong>#rotate</strong>(rad : Number) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#rounded_rect%28x%3ANumber%2Cy%3ANumber%2Cw%3ANumber%2Ch%3ANumber%2Cradius%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#rounded_rect</strong>(x : Number, y : Number, w : Number, h : Number, radius : Number, mode : DrawMode = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : Color = @color) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#scale%28x%3ANumber%2Cy%3ANumber%29%3ANil-instance-method" class="signature"><strong>#scale</strong>(x : Number, y : Number) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#scale%28s%3ANumber%29%3ANil-instance-method" class="signature"><strong>#scale</strong>(s : Number) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#scissor%3D%28r%3ARect%7CNil%29-instance-method" class="signature"><strong>#scissor=</strong>(r : Rect | Nil)</a>
+        
+          <div class="summary"><p>Clip drawing to a rectangle (in current target coordinates), nil to disable.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#scissor_rect%3ARect%7CNil-instance-method" class="signature"><strong>#scissor_rect</strong> : Rect | Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#shader%3AShader%7CNil-instance-method" class="signature"><strong>#shader</strong> : Shader | Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#shader%3D%28s%3AShader%7CNil%29-instance-method" class="signature"><strong>#shader=</strong>(s : Shader | Nil)</a>
+        
+          <div class="summary"><p>Set a custom shader (nil = default).</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#stats_draw_calls%3AInt32-instance-method" class="signature"><strong>#stats_draw_calls</strong> : Int32</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#stats_vertices%3AInt32-instance-method" class="signature"><strong>#stats_vertices</strong> : Int32</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#target_size%3AVec2-instance-method" class="signature"><strong>#target_size</strong> : Vec2</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#text_size%28text%3AString%2Cfont%3AFont%3D%40font%2Cscale%3ANumber%3D1%29%3AVec2-instance-method" class="signature"><strong>#text_size</strong>(text : String, font : Font = @font, scale : Number = <span class="n">1</span>) : Vec2</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#transform%3ATransform2D-instance-method" class="signature"><strong>#transform</strong> : Transform2D</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#transform%3D%28t%3ATransform2D%29-instance-method" class="signature"><strong>#transform=</strong>(t : Transform2D)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#translate%28x%3ANumber%2Cy%3ANumber%29%3ANil-instance-method" class="signature"><strong>#translate</strong>(x : Number, y : Number) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#translate%28v%3AVec2%29%3ANil-instance-method" class="signature"><strong>#translate</strong>(v : Vec2) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#triangle%28a%3AVec2%2Cb%3AVec2%2Cc%3AVec2%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method" class="signature"><strong>#triangle</strong>(a : Vec2, b : Vec2, c : Vec2, mode : DrawMode = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : Color = @color) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#triangles%28tex%3ATexture%2Cpositions%3AArray%28Vec2%29%2Cuvs%3AArray%28Vec2%29%2Ccolors%3AArray%28Color%29%2Cindices%3AArray%28Int32%29%29%3ANil-instance-method" class="signature"><strong>#triangles</strong>(tex : Texture, positions : Array(Vec2), uvs : Array(Vec2), colors : Array(Color), indices : Array(Int32)) : Nil</a>
+        
+          <div class="summary"><p>Push raw triangles (positions, uvs, colors, indices) — for meshes, particles.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#with_blend%28mode%3AGPU%3A%3ABlendMode%2C%26%29%3ANil-instance-method" class="signature"><strong>#with_blend</strong>(mode : GPU::BlendMode, &) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#with_camera%28cam%3ACamera2D%7CNil%2C%26%29%3ANil-instance-method" class="signature"><strong>#with_camera</strong>(cam : Camera2D | Nil, &) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#with_canvas%28canvas%3ACanvas%2Cclear%3AColor%7CNil%3DColor%3A%3ATRANSPARENT%2C%26%29%3ANil-instance-method" class="signature"><strong>#with_canvas</strong>(canvas : Canvas, clear : Color | Nil = <span class="t">Color</span><span class="t">::</span><span class="t">TRANSPARENT</span>, &) : Nil</a>
+        
+          <div class="summary"><p>Draw into an off-screen canvas for the duration of the block.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#with_color%28c%3AColor%2C%26%29%3ANil-instance-method" class="signature"><strong>#with_color</strong>(c : Color, &) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#with_scissor%28r%3ARect%7CNil%2C%26%29%3ANil-instance-method" class="signature"><strong>#with_scissor</strong>(r : Rect | Nil, &) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#with_shader%28s%3AShader%7CNil%2C%26%29%3ANil-instance-method" class="signature"><strong>#with_shader</strong>(s : Shader | Nil, &) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#with_transform%28t%3ATransform2D%2C%26%29%3ANil-instance-method" class="signature"><strong>#with_transform</strong>(t : Transform2D, &) : Nil</a>
+        
+      </li>
+    
+  </ul>
+
+
+
+  <div class="methods-inherited">
+    
+      
+
+
+      
+
+
+      
+
+
+      
+
+
+    
+      
+
+
+      
+
+
+      
+
+
+      
+
+
+    
+  </div>
+
+  
+  <h2>
+    <a id="constructor-detail" class="anchor" href="#constructor-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructor Detail
+  </h2>
+  
+    <div class="entry-detail" id="new-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>
+
+        <a class="method-permalink" href="#new-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+
+
+  
+
+  
+
+  
+  <h2>
+    <a id="instance-method-detail" class="anchor" href="#instance-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="apply(t:Transform2D):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>apply</strong>(t : <a href="../Eagle/Transform2D.html">Transform2D</a>) : Nil
+
+        <a class="method-permalink" href="#apply%28t%3ATransform2D%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="arc(x:Number,y:Number,radius:Number,a0:Number,a1:Number,mode:DrawMode=DrawMode::Fill,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>arc</strong>(x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>, radius : <a href="../Number.html">Number</a>, a0 : <a href="../Number.html">Number</a>, a1 : <a href="../Number.html">Number</a>, mode : <a href="../Eagle/DrawMode.html">DrawMode</a> = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#arc%28x%3ANumber%2Cy%3ANumber%2Cradius%3ANumber%2Ca0%3ANumber%2Ca1%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Pie slice / arc from <code>a0</code> to <code>a1</code> radians.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="begin_frame:Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>begin_frame</strong> : Nil
+
+        <a class="method-permalink" href="#begin_frame%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>--- frame ---------------------------------------------------------------
+:nodoc:</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="blend:GPU::BlendMode-instance-method">
+      <div class="signature">
+        
+        def <strong>blend</strong> : <a href="../Eagle/GPU/BlendMode.html">GPU::BlendMode</a>
+
+        <a class="method-permalink" href="#blend%3AGPU%3A%3ABlendMode-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="blend=(mode:GPU::BlendMode)-instance-method">
+      <div class="signature">
+        
+        def <strong>blend=</strong>(mode : <a href="../Eagle/GPU/BlendMode.html">GPU::BlendMode</a>)
+
+        <a class="method-permalink" href="#blend%3D%28mode%3AGPU%3A%3ABlendMode%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>--- state ---------------------------------------------------------------</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="camera:Camera2D|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>camera</strong> : <a href="../Eagle/Camera2D.html">Camera2D</a> | Nil
+
+        <a class="method-permalink" href="#camera%3ACamera2D%7CNil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="camera=(cam:Camera2D|Nil)-instance-method">
+      <div class="signature">
+        
+        def <strong>camera=</strong>(cam : <a href="../Eagle/Camera2D.html">Camera2D</a> | Nil)
+
+        <a class="method-permalink" href="#camera%3D%28cam%3ACamera2D%7CNil%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Use a camera for subsequent drawing (world space). <code>nil</code> returns to screen space.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="canvas:Canvas|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>canvas</strong> : <a href="../Eagle/Canvas.html">Canvas</a> | Nil
+
+        <a class="method-permalink" href="#canvas%3ACanvas%7CNil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="circle(x:Number,y:Number,radius:Number,mode:DrawMode=DrawMode::Fill,color:Color=@color,segments:Int32|Nil=nil):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>circle</strong>(x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>, radius : <a href="../Number.html">Number</a>, mode : <a href="../Eagle/DrawMode.html">DrawMode</a> = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : <a href="../Eagle/Color.html">Color</a> = @color, segments : Int32 | Nil = <span class="n">nil</span>) : Nil
+
+        <a class="method-permalink" href="#circle%28x%3ANumber%2Cy%3ANumber%2Cradius%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%2Csegments%3AInt32%7CNil%3Dnil%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="circle(center:Vec2,radius:Number,mode:DrawMode=DrawMode::Fill,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>circle</strong>(center : <a href="../Eagle/Vec2.html">Vec2</a>, radius : <a href="../Number.html">Number</a>, mode : <a href="../Eagle/DrawMode.html">DrawMode</a> = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#circle%28center%3AVec2%2Cradius%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="circle_line(x:Number,y:Number,radius:Number,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>circle_line</strong>(x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>, radius : <a href="../Number.html">Number</a>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#circle_line%28x%3ANumber%2Cy%3ANumber%2Cradius%3ANumber%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="circle_segments:Int32|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>circle_segments</strong> : Int32 | Nil
+
+        <a class="method-permalink" href="#circle_segments%3AInt32%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Anti-aliased circle segment count is derived from radius; override here.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="circle_segments=(circle_segments:Int32|Nil)-instance-method">
+      <div class="signature">
+        
+        def <strong>circle_segments=</strong>(circle_segments : Int32 | Nil)
+
+        <a class="method-permalink" href="#circle_segments%3D%28circle_segments%3AInt32%7CNil%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Anti-aliased circle segment count is derived from radius; override here.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="clear(color:Color=Color::BLACK):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>clear</strong>(color : <a href="../Eagle/Color.html">Color</a> = <span class="t">Color</span><span class="t">::</span><span class="t">BLACK</span>) : Nil
+
+        <a class="method-permalink" href="#clear%28color%3AColor%3DColor%3A%3ABLACK%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Clear the current target.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="color:Color-instance-method">
+      <div class="signature">
+        
+        def <strong>color</strong> : <a href="../Eagle/Color.html">Color</a>
+
+        <a class="method-permalink" href="#color%3AColor-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Current tint; multiplies everything drawn.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="color=(color:Color)-instance-method">
+      <div class="signature">
+        
+        def <strong>color=</strong>(color : <a href="../Eagle/Color.html">Color</a>)
+
+        <a class="method-permalink" href="#color%3D%28color%3AColor%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Current tint; multiplies everything drawn.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="dispose:Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>dispose</strong> : Nil
+
+        <a class="method-permalink" href="#dispose%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw(d:Drawable,x:Number=0,y:Number=0,rotation:Number=0,sx:Number=1,sy:Number=sx,ox:Number=0,oy:Number=0,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>draw</strong>(d : <a href="../Eagle/Drawable.html">Drawable</a>, x : <a href="../Number.html">Number</a> = <span class="n">0</span>, y : <a href="../Number.html">Number</a> = <span class="n">0</span>, rotation : <a href="../Number.html">Number</a> = <span class="n">0</span>, sx : <a href="../Number.html">Number</a> = <span class="n">1</span>, sy : <a href="../Number.html">Number</a> = sx, ox : <a href="../Number.html">Number</a> = <span class="n">0</span>, oy : <a href="../Number.html">Number</a> = <span class="n">0</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#draw%28d%3ADrawable%2Cx%3ANumber%3D0%2Cy%3ANumber%3D0%2Crotation%3ANumber%3D0%2Csx%3ANumber%3D1%2Csy%3ANumber%3Dsx%2Cox%3ANumber%3D0%2Coy%3ANumber%3D0%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>--- sprites -------------------------------------------------------------
+Draw a texture/region at (x, y) with rotation (radians), scale and origin offset (in texture pixels).</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw(d:Drawable,position:Vec2,rotation:Number=0,scale:Vec2=Vec2::ONE,origin:Vec2=Vec2::ZERO,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>draw</strong>(d : <a href="../Eagle/Drawable.html">Drawable</a>, position : <a href="../Eagle/Vec2.html">Vec2</a>, rotation : <a href="../Number.html">Number</a> = <span class="n">0</span>, scale : <a href="../Eagle/Vec2.html">Vec2</a> = <span class="t">Vec2</span><span class="t">::</span><span class="t">ONE</span>, origin : <a href="../Eagle/Vec2.html">Vec2</a> = <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#draw%28d%3ADrawable%2Cposition%3AVec2%2Crotation%3ANumber%3D0%2Cscale%3AVec2%3DVec2%3A%3AONE%2Corigin%3AVec2%3DVec2%3A%3AZERO%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw(d:Drawable,dest:Rect,color:Color=@color,rotation:Number=0):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>draw</strong>(d : <a href="../Eagle/Drawable.html">Drawable</a>, dest : <a href="../Eagle/Rect.html">Rect</a>, color : <a href="../Eagle/Color.html">Color</a> = @color, rotation : <a href="../Number.html">Number</a> = <span class="n">0</span>) : Nil
+
+        <a class="method-permalink" href="#draw%28d%3ADrawable%2Cdest%3ARect%2Ccolor%3AColor%3D%40color%2Crotation%3ANumber%3D0%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Draw stretched into <code>dest</code>.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw(c:Canvas,x:Number=0,y:Number=0,rotation:Number=0,sx:Number=1,sy:Number=sx,ox:Number=0,oy:Number=0,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>draw</strong>(c : <a href="../Eagle/Canvas.html">Canvas</a>, x : <a href="../Number.html">Number</a> = <span class="n">0</span>, y : <a href="../Number.html">Number</a> = <span class="n">0</span>, rotation : <a href="../Number.html">Number</a> = <span class="n">0</span>, sx : <a href="../Number.html">Number</a> = <span class="n">1</span>, sy : <a href="../Number.html">Number</a> = sx, ox : <a href="../Number.html">Number</a> = <span class="n">0</span>, oy : <a href="../Number.html">Number</a> = <span class="n">0</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#draw%28c%3ACanvas%2Cx%3ANumber%3D0%2Cy%3ANumber%3D0%2Crotation%3ANumber%3D0%2Csx%3ANumber%3D1%2Csy%3ANumber%3Dsx%2Cox%3ANumber%3D0%2Coy%3ANumber%3D0%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Draw a canvas (its texture is stored top-row-first, so no flip needed).</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw(c:Canvas,dest:Rect,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>draw</strong>(c : <a href="../Eagle/Canvas.html">Canvas</a>, dest : <a href="../Eagle/Rect.html">Rect</a>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#draw%28c%3ACanvas%2Cdest%3ARect%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw_calls:Int32-instance-method">
+      <div class="signature">
+        
+        def <strong>draw_calls</strong> : Int32
+
+        <a class="method-permalink" href="#draw_calls%3AInt32-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw_centered(d:Drawable,x:Number,y:Number,rotation:Number=0,sx:Number=1,sy:Number=sx,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>draw_centered</strong>(d : <a href="../Eagle/Drawable.html">Drawable</a>, x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>, rotation : <a href="../Number.html">Number</a> = <span class="n">0</span>, sx : <a href="../Number.html">Number</a> = <span class="n">1</span>, sy : <a href="../Number.html">Number</a> = sx, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#draw_centered%28d%3ADrawable%2Cx%3ANumber%2Cy%3ANumber%2Crotation%3ANumber%3D0%2Csx%3ANumber%3D1%2Csy%3ANumber%3Dsx%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Draw a texture centred at a point.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw_centered(d:Drawable,p:Vec2,rotation:Number=0,sx:Number=1,sy:Number=sx,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>draw_centered</strong>(d : <a href="../Eagle/Drawable.html">Drawable</a>, p : <a href="../Eagle/Vec2.html">Vec2</a>, rotation : <a href="../Number.html">Number</a> = <span class="n">0</span>, sx : <a href="../Number.html">Number</a> = <span class="n">1</span>, sy : <a href="../Number.html">Number</a> = sx, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#draw_centered%28d%3ADrawable%2Cp%3AVec2%2Crotation%3ANumber%3D0%2Csx%3ANumber%3D1%2Csy%3ANumber%3Dsx%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw_tiled(tex:Texture,dest:Rect,offset:Vec2=Vec2::ZERO,scale:Number=1,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>draw_tiled</strong>(tex : <a href="../Eagle/Texture.html">Texture</a>, dest : <a href="../Eagle/Rect.html">Rect</a>, offset : <a href="../Eagle/Vec2.html">Vec2</a> = <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>, scale : <a href="../Number.html">Number</a> = <span class="n">1</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#draw_tiled%28tex%3ATexture%2Cdest%3ARect%2Coffset%3AVec2%3DVec2%3A%3AZERO%2Cscale%3ANumber%3D1%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Tiled fill of a rectangle with a texture (requires Wrap::Repeat on the texture).</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="ellipse(x:Number,y:Number,rx:Number,ry:Number,mode:DrawMode=DrawMode::Fill,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>ellipse</strong>(x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>, rx : <a href="../Number.html">Number</a>, ry : <a href="../Number.html">Number</a>, mode : <a href="../Eagle/DrawMode.html">DrawMode</a> = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#ellipse%28x%3ANumber%2Cy%3ANumber%2Crx%3ANumber%2Cry%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="flush:Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>flush</strong> : Nil
+
+        <a class="method-permalink" href="#flush%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Flush pending geometry to the GPU.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="font:Font-instance-method">
+      <div class="signature">
+        
+        def <strong>font</strong> : <a href="../Eagle/Font.html">Font</a>
+
+        <a class="method-permalink" href="#font%3AFont-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="font=(font:Font)-instance-method">
+      <div class="signature">
+        
+        def <strong>font=</strong>(font : <a href="../Eagle/Font.html">Font</a>)
+
+        <a class="method-permalink" href="#font%3D%28font%3AFont%29-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="line(x1:Number,y1:Number,x2:Number,y2:Number,color:Color=@color,width:Number=@line_width):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>line</strong>(x1 : <a href="../Number.html">Number</a>, y1 : <a href="../Number.html">Number</a>, x2 : <a href="../Number.html">Number</a>, y2 : <a href="../Number.html">Number</a>, color : <a href="../Eagle/Color.html">Color</a> = @color, width : <a href="../Number.html">Number</a> = @line_width) : Nil
+
+        <a class="method-permalink" href="#line%28x1%3ANumber%2Cy1%3ANumber%2Cx2%3ANumber%2Cy2%3ANumber%2Ccolor%3AColor%3D%40color%2Cwidth%3ANumber%3D%40line_width%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="line(a:Vec2,b:Vec2,color:Color=@color,width:Number=@line_width):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>line</strong>(a : <a href="../Eagle/Vec2.html">Vec2</a>, b : <a href="../Eagle/Vec2.html">Vec2</a>, color : <a href="../Eagle/Color.html">Color</a> = @color, width : <a href="../Number.html">Number</a> = @line_width) : Nil
+
+        <a class="method-permalink" href="#line%28a%3AVec2%2Cb%3AVec2%2Ccolor%3AColor%3D%40color%2Cwidth%3ANumber%3D%40line_width%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="line_width:Float32-instance-method">
+      <div class="signature">
+        
+        def <strong>line_width</strong> : Float32
+
+        <a class="method-permalink" href="#line_width%3AFloat32-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="line_width=(line_width:Float32)-instance-method">
+      <div class="signature">
+        
+        def <strong>line_width=</strong>(line_width : Float32)
+
+        <a class="method-permalink" href="#line_width%3D%28line_width%3AFloat32%29-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="origin:Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>origin</strong> : Nil
+
+        <a class="method-permalink" href="#origin%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="point(x:Number,y:Number,color:Color=@color,size:Number=1):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>point</strong>(x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>, color : <a href="../Eagle/Color.html">Color</a> = @color, size : <a href="../Number.html">Number</a> = <span class="n">1</span>) : Nil
+
+        <a class="method-permalink" href="#point%28x%3ANumber%2Cy%3ANumber%2Ccolor%3AColor%3D%40color%2Csize%3ANumber%3D1%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="points(pts:Array(Vec2),color:Color=@color,size:Number=1):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>points</strong>(pts : Array(<a href="../Eagle/Vec2.html">Vec2</a>), color : <a href="../Eagle/Color.html">Color</a> = @color, size : <a href="../Number.html">Number</a> = <span class="n">1</span>) : Nil
+
+        <a class="method-permalink" href="#points%28pts%3AArray%28Vec2%29%2Ccolor%3AColor%3D%40color%2Csize%3ANumber%3D1%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="polygon(points:Array(Vec2),mode:DrawMode=DrawMode::Fill,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>polygon</strong>(points : Array(<a href="../Eagle/Vec2.html">Vec2</a>), mode : <a href="../Eagle/DrawMode.html">DrawMode</a> = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#polygon%28points%3AArray%28Vec2%29%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Filled (convex or simple concave via ear clipping) or outlined polygon.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="polyline(points:Array(Vec2),color:Color=@color,width:Number=@line_width,closed:Bool=false):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>polyline</strong>(points : Array(<a href="../Eagle/Vec2.html">Vec2</a>), color : <a href="../Eagle/Color.html">Color</a> = @color, width : <a href="../Number.html">Number</a> = @line_width, closed : Bool = <span class="n">false</span>) : Nil
+
+        <a class="method-permalink" href="#polyline%28points%3AArray%28Vec2%29%2Ccolor%3AColor%3D%40color%2Cwidth%3ANumber%3D%40line_width%2Cclosed%3ABool%3Dfalse%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Connected line segments with mitred joins.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="pop:Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>pop</strong> : Nil
+
+        <a class="method-permalink" href="#pop%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="print(text:String,x:Number=0,y:Number=0,color:Color=@color,font:Font=@font,scale:Number=1,align:TextAlign=TextAlign::Left):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>print</strong>(text : String, x : <a href="../Number.html">Number</a> = <span class="n">0</span>, y : <a href="../Number.html">Number</a> = <span class="n">0</span>, color : <a href="../Eagle/Color.html">Color</a> = @color, font : <a href="../Eagle/Font.html">Font</a> = @font, scale : <a href="../Number.html">Number</a> = <span class="n">1</span>, align : <a href="../Eagle/TextAlign.html">TextAlign</a> = <span class="t">TextAlign</span><span class="t">::</span><span class="t">Left</span>) : Nil
+
+        <a class="method-permalink" href="#print%28text%3AString%2Cx%3ANumber%3D0%2Cy%3ANumber%3D0%2Ccolor%3AColor%3D%40color%2Cfont%3AFont%3D%40font%2Cscale%3ANumber%3D1%2Calign%3ATextAlign%3DTextAlign%3A%3ALeft%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>--- text ----------------------------------------------------------------
+Draw text at (x, y) = top-left of the first line.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="print(text:String,pos:Vec2,color:Color=@color,font:Font=@font,scale:Number=1,align:TextAlign=TextAlign::Left):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>print</strong>(text : String, pos : <a href="../Eagle/Vec2.html">Vec2</a>, color : <a href="../Eagle/Color.html">Color</a> = @color, font : <a href="../Eagle/Font.html">Font</a> = @font, scale : <a href="../Number.html">Number</a> = <span class="n">1</span>, align : <a href="../Eagle/TextAlign.html">TextAlign</a> = <span class="t">TextAlign</span><span class="t">::</span><span class="t">Left</span>) : Nil
+
+        <a class="method-permalink" href="#print%28text%3AString%2Cpos%3AVec2%2Ccolor%3AColor%3D%40color%2Cfont%3AFont%3D%40font%2Cscale%3ANumber%3D1%2Calign%3ATextAlign%3DTextAlign%3A%3ALeft%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="printf(text:String,x:Number,y:Number,width:Number,align:TextAlign=TextAlign::Left,color:Color=@color,font:Font=@font,scale:Number=1):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>printf</strong>(text : String, x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>, width : <a href="../Number.html">Number</a>, align : <a href="../Eagle/TextAlign.html">TextAlign</a> = <span class="t">TextAlign</span><span class="t">::</span><span class="t">Left</span>, color : <a href="../Eagle/Color.html">Color</a> = @color, font : <a href="../Eagle/Font.html">Font</a> = @font, scale : <a href="../Number.html">Number</a> = <span class="n">1</span>) : Nil
+
+        <a class="method-permalink" href="#printf%28text%3AString%2Cx%3ANumber%2Cy%3ANumber%2Cwidth%3ANumber%2Calign%3ATextAlign%3DTextAlign%3A%3ALeft%2Ccolor%3AColor%3D%40color%2Cfont%3AFont%3D%40font%2Cscale%3ANumber%3D1%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Word-wrapped text inside <code>width</code>.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="push:Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>push</strong> : Nil
+
+        <a class="method-permalink" href="#push%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>--- transform stack -----------------------------------------------------</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="push(&amp;):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>push</strong>(&) : Nil
+
+        <a class="method-permalink" href="#push%28%26%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="quad_raw(tex:Texture,p0:Vec2,p1:Vec2,p2:Vec2,p3:Vec2,uv0:Vec2,uv1:Vec2,uv2:Vec2,uv3:Vec2,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>quad_raw</strong>(tex : <a href="../Eagle/Texture.html">Texture</a>, p0 : <a href="../Eagle/Vec2.html">Vec2</a>, p1 : <a href="../Eagle/Vec2.html">Vec2</a>, p2 : <a href="../Eagle/Vec2.html">Vec2</a>, p3 : <a href="../Eagle/Vec2.html">Vec2</a>, uv0 : <a href="../Eagle/Vec2.html">Vec2</a>, uv1 : <a href="../Eagle/Vec2.html">Vec2</a>, uv2 : <a href="../Eagle/Vec2.html">Vec2</a>, uv3 : <a href="../Eagle/Vec2.html">Vec2</a>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#quad_raw%28tex%3ATexture%2Cp0%3AVec2%2Cp1%3AVec2%2Cp2%3AVec2%2Cp3%3AVec2%2Cuv0%3AVec2%2Cuv1%3AVec2%2Cuv2%3AVec2%2Cuv3%3AVec2%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>--- low level -----------------------------------------------------------
+Push an arbitrary textured quad (corners in order, with UVs).</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="rect(x:Number,y:Number,w:Number,h:Number,mode:DrawMode=DrawMode::Fill,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>rect</strong>(x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>, w : <a href="../Number.html">Number</a>, h : <a href="../Number.html">Number</a>, mode : <a href="../Eagle/DrawMode.html">DrawMode</a> = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#rect%28x%3ANumber%2Cy%3ANumber%2Cw%3ANumber%2Ch%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>--- shapes --------------------------------------------------------------</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="rect(r:Rect,mode:DrawMode=DrawMode::Fill,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>rect</strong>(r : <a href="../Eagle/Rect.html">Rect</a>, mode : <a href="../Eagle/DrawMode.html">DrawMode</a> = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#rect%28r%3ARect%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="rect_line(x:Number,y:Number,w:Number,h:Number,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>rect_line</strong>(x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>, w : <a href="../Number.html">Number</a>, h : <a href="../Number.html">Number</a>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#rect_line%28x%3ANumber%2Cy%3ANumber%2Cw%3ANumber%2Ch%3ANumber%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="rect_line(r:Rect,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>rect_line</strong>(r : <a href="../Eagle/Rect.html">Rect</a>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#rect_line%28r%3ARect%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="rotate(rad:Number):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>rotate</strong>(rad : <a href="../Number.html">Number</a>) : Nil
+
+        <a class="method-permalink" href="#rotate%28rad%3ANumber%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="rounded_rect(x:Number,y:Number,w:Number,h:Number,radius:Number,mode:DrawMode=DrawMode::Fill,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>rounded_rect</strong>(x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>, w : <a href="../Number.html">Number</a>, h : <a href="../Number.html">Number</a>, radius : <a href="../Number.html">Number</a>, mode : <a href="../Eagle/DrawMode.html">DrawMode</a> = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#rounded_rect%28x%3ANumber%2Cy%3ANumber%2Cw%3ANumber%2Ch%3ANumber%2Cradius%3ANumber%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="scale(x:Number,y:Number):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>scale</strong>(x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>) : Nil
+
+        <a class="method-permalink" href="#scale%28x%3ANumber%2Cy%3ANumber%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="scale(s:Number):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>scale</strong>(s : <a href="../Number.html">Number</a>) : Nil
+
+        <a class="method-permalink" href="#scale%28s%3ANumber%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="scissor=(r:Rect|Nil)-instance-method">
+      <div class="signature">
+        
+        def <strong>scissor=</strong>(r : <a href="../Eagle/Rect.html">Rect</a> | Nil)
+
+        <a class="method-permalink" href="#scissor%3D%28r%3ARect%7CNil%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Clip drawing to a rectangle (in current target coordinates), nil to disable.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="scissor_rect:Rect|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>scissor_rect</strong> : <a href="../Eagle/Rect.html">Rect</a> | Nil
+
+        <a class="method-permalink" href="#scissor_rect%3ARect%7CNil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="shader:Shader|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>shader</strong> : <a href="../Eagle/Shader.html">Shader</a> | Nil
+
+        <a class="method-permalink" href="#shader%3AShader%7CNil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="shader=(s:Shader|Nil)-instance-method">
+      <div class="signature">
+        
+        def <strong>shader=</strong>(s : <a href="../Eagle/Shader.html">Shader</a> | Nil)
+
+        <a class="method-permalink" href="#shader%3D%28s%3AShader%7CNil%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Set a custom shader (nil = default). Uniforms <code>u_projection</code>, <code>u_texture</code>,
+<code>u_time</code>, <code>u_resolution</code> are provided.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="stats_draw_calls:Int32-instance-method">
+      <div class="signature">
+        
+        def <strong>stats_draw_calls</strong> : Int32
+
+        <a class="method-permalink" href="#stats_draw_calls%3AInt32-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="stats_vertices:Int32-instance-method">
+      <div class="signature">
+        
+        def <strong>stats_vertices</strong> : Int32
+
+        <a class="method-permalink" href="#stats_vertices%3AInt32-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="target_size:Vec2-instance-method">
+      <div class="signature">
+        
+        def <strong>target_size</strong> : <a href="../Eagle/Vec2.html">Vec2</a>
+
+        <a class="method-permalink" href="#target_size%3AVec2-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="text_size(text:String,font:Font=@font,scale:Number=1):Vec2-instance-method">
+      <div class="signature">
+        
+        def <strong>text_size</strong>(text : String, font : <a href="../Eagle/Font.html">Font</a> = @font, scale : <a href="../Number.html">Number</a> = <span class="n">1</span>) : <a href="../Eagle/Vec2.html">Vec2</a>
+
+        <a class="method-permalink" href="#text_size%28text%3AString%2Cfont%3AFont%3D%40font%2Cscale%3ANumber%3D1%29%3AVec2-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="transform:Transform2D-instance-method">
+      <div class="signature">
+        
+        def <strong>transform</strong> : <a href="../Eagle/Transform2D.html">Transform2D</a>
+
+        <a class="method-permalink" href="#transform%3ATransform2D-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="transform=(t:Transform2D)-instance-method">
+      <div class="signature">
+        
+        def <strong>transform=</strong>(t : <a href="../Eagle/Transform2D.html">Transform2D</a>)
+
+        <a class="method-permalink" href="#transform%3D%28t%3ATransform2D%29-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="translate(x:Number,y:Number):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>translate</strong>(x : <a href="../Number.html">Number</a>, y : <a href="../Number.html">Number</a>) : Nil
+
+        <a class="method-permalink" href="#translate%28x%3ANumber%2Cy%3ANumber%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="translate(v:Vec2):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>translate</strong>(v : <a href="../Eagle/Vec2.html">Vec2</a>) : Nil
+
+        <a class="method-permalink" href="#translate%28v%3AVec2%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="triangle(a:Vec2,b:Vec2,c:Vec2,mode:DrawMode=DrawMode::Fill,color:Color=@color):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>triangle</strong>(a : <a href="../Eagle/Vec2.html">Vec2</a>, b : <a href="../Eagle/Vec2.html">Vec2</a>, c : <a href="../Eagle/Vec2.html">Vec2</a>, mode : <a href="../Eagle/DrawMode.html">DrawMode</a> = <span class="t">DrawMode</span><span class="t">::</span><span class="t">Fill</span>, color : <a href="../Eagle/Color.html">Color</a> = @color) : Nil
+
+        <a class="method-permalink" href="#triangle%28a%3AVec2%2Cb%3AVec2%2Cc%3AVec2%2Cmode%3ADrawMode%3DDrawMode%3A%3AFill%2Ccolor%3AColor%3D%40color%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="triangles(tex:Texture,positions:Array(Vec2),uvs:Array(Vec2),colors:Array(Color),indices:Array(Int32)):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>triangles</strong>(tex : <a href="../Eagle/Texture.html">Texture</a>, positions : Array(<a href="../Eagle/Vec2.html">Vec2</a>), uvs : Array(<a href="../Eagle/Vec2.html">Vec2</a>), colors : Array(<a href="../Eagle/Color.html">Color</a>), indices : Array(Int32)) : Nil
+
+        <a class="method-permalink" href="#triangles%28tex%3ATexture%2Cpositions%3AArray%28Vec2%29%2Cuvs%3AArray%28Vec2%29%2Ccolors%3AArray%28Color%29%2Cindices%3AArray%28Int32%29%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Push raw triangles (positions, uvs, colors, indices) — for meshes, particles.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="with_blend(mode:GPU::BlendMode,&amp;):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>with_blend</strong>(mode : <a href="../Eagle/GPU/BlendMode.html">GPU::BlendMode</a>, &) : Nil
+
+        <a class="method-permalink" href="#with_blend%28mode%3AGPU%3A%3ABlendMode%2C%26%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="with_camera(cam:Camera2D|Nil,&amp;):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>with_camera</strong>(cam : <a href="../Eagle/Camera2D.html">Camera2D</a> | Nil, &) : Nil
+
+        <a class="method-permalink" href="#with_camera%28cam%3ACamera2D%7CNil%2C%26%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="with_canvas(canvas:Canvas,clear:Color|Nil=Color::TRANSPARENT,&amp;):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>with_canvas</strong>(canvas : <a href="../Eagle/Canvas.html">Canvas</a>, clear : <a href="../Eagle/Color.html">Color</a> | Nil = <span class="t">Color</span><span class="t">::</span><span class="t">TRANSPARENT</span>, &) : Nil
+
+        <a class="method-permalink" href="#with_canvas%28canvas%3ACanvas%2Cclear%3AColor%7CNil%3DColor%3A%3ATRANSPARENT%2C%26%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Draw into an off-screen canvas for the duration of the block.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="with_color(c:Color,&amp;):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>with_color</strong>(c : <a href="../Eagle/Color.html">Color</a>, &) : Nil
+
+        <a class="method-permalink" href="#with_color%28c%3AColor%2C%26%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="with_scissor(r:Rect|Nil,&amp;):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>with_scissor</strong>(r : <a href="../Eagle/Rect.html">Rect</a> | Nil, &) : Nil
+
+        <a class="method-permalink" href="#with_scissor%28r%3ARect%7CNil%2C%26%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="with_shader(s:Shader|Nil,&amp;):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>with_shader</strong>(s : <a href="../Eagle/Shader.html">Shader</a> | Nil, &) : Nil
+
+        <a class="method-permalink" href="#with_shader%28s%3AShader%7CNil%2C%26%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="with_transform(t:Transform2D,&amp;):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>with_transform</strong>(t : <a href="../Eagle/Transform2D.html">Transform2D</a>, &) : Nil
+
+        <a class="method-permalink" href="#with_transform%28t%3ATransform2D%2C%26%29%3ANil-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+
+
+
+</div>
+
+</body>
+</html>

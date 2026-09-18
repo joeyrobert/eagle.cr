@@ -1,0 +1,3887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Crystal Docs 1.18.2">
+<meta name="crystal_docs.project_version" content="main-dev">
+<meta name="crystal_docs.project_name" content="eagle">
+
+
+
+<link href="../css/style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/doc.js"></script>
+
+  <meta name="repository-name" content="eagle">
+  <title>Eagle::GL - eagle main-dev</title>
+  <script type="text/javascript">
+    CrystalDocs.base_path = "../";
+  </script>
+</head>
+<body>
+
+<svg class="hidden">
+  <symbol id="octicon-link" viewBox="0 0 16 16">
+    <path fill="currentColor" fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+  </symbol>
+</svg>
+<input type="checkbox" id="sidebar-btn">
+<label for="sidebar-btn" id="sidebar-btn-label">
+  <svg class="open" xmlns="http://www.w3.org/2000/svg" height="2em" width="2em" viewBox="0 0 512 512"><title>Open Sidebar</title><path fill="currentColor" d="M80 96v64h352V96H80zm0 112v64h352v-64H80zm0 112v64h352v-64H80z"></path></svg>
+  <svg class="close" xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" viewBox="0 0 512 512"><title>Close Sidebar</title><path fill="currentColor" d="m118.6 73.4-45.2 45.2L210.7 256 73.4 393.4l45.2 45.2L256 301.3l137.4 137.3 45.2-45.2L301.3 256l137.3-137.4-45.2-45.2L256 210.7Z"></path></svg>
+</label>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="search-box">
+      <input type="search" class="search-input" placeholder="Search..." spellcheck="false" aria-label="Search">
+    </div>
+
+    <div class="project-summary">
+      <h1 class="project-name">
+        <a href="../index.html">
+          eagle
+        </a>
+      </h1>
+
+      <span class="project-version">
+        main-dev
+      </span>
+    </div>
+  </div>
+
+  <div class="search-results hidden">
+    <ul class="search-list"></ul>
+  </div>
+
+  <div class="types-list">
+    <ul>
+  
+  <li class=" " data-id="eagle/toplevel" data-name="top level namespace">
+      <a href="../toplevel.html">Top Level Namespace</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="eagle/Eagle" data-name="eagle">
+      <a href="../Eagle.html">Eagle</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/AABB" data-name="eagle::aabb">
+      <a href="../Eagle/AABB.html">AABB</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Anchor" data-name="eagle::anchor">
+      <a href="../Eagle/Anchor.html">Anchor</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/AnimatedSprite2D" data-name="eagle::animatedsprite2d">
+      <a href="../Eagle/AnimatedSprite2D.html">AnimatedSprite2D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/AnimatedSprite2D/Animation" data-name="eagle::animatedsprite2d::animation">
+      <a href="../Eagle/AnimatedSprite2D/Animation.html">Animation</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/App" data-name="eagle::app">
+      <a href="../Eagle/App.html">App</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Area2D" data-name="eagle::area2d">
+      <a href="../Eagle/Area2D.html">Area2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Area3D" data-name="eagle::area3d">
+      <a href="../Eagle/Area3D.html">Area3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AssetError" data-name="eagle::asseterror">
+      <a href="../Eagle/AssetError.html">AssetError</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Assets" data-name="eagle::assets">
+      <a href="../Eagle/Assets.html">Assets</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Audio" data-name="eagle::audio">
+      <a href="../Eagle/Audio.html">Audio</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Audio/Bus" data-name="eagle::audio::bus">
+      <a href="../Eagle/Audio/Bus.html">Bus</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioBuffer" data-name="eagle::audiobuffer">
+      <a href="../Eagle/AudioBuffer.html">AudioBuffer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioPlayback" data-name="eagle::audioplayback">
+      <a href="../Eagle/AudioPlayback.html">AudioPlayback</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioPlayer" data-name="eagle::audioplayer">
+      <a href="../Eagle/AudioPlayer.html">AudioPlayer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioPlayer2D" data-name="eagle::audioplayer2d">
+      <a href="../Eagle/AudioPlayer2D.html">AudioPlayer2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioStream" data-name="eagle::audiostream">
+      <a href="../Eagle/AudioStream.html">AudioStream</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/BitmapFont" data-name="eagle::bitmapfont">
+      <a href="../Eagle/BitmapFont.html">BitmapFont</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/BoxContainer" data-name="eagle::boxcontainer">
+      <a href="../Eagle/BoxContainer.html">BoxContainer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Button" data-name="eagle::button">
+      <a href="../Eagle/Button.html">Button</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Camera2D" data-name="eagle::camera2d">
+      <a href="../Eagle/Camera2D.html">Camera2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Camera3D" data-name="eagle::camera3d">
+      <a href="../Eagle/Camera3D.html">Camera3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CameraView" data-name="eagle::cameraview">
+      <a href="../Eagle/CameraView.html">CameraView</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Canvas" data-name="eagle::canvas">
+      <a href="../Eagle/Canvas.html">Canvas</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CanvasLayer" data-name="eagle::canvaslayer">
+      <a href="../Eagle/CanvasLayer.html">CanvasLayer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CharacterBody2D" data-name="eagle::characterbody2d">
+      <a href="../Eagle/CharacterBody2D.html">CharacterBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CharacterBody3D" data-name="eagle::characterbody3d">
+      <a href="../Eagle/CharacterBody3D.html">CharacterBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CheckBox" data-name="eagle::checkbox">
+      <a href="../Eagle/CheckBox.html">CheckBox</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Clock" data-name="eagle::clock">
+      <a href="../Eagle/Clock.html">Clock</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Codecs" data-name="eagle::codecs">
+      <a href="../Eagle/Codecs.html">Codecs</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/BMP" data-name="eagle::codecs::bmp">
+      <a href="../Eagle/Codecs/BMP.html">BMP</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/OBJ" data-name="eagle::codecs::obj">
+      <a href="../Eagle/Codecs/OBJ.html">OBJ</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/PNG" data-name="eagle::codecs::png">
+      <a href="../Eagle/Codecs/PNG.html">PNG</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/QOI" data-name="eagle::codecs::qoi">
+      <a href="../Eagle/Codecs/QOI.html">QOI</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Codecs/Vorbis" data-name="eagle::codecs::vorbis">
+      <a href="../Eagle/Codecs/Vorbis.html">Vorbis</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/BitReader" data-name="eagle::codecs::vorbis::bitreader">
+      <a href="../Eagle/Codecs/Vorbis/BitReader.html">BitReader</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Codebook" data-name="eagle::codecs::vorbis::codebook">
+      <a href="../Eagle/Codecs/Vorbis/Codebook.html">Codebook</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/DecodeError" data-name="eagle::codecs::vorbis::decodeerror">
+      <a href="../Eagle/Codecs/Vorbis/DecodeError.html">DecodeError</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Decoder" data-name="eagle::codecs::vorbis::decoder">
+      <a href="../Eagle/Codecs/Vorbis/Decoder.html">Decoder</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/FFT" data-name="eagle::codecs::vorbis::fft">
+      <a href="../Eagle/Codecs/Vorbis/FFT.html">FFT</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Floor1" data-name="eagle::codecs::vorbis::floor1">
+      <a href="../Eagle/Codecs/Vorbis/Floor1.html">Floor1</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/IMDCT" data-name="eagle::codecs::vorbis::imdct">
+      <a href="../Eagle/Codecs/Vorbis/IMDCT.html">IMDCT</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Mapping" data-name="eagle::codecs::vorbis::mapping">
+      <a href="../Eagle/Codecs/Vorbis/Mapping.html">Mapping</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Mode" data-name="eagle::codecs::vorbis::mode">
+      <a href="../Eagle/Codecs/Vorbis/Mode.html">Mode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Residue" data-name="eagle::codecs::vorbis::residue">
+      <a href="../Eagle/Codecs/Vorbis/Residue.html">Residue</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/WAV" data-name="eagle::codecs::wav">
+      <a href="../Eagle/Codecs/WAV.html">WAV</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Codecs/Zlib" data-name="eagle::codecs::zlib">
+      <a href="../Eagle/Codecs/Zlib.html">Zlib</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Zlib/Error" data-name="eagle::codecs::zlib::error">
+      <a href="../Eagle/Codecs/Zlib/Error.html">Error</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CollisionObject2D" data-name="eagle::collisionobject2d">
+      <a href="../Eagle/CollisionObject2D.html">CollisionObject2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CollisionObject3D" data-name="eagle::collisionobject3d">
+      <a href="../Eagle/CollisionObject3D.html">CollisionObject3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CollisionShape2D" data-name="eagle::collisionshape2d">
+      <a href="../Eagle/CollisionShape2D.html">CollisionShape2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Color" data-name="eagle::color">
+      <a href="../Eagle/Color.html">Color</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Config" data-name="eagle::config">
+      <a href="../Eagle/Config.html">Config</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Container" data-name="eagle::container">
+      <a href="../Eagle/Container.html">Container</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Control" data-name="eagle::control">
+      <a href="../Eagle/Control.html">Control</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/DirectionalLight3D" data-name="eagle::directionallight3d">
+      <a href="../Eagle/DirectionalLight3D.html">DirectionalLight3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Drawable" data-name="eagle::drawable">
+      <a href="../Eagle/Drawable.html">Drawable</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/DrawItem" data-name="eagle::drawitem">
+      <a href="../Eagle/DrawItem.html">DrawItem</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/DrawMode" data-name="eagle::drawmode">
+      <a href="../Eagle/DrawMode.html">DrawMode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Ease" data-name="eagle::ease">
+      <a href="../Eagle/Ease.html">Ease</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Emitter" data-name="eagle::emitter(*t)">
+      <a href="../Eagle/Emitter.html">Emitter</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Environment" data-name="eagle::environment">
+      <a href="../Eagle/Environment.html">Environment</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Error" data-name="eagle::error">
+      <a href="../Eagle/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Event" data-name="eagle::event">
+      <a href="../Eagle/Event.html">Event</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/FileDropEvent" data-name="eagle::filedropevent">
+      <a href="../Eagle/FileDropEvent.html">FileDropEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Focus" data-name="eagle::focus">
+      <a href="../Eagle/Focus.html">Focus</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Font" data-name="eagle::font">
+      <a href="../Eagle/Font.html">Font</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Font/Glyph" data-name="eagle::font::glyph">
+      <a href="../Eagle/Font/Glyph.html">Glyph</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadAxis" data-name="eagle::gamepadaxis">
+      <a href="../Eagle/GamepadAxis.html">GamepadAxis</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadAxisEvent" data-name="eagle::gamepadaxisevent">
+      <a href="../Eagle/GamepadAxisEvent.html">GamepadAxisEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadButton" data-name="eagle::gamepadbutton">
+      <a href="../Eagle/GamepadButton.html">GamepadButton</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadButtonEvent" data-name="eagle::gamepadbuttonevent">
+      <a href="../Eagle/GamepadButtonEvent.html">GamepadButtonEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadConnectionEvent" data-name="eagle::gamepadconnectionevent">
+      <a href="../Eagle/GamepadConnectionEvent.html">GamepadConnectionEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Geometry" data-name="eagle::geometry">
+      <a href="../Eagle/Geometry.html">Geometry</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="eagle/Eagle/GL" data-name="eagle::gl">
+      <a href="../Eagle/GL.html">GL</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Bitfield" data-name="eagle::gl::bitfield">
+      <a href="../Eagle/GL/Bitfield.html">Bitfield</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Boolean" data-name="eagle::gl::boolean">
+      <a href="../Eagle/GL/Boolean.html">Boolean</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Enum" data-name="eagle::gl::enum">
+      <a href="../Eagle/GL/Enum.html">Enum</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Float" data-name="eagle::gl::float">
+      <a href="../Eagle/GL/Float.html">Float</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Int" data-name="eagle::gl::int">
+      <a href="../Eagle/GL/Int.html">Int</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Intptr" data-name="eagle::gl::intptr">
+      <a href="../Eagle/GL/Intptr.html">Intptr</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Sizei" data-name="eagle::gl::sizei">
+      <a href="../Eagle/GL/Sizei.html">Sizei</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Sizeiptr" data-name="eagle::gl::sizeiptr">
+      <a href="../Eagle/GL/Sizeiptr.html">Sizeiptr</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Uint" data-name="eagle::gl::uint">
+      <a href="../Eagle/GL/Uint.html">Uint</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/GPU" data-name="eagle::gpu">
+      <a href="../Eagle/GPU.html">GPU</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/AttribType" data-name="eagle::gpu::attribtype">
+      <a href="../Eagle/GPU/AttribType.html">AttribType</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/BlendMode" data-name="eagle::gpu::blendmode">
+      <a href="../Eagle/GPU/BlendMode.html">BlendMode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/CullMode" data-name="eagle::gpu::cullmode">
+      <a href="../Eagle/GPU/CullMode.html">CullMode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/DepthFunc" data-name="eagle::gpu::depthfunc">
+      <a href="../Eagle/GPU/DepthFunc.html">DepthFunc</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Device" data-name="eagle::gpu::device">
+      <a href="../Eagle/GPU/Device.html">Device</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Filter" data-name="eagle::gpu::filter">
+      <a href="../Eagle/GPU/Filter.html">Filter</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/GL33" data-name="eagle::gpu::gl33">
+      <a href="../Eagle/GPU/GL33.html">GL33</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/PixelFormat" data-name="eagle::gpu::pixelformat">
+      <a href="../Eagle/GPU/PixelFormat.html">PixelFormat</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Primitive" data-name="eagle::gpu::primitive">
+      <a href="../Eagle/GPU/Primitive.html">Primitive</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/RenderTargetHandle" data-name="eagle::gpu::rendertargethandle">
+      <a href="../Eagle/GPU/RenderTargetHandle.html">RenderTargetHandle</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/UniformValue" data-name="eagle::gpu::uniformvalue">
+      <a href="../Eagle/GPU/UniformValue.html">UniformValue</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Usage" data-name="eagle::gpu::usage">
+      <a href="../Eagle/GPU/Usage.html">Usage</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/VertexAttrib" data-name="eagle::gpu::vertexattrib">
+      <a href="../Eagle/GPU/VertexAttrib.html">VertexAttrib</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/VertexLayout" data-name="eagle::gpu::vertexlayout">
+      <a href="../Eagle/GPU/VertexLayout.html">VertexLayout</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Wrap" data-name="eagle::gpu::wrap">
+      <a href="../Eagle/GPU/Wrap.html">Wrap</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Graphics" data-name="eagle::graphics">
+      <a href="../Eagle/Graphics.html">Graphics</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GridContainer" data-name="eagle::gridcontainer">
+      <a href="../Eagle/GridContainer.html">GridContainer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/HBox" data-name="eagle::hbox">
+      <a href="../Eagle/HBox.html">HBox</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Image" data-name="eagle::image">
+      <a href="../Eagle/Image.html">Image</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/ImageControl" data-name="eagle::imagecontrol">
+      <a href="../Eagle/ImageControl.html">ImageControl</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Input" data-name="eagle::input">
+      <a href="../Eagle/Input.html">Input</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Input/AxisBinding" data-name="eagle::input::axisbinding">
+      <a href="../Eagle/Input/AxisBinding.html">AxisBinding</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Input/Binding" data-name="eagle::input::binding">
+      <a href="../Eagle/Input/Binding.html">Binding</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Input/Gamepad" data-name="eagle::input::gamepad">
+      <a href="../Eagle/Input/Gamepad.html">Gamepad</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Key" data-name="eagle::key">
+      <a href="../Eagle/Key.html">Key</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KeyEvent" data-name="eagle::keyevent">
+      <a href="../Eagle/KeyEvent.html">KeyEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KeyMod" data-name="eagle::keymod">
+      <a href="../Eagle/KeyMod.html">KeyMod</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KinematicBody2D" data-name="eagle::kinematicbody2d">
+      <a href="../Eagle/KinematicBody2D.html">KinematicBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KinematicBody3D" data-name="eagle::kinematicbody3d">
+      <a href="../Eagle/KinematicBody3D.html">KinematicBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Label" data-name="eagle::label">
+      <a href="../Eagle/Label.html">Label</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Light3D" data-name="eagle::light3d">
+      <a href="../Eagle/Light3D.html">Light3D</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/LightData" data-name="eagle::lightdata">
+      <a href="../Eagle/LightData.html">LightData</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/LightData/Kind" data-name="eagle::lightdata::kind">
+      <a href="../Eagle/LightData/Kind.html">Kind</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Line2D" data-name="eagle::line2d">
+      <a href="../Eagle/Line2D.html">Line2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mat3" data-name="eagle::mat3">
+      <a href="../Eagle/Mat3.html">Mat3</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mat4" data-name="eagle::mat4">
+      <a href="../Eagle/Mat4.html">Mat4</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Material" data-name="eagle::material">
+      <a href="../Eagle/Material.html">Material</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mathf" data-name="eagle::mathf">
+      <a href="../Eagle/Mathf.html">Mathf</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mesh" data-name="eagle::mesh">
+      <a href="../Eagle/Mesh.html">Mesh</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MeshInstance3D" data-name="eagle::meshinstance3d">
+      <a href="../Eagle/MeshInstance3D.html">MeshInstance3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseButton" data-name="eagle::mousebutton">
+      <a href="../Eagle/MouseButton.html">MouseButton</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseButtonEvent" data-name="eagle::mousebuttonevent">
+      <a href="../Eagle/MouseButtonEvent.html">MouseButtonEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseMotionEvent" data-name="eagle::mousemotionevent">
+      <a href="../Eagle/MouseMotionEvent.html">MouseMotionEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseWheelEvent" data-name="eagle::mousewheelevent">
+      <a href="../Eagle/MouseWheelEvent.html">MouseWheelEvent</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Node" data-name="eagle::node">
+      <a href="../Eagle/Node.html">Node</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Node/ProcessMode" data-name="eagle::node::processmode">
+      <a href="../Eagle/Node/ProcessMode.html">ProcessMode</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Node2D" data-name="eagle::node2d">
+      <a href="../Eagle/Node2D.html">Node2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Node3D" data-name="eagle::node3d">
+      <a href="../Eagle/Node3D.html">Node3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Panel" data-name="eagle::panel">
+      <a href="../Eagle/Panel.html">Panel</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Particles2D" data-name="eagle::particles2d">
+      <a href="../Eagle/Particles2D.html">Particles2D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Particles2D/EmissionShape" data-name="eagle::particles2d::emissionshape">
+      <a href="../Eagle/Particles2D/EmissionShape.html">EmissionShape</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Particles2D/Particle" data-name="eagle::particles2d::particle">
+      <a href="../Eagle/Particles2D/Particle.html">Particle</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Physics2D" data-name="eagle::physics2d">
+      <a href="../Eagle/Physics2D.html">Physics2D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Body" data-name="eagle::physics2d::body">
+      <a href="../Eagle/Physics2D/Body.html">Body</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/BodyType" data-name="eagle::physics2d::bodytype">
+      <a href="../Eagle/Physics2D/BodyType.html">BodyType</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Circle" data-name="eagle::physics2d::circle">
+      <a href="../Eagle/Physics2D/Circle.html">Circle</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Collision" data-name="eagle::physics2d::collision">
+      <a href="../Eagle/Physics2D/Collision.html">Collision</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Manifold" data-name="eagle::physics2d::manifold">
+      <a href="../Eagle/Physics2D/Manifold.html">Manifold</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Polygon" data-name="eagle::physics2d::polygon">
+      <a href="../Eagle/Physics2D/Polygon.html">Polygon</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/RayHit" data-name="eagle::physics2d::rayhit">
+      <a href="../Eagle/Physics2D/RayHit.html">RayHit</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Shape" data-name="eagle::physics2d::shape">
+      <a href="../Eagle/Physics2D/Shape.html">Shape</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/World" data-name="eagle::physics2d::world">
+      <a href="../Eagle/Physics2D/World.html">World</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Physics3D" data-name="eagle::physics3d">
+      <a href="../Eagle/Physics3D.html">Physics3D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Body" data-name="eagle::physics3d::body">
+      <a href="../Eagle/Physics3D/Body.html">Body</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/BodyType" data-name="eagle::physics3d::bodytype">
+      <a href="../Eagle/Physics3D/BodyType.html">BodyType</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Collision" data-name="eagle::physics3d::collision">
+      <a href="../Eagle/Physics3D/Collision.html">Collision</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Cuboid" data-name="eagle::physics3d::cuboid">
+      <a href="../Eagle/Physics3D/Cuboid.html">Cuboid</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Manifold" data-name="eagle::physics3d::manifold">
+      <a href="../Eagle/Physics3D/Manifold.html">Manifold</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/RayHit" data-name="eagle::physics3d::rayhit">
+      <a href="../Eagle/Physics3D/RayHit.html">RayHit</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Shape" data-name="eagle::physics3d::shape">
+      <a href="../Eagle/Physics3D/Shape.html">Shape</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Sphere" data-name="eagle::physics3d::sphere">
+      <a href="../Eagle/Physics3D/Sphere.html">Sphere</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/World" data-name="eagle::physics3d::world">
+      <a href="../Eagle/Physics3D/World.html">World</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/WorldShape" data-name="eagle::physics3d::worldshape">
+      <a href="../Eagle/Physics3D/WorldShape.html">WorldShape</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Platform" data-name="eagle::platform">
+      <a href="../Eagle/Platform.html">Platform</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Platform/Base" data-name="eagle::platform::base">
+      <a href="../Eagle/Platform/Base.html">Base</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Platform/SDL" data-name="eagle::platform::sdl">
+      <a href="../Eagle/Platform/SDL.html">SDL</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Platform/WindowConfig" data-name="eagle::platform::windowconfig">
+      <a href="../Eagle/Platform/WindowConfig.html">WindowConfig</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/PointLight3D" data-name="eagle::pointlight3d">
+      <a href="../Eagle/PointLight3D.html">PointLight3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Polygon2D" data-name="eagle::polygon2d">
+      <a href="../Eagle/Polygon2D.html">Polygon2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/ProgressBar" data-name="eagle::progressbar">
+      <a href="../Eagle/ProgressBar.html">ProgressBar</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Quat" data-name="eagle::quat">
+      <a href="../Eagle/Quat.html">Quat</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/QuitEvent" data-name="eagle::quitevent">
+      <a href="../Eagle/QuitEvent.html">QuitEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Ray" data-name="eagle::ray">
+      <a href="../Eagle/Ray.html">Ray</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RayCast2D" data-name="eagle::raycast2d">
+      <a href="../Eagle/RayCast2D.html">RayCast2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RayCast3D" data-name="eagle::raycast3d">
+      <a href="../Eagle/RayCast3D.html">RayCast3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Rect" data-name="eagle::rect">
+      <a href="../Eagle/Rect.html">Rect</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Renderer3D" data-name="eagle::renderer3d">
+      <a href="../Eagle/Renderer3D.html">Renderer3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RigidBody2D" data-name="eagle::rigidbody2d">
+      <a href="../Eagle/RigidBody2D.html">RigidBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RigidBody3D" data-name="eagle::rigidbody3d">
+      <a href="../Eagle/RigidBody3D.html">RigidBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Scene3D" data-name="eagle::scene3d">
+      <a href="../Eagle/Scene3D.html">Scene3D</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/SceneTree" data-name="eagle::scenetree">
+      <a href="../Eagle/SceneTree.html">SceneTree</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/SceneTree/RootNode" data-name="eagle::scenetree::rootnode">
+      <a href="../Eagle/SceneTree/RootNode.html">RootNode</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Script" data-name="eagle::script">
+      <a href="../Eagle/Script.html">Script</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Script/Step" data-name="eagle::script::step">
+      <a href="../Eagle/Script/Step.html">Step</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Shader" data-name="eagle::shader">
+      <a href="../Eagle/Shader.html">Shader</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/ShaderError" data-name="eagle::shadererror">
+      <a href="../Eagle/ShaderError.html">ShaderError</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Shaders3D" data-name="eagle::shaders3d">
+      <a href="../Eagle/Shaders3D.html">Shaders3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/SizeFlags" data-name="eagle::sizeflags">
+      <a href="../Eagle/SizeFlags.html">SizeFlags</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Slider" data-name="eagle::slider">
+      <a href="../Eagle/Slider.html">Slider</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Sound" data-name="eagle::sound">
+      <a href="../Eagle/Sound.html">Sound</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Sound/Wave" data-name="eagle::sound::wave">
+      <a href="../Eagle/Sound/Wave.html">Wave</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Spacer" data-name="eagle::spacer">
+      <a href="../Eagle/Spacer.html">Spacer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/SpotLight3D" data-name="eagle::spotlight3d">
+      <a href="../Eagle/SpotLight3D.html">SpotLight3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Sprite2D" data-name="eagle::sprite2d">
+      <a href="../Eagle/Sprite2D.html">Sprite2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/StaticBody2D" data-name="eagle::staticbody2d">
+      <a href="../Eagle/StaticBody2D.html">StaticBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/StaticBody3D" data-name="eagle::staticbody3d">
+      <a href="../Eagle/StaticBody3D.html">StaticBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextAlign" data-name="eagle::textalign">
+      <a href="../Eagle/TextAlign.html">TextAlign</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextEvent" data-name="eagle::textevent">
+      <a href="../Eagle/TextEvent.html">TextEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextInput" data-name="eagle::textinput">
+      <a href="../Eagle/TextInput.html">TextInput</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Texture" data-name="eagle::texture">
+      <a href="../Eagle/Texture.html">Texture</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextureRegion" data-name="eagle::textureregion">
+      <a href="../Eagle/TextureRegion.html">TextureRegion</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Theme" data-name="eagle::theme">
+      <a href="../Eagle/Theme.html">Theme</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TileMap" data-name="eagle::tilemap">
+      <a href="../Eagle/TileMap.html">TileMap</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Timer" data-name="eagle::timer">
+      <a href="../Eagle/Timer.html">Timer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Transform2D" data-name="eagle::transform2d">
+      <a href="../Eagle/Transform2D.html">Transform2D</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/TrueType" data-name="eagle::truetype">
+      <a href="../Eagle/TrueType.html">TrueType</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/Accumulator" data-name="eagle::truetype::accumulator">
+      <a href="../Eagle/TrueType/Accumulator.html">Accumulator</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/Bitmap" data-name="eagle::truetype::bitmap">
+      <a href="../Eagle/TrueType/Bitmap.html">Bitmap</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/GlyphOutline" data-name="eagle::truetype::glyphoutline">
+      <a href="../Eagle/TrueType/GlyphOutline.html">GlyphOutline</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/HMetric" data-name="eagle::truetype::hmetric">
+      <a href="../Eagle/TrueType/HMetric.html">HMetric</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/Point" data-name="eagle::truetype::point">
+      <a href="../Eagle/TrueType/Point.html">Point</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueTypeFont" data-name="eagle::truetypefont">
+      <a href="../Eagle/TrueTypeFont.html">TrueTypeFont</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Tween" data-name="eagle::tween">
+      <a href="../Eagle/Tween.html">Tween</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Tween/Sequence" data-name="eagle::tween::sequence">
+      <a href="../Eagle/Tween/Sequence.html">Sequence</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/VBox" data-name="eagle::vbox">
+      <a href="../Eagle/VBox.html">VBox</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Vec2" data-name="eagle::vec2">
+      <a href="../Eagle/Vec2.html">Vec2</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Vec3" data-name="eagle::vec3">
+      <a href="../Eagle/Vec3.html">Vec3</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Vec4" data-name="eagle::vec4">
+      <a href="../Eagle/Vec4.html">Vec4</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Voice" data-name="eagle::voice">
+      <a href="../Eagle/Voice.html">Voice</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Window" data-name="eagle::window">
+      <a href="../Eagle/Window.html">Window</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/WindowEvent" data-name="eagle::windowevent">
+      <a href="../Eagle/WindowEvent.html">WindowEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/WindowEventKind" data-name="eagle::windoweventkind">
+      <a href="../Eagle/WindowEventKind.html">WindowEventKind</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Number" data-name="number">
+      <a href="../Number.html">Number</a>
+      
+    </li>
+  
+</ul>
+
+  </div>
+</div>
+
+
+<div class="main-content">
+<h1 class="type-name">
+
+  <span class="kind">
+    module
+  </span> Eagle::<wbr>GL
+
+</h1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="defined-in" class="anchor" href="#defined-in">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Defined in:
+  </h2>
+  
+    
+      eagle/lib/gl.cr
+    
+    <br/>
+  
+
+
+
+  
+    <h2>
+      <a id="constant-summary" class="anchor" href="#constant-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+      Constant Summary
+    </h2>
+  
+  <dl>
+    
+      <dt class="entry-const" id="ALWAYS">
+        <strong>ALWAYS</strong> = <code><span class="n">519_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="ARRAY_BUFFER">
+        <strong>ARRAY_BUFFER</strong> = <code><span class="n">34962_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="BACK">
+        <strong>BACK</strong> = <code><span class="n">1029_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="BLEND">
+        <strong>BLEND</strong> = <code><span class="n">3042_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="BYTE">
+        <strong>BYTE</strong> = <code><span class="n">5120_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="CCW">
+        <strong>CCW</strong> = <code><span class="n">2305_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="CLAMP_TO_EDGE">
+        <strong>CLAMP_TO_EDGE</strong> = <code><span class="n">33071_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="COLOR_ATTACHMENT0">
+        <strong>COLOR_ATTACHMENT0</strong> = <code><span class="n">36064_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="COLOR_BUFFER_BIT">
+        <strong>COLOR_BUFFER_BIT</strong> = <code><span class="n">16384_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="COMPARE_REF_TO_TEXTURE">
+        <strong>COMPARE_REF_TO_TEXTURE</strong> = <code><span class="n">34894_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="COMPILE_STATUS">
+        <strong>COMPILE_STATUS</strong> = <code><span class="n">35713_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="CULL_FACE">
+        <strong>CULL_FACE</strong> = <code><span class="n">2884_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="CW">
+        <strong>CW</strong> = <code><span class="n">2304_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DEPTH24_STENCIL8">
+        <strong>DEPTH24_STENCIL8</strong> = <code><span class="n">35056_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DEPTH_ATTACHMENT">
+        <strong>DEPTH_ATTACHMENT</strong> = <code><span class="n">36096_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DEPTH_BUFFER_BIT">
+        <strong>DEPTH_BUFFER_BIT</strong> = <code><span class="n">256_u32</span></code>
+      </dt>
+      
+      <dd class="entry-const-doc">
+        <p>--- constants ---------------------------------------------------------</p>
+      </dd>
+      
+    
+      <dt class="entry-const" id="DEPTH_COMPONENT">
+        <strong>DEPTH_COMPONENT</strong> = <code><span class="n">6402_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DEPTH_COMPONENT16">
+        <strong>DEPTH_COMPONENT16</strong> = <code><span class="n">33189_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DEPTH_COMPONENT24">
+        <strong>DEPTH_COMPONENT24</strong> = <code><span class="n">33190_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DEPTH_STENCIL">
+        <strong>DEPTH_STENCIL</strong> = <code><span class="n">34041_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DEPTH_STENCIL_ATTACHMENT">
+        <strong>DEPTH_STENCIL_ATTACHMENT</strong> = <code><span class="n">33306_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DEPTH_TEST">
+        <strong>DEPTH_TEST</strong> = <code><span class="n">2929_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DRAW_FRAMEBUFFER">
+        <strong>DRAW_FRAMEBUFFER</strong> = <code><span class="n">36009_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DST_ALPHA">
+        <strong>DST_ALPHA</strong> = <code><span class="n">772_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DST_COLOR">
+        <strong>DST_COLOR</strong> = <code><span class="n">774_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="DYNAMIC_DRAW">
+        <strong>DYNAMIC_DRAW</strong> = <code><span class="n">35048_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="ELEMENT_ARRAY_BUFFER">
+        <strong>ELEMENT_ARRAY_BUFFER</strong> = <code><span class="n">34963_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="EQUAL">
+        <strong>EQUAL</strong> = <code><span class="n">514_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FALSE_">
+        <strong>FALSE_</strong> = <code><span class="n">0_u8</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FILL">
+        <strong>FILL</strong> = <code><span class="n">6914_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FLOAT">
+        <strong>FLOAT</strong> = <code><span class="n">5126_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FRAGMENT_SHADER">
+        <strong>FRAGMENT_SHADER</strong> = <code><span class="n">35632_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FRAMEBUFFER">
+        <strong>FRAMEBUFFER</strong> = <code><span class="n">36160_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FRAMEBUFFER_COMPLETE">
+        <strong>FRAMEBUFFER_COMPLETE</strong> = <code><span class="n">36053_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FRAMEBUFFER_SRGB">
+        <strong>FRAMEBUFFER_SRGB</strong> = <code><span class="n">36281_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FRONT">
+        <strong>FRONT</strong> = <code><span class="n">1028_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FRONT_AND_BACK">
+        <strong>FRONT_AND_BACK</strong> = <code><span class="n">1032_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FUNC_ADD">
+        <strong>FUNC_ADD</strong> = <code><span class="n">32774_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FUNC_REVERSE_SUBTRACT">
+        <strong>FUNC_REVERSE_SUBTRACT</strong> = <code><span class="n">32779_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="FUNC_SUBTRACT">
+        <strong>FUNC_SUBTRACT</strong> = <code><span class="n">32778_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="GEQUAL">
+        <strong>GEQUAL</strong> = <code><span class="n">518_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="GREATER">
+        <strong>GREATER</strong> = <code><span class="n">516_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="INFO_LOG_LENGTH">
+        <strong>INFO_LOG_LENGTH</strong> = <code><span class="n">35716_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="INT">
+        <strong>INT</strong> = <code><span class="n">5124_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="INVALID_ENUM">
+        <strong>INVALID_ENUM</strong> = <code><span class="n">1280_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="INVALID_FRAMEBUFFER_OPERATION">
+        <strong>INVALID_FRAMEBUFFER_OPERATION</strong> = <code><span class="n">1286_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="INVALID_OPERATION">
+        <strong>INVALID_OPERATION</strong> = <code><span class="n">1282_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="INVALID_VALUE">
+        <strong>INVALID_VALUE</strong> = <code><span class="n">1281_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="LEQUAL">
+        <strong>LEQUAL</strong> = <code><span class="n">515_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="LESS">
+        <strong>LESS</strong> = <code><span class="n">513_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="LINE">
+        <strong>LINE</strong> = <code><span class="n">6913_u32</span></code>
+      </dt>
+      
+      <dd class="entry-const-doc">
+        <p>Desktop-only (not in WebGL2): wireframe mode</p>
+      </dd>
+      
+    
+      <dt class="entry-const" id="LINE_LOOP">
+        <strong>LINE_LOOP</strong> = <code><span class="n">2_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="LINE_SMOOTH">
+        <strong>LINE_SMOOTH</strong> = <code><span class="n">2848_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="LINE_STRIP">
+        <strong>LINE_STRIP</strong> = <code><span class="n">3_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="LINEAR">
+        <strong>LINEAR</strong> = <code><span class="n">9729_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="LINEAR_MIPMAP_LINEAR">
+        <strong>LINEAR_MIPMAP_LINEAR</strong> = <code><span class="n">9987_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="LINEAR_MIPMAP_NEAREST">
+        <strong>LINEAR_MIPMAP_NEAREST</strong> = <code><span class="n">9985_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="LINES">
+        <strong>LINES</strong> = <code><span class="n">1_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="LINK_STATUS">
+        <strong>LINK_STATUS</strong> = <code><span class="n">35714_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="MAX">
+        <strong>MAX</strong> = <code><span class="n">32776_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="MAX_TEXTURE_IMAGE_UNITS">
+        <strong>MAX_TEXTURE_IMAGE_UNITS</strong> = <code><span class="n">34930_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="MAX_TEXTURE_SIZE">
+        <strong>MAX_TEXTURE_SIZE</strong> = <code><span class="n">3379_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="MIN">
+        <strong>MIN</strong> = <code><span class="n">32775_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="MIRRORED_REPEAT">
+        <strong>MIRRORED_REPEAT</strong> = <code><span class="n">33648_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="MULTISAMPLE">
+        <strong>MULTISAMPLE</strong> = <code><span class="n">32925_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="NEAREST">
+        <strong>NEAREST</strong> = <code><span class="n">9728_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="NEAREST_MIPMAP_LINEAR">
+        <strong>NEAREST_MIPMAP_LINEAR</strong> = <code><span class="n">9986_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="NEAREST_MIPMAP_NEAREST">
+        <strong>NEAREST_MIPMAP_NEAREST</strong> = <code><span class="n">9984_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="NEVER">
+        <strong>NEVER</strong> = <code><span class="n">512_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="NO_ERROR">
+        <strong>NO_ERROR</strong> = <code><span class="n">0_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="NONE">
+        <strong>NONE</strong> = <code><span class="n">0_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="NOTEQUAL">
+        <strong>NOTEQUAL</strong> = <code><span class="n">517_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="ONE">
+        <strong>ONE</strong> = <code><span class="n">1_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="ONE_MINUS_DST_ALPHA">
+        <strong>ONE_MINUS_DST_ALPHA</strong> = <code><span class="n">773_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="ONE_MINUS_DST_COLOR">
+        <strong>ONE_MINUS_DST_COLOR</strong> = <code><span class="n">775_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="ONE_MINUS_SRC_ALPHA">
+        <strong>ONE_MINUS_SRC_ALPHA</strong> = <code><span class="n">771_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="ONE_MINUS_SRC_COLOR">
+        <strong>ONE_MINUS_SRC_COLOR</strong> = <code><span class="n">769_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="OUT_OF_MEMORY">
+        <strong>OUT_OF_MEMORY</strong> = <code><span class="n">1285_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="PACK_ALIGNMENT">
+        <strong>PACK_ALIGNMENT</strong> = <code><span class="n">3333_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="POINTS">
+        <strong>POINTS</strong> = <code><span class="n">0_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="PROGRAM_POINT_SIZE">
+        <strong>PROGRAM_POINT_SIZE</strong> = <code><span class="n">34370_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="R8">
+        <strong>R8</strong> = <code><span class="n">33321_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="READ_FRAMEBUFFER">
+        <strong>READ_FRAMEBUFFER</strong> = <code><span class="n">36008_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="RED">
+        <strong>RED</strong> = <code><span class="n">6403_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="RENDERBUFFER">
+        <strong>RENDERBUFFER</strong> = <code><span class="n">36161_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="RENDERER">
+        <strong>RENDERER</strong> = <code><span class="n">7937_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="REPEAT">
+        <strong>REPEAT</strong> = <code><span class="n">10497_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="RG">
+        <strong>RG</strong> = <code><span class="n">33319_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="RG8">
+        <strong>RG8</strong> = <code><span class="n">33323_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="RGB">
+        <strong>RGB</strong> = <code><span class="n">6407_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="RGB8">
+        <strong>RGB8</strong> = <code><span class="n">32849_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="RGBA">
+        <strong>RGBA</strong> = <code><span class="n">6408_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="RGBA16F">
+        <strong>RGBA16F</strong> = <code><span class="n">34842_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="RGBA32F">
+        <strong>RGBA32F</strong> = <code><span class="n">34836_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="RGBA8">
+        <strong>RGBA8</strong> = <code><span class="n">32856_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="SCISSOR_TEST">
+        <strong>SCISSOR_TEST</strong> = <code><span class="n">3089_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="SHADING_LANGUAGE_VERSION">
+        <strong>SHADING_LANGUAGE_VERSION</strong> = <code><span class="n">35724_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="SHORT">
+        <strong>SHORT</strong> = <code><span class="n">5122_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="SRC_ALPHA">
+        <strong>SRC_ALPHA</strong> = <code><span class="n">770_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="SRC_COLOR">
+        <strong>SRC_COLOR</strong> = <code><span class="n">768_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="SRGB8_ALPHA8">
+        <strong>SRGB8_ALPHA8</strong> = <code><span class="n">35907_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="STATIC_DRAW">
+        <strong>STATIC_DRAW</strong> = <code><span class="n">35044_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="STENCIL_ATTACHMENT">
+        <strong>STENCIL_ATTACHMENT</strong> = <code><span class="n">36128_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="STENCIL_BUFFER_BIT">
+        <strong>STENCIL_BUFFER_BIT</strong> = <code><span class="n">1024_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="STENCIL_TEST">
+        <strong>STENCIL_TEST</strong> = <code><span class="n">2960_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="STREAM_DRAW">
+        <strong>STREAM_DRAW</strong> = <code><span class="n">35040_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TEXTURE0">
+        <strong>TEXTURE0</strong> = <code><span class="n">33984_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TEXTURE_2D">
+        <strong>TEXTURE_2D</strong> = <code><span class="n">3553_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TEXTURE_COMPARE_FUNC">
+        <strong>TEXTURE_COMPARE_FUNC</strong> = <code><span class="n">34893_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TEXTURE_COMPARE_MODE">
+        <strong>TEXTURE_COMPARE_MODE</strong> = <code><span class="n">34892_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TEXTURE_CUBE_MAP">
+        <strong>TEXTURE_CUBE_MAP</strong> = <code><span class="n">34067_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TEXTURE_CUBE_MAP_POSITIVE_X">
+        <strong>TEXTURE_CUBE_MAP_POSITIVE_X</strong> = <code><span class="n">34069_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TEXTURE_MAG_FILTER">
+        <strong>TEXTURE_MAG_FILTER</strong> = <code><span class="n">10240_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TEXTURE_MIN_FILTER">
+        <strong>TEXTURE_MIN_FILTER</strong> = <code><span class="n">10241_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TEXTURE_WRAP_R">
+        <strong>TEXTURE_WRAP_R</strong> = <code><span class="n">32882_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TEXTURE_WRAP_S">
+        <strong>TEXTURE_WRAP_S</strong> = <code><span class="n">10242_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TEXTURE_WRAP_T">
+        <strong>TEXTURE_WRAP_T</strong> = <code><span class="n">10243_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TRIANGLE_FAN">
+        <strong>TRIANGLE_FAN</strong> = <code><span class="n">6_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TRIANGLE_STRIP">
+        <strong>TRIANGLE_STRIP</strong> = <code><span class="n">5_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TRIANGLES">
+        <strong>TRIANGLES</strong> = <code><span class="n">4_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="TRUE_">
+        <strong>TRUE_</strong> = <code><span class="n">1_u8</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="UNPACK_ALIGNMENT">
+        <strong>UNPACK_ALIGNMENT</strong> = <code><span class="n">3317_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="UNSIGNED_BYTE">
+        <strong>UNSIGNED_BYTE</strong> = <code><span class="n">5121_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="UNSIGNED_INT">
+        <strong>UNSIGNED_INT</strong> = <code><span class="n">5125_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="UNSIGNED_INT_24_8">
+        <strong>UNSIGNED_INT_24_8</strong> = <code><span class="n">34042_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="UNSIGNED_SHORT">
+        <strong>UNSIGNED_SHORT</strong> = <code><span class="n">5123_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="VENDOR">
+        <strong>VENDOR</strong> = <code><span class="n">7936_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="VERSION">
+        <strong>VERSION</strong> = <code><span class="n">7938_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="VERTEX_SHADER">
+        <strong>VERTEX_SHADER</strong> = <code><span class="n">35633_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="VIEWPORT">
+        <strong>VIEWPORT</strong> = <code><span class="n">2978_u32</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="ZERO">
+        <strong>ZERO</strong> = <code><span class="n">0_u32</span></code>
+      </dt>
+      
+    
+  </dl>
+
+
+
+  
+
+  
+  <h2>
+    <a id="class-method-summary" class="anchor" href="#class-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Class Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#active_texture%28%2Aargs%29-class-method" class="signature"><strong>.active_texture</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#attach_shader%28%2Aargs%29-class-method" class="signature"><strong>.attach_shader</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#bind_attrib_location%28%2Aargs%29-class-method" class="signature"><strong>.bind_attrib_location</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#bind_buffer%28%2Aargs%29-class-method" class="signature"><strong>.bind_buffer</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#bind_framebuffer%28%2Aargs%29-class-method" class="signature"><strong>.bind_framebuffer</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#bind_renderbuffer%28%2Aargs%29-class-method" class="signature"><strong>.bind_renderbuffer</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#bind_texture%28%2Aargs%29-class-method" class="signature"><strong>.bind_texture</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#bind_vertex_array%28%2Aargs%29-class-method" class="signature"><strong>.bind_vertex_array</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#blend_equation%28%2Aargs%29-class-method" class="signature"><strong>.blend_equation</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#blend_func%28%2Aargs%29-class-method" class="signature"><strong>.blend_func</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#blend_func_separate%28%2Aargs%29-class-method" class="signature"><strong>.blend_func_separate</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#blit_framebuffer%28%2Aargs%29-class-method" class="signature"><strong>.blit_framebuffer</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#buffer_data%28%2Aargs%29-class-method" class="signature"><strong>.buffer_data</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#buffer_sub_data%28%2Aargs%29-class-method" class="signature"><strong>.buffer_sub_data</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#check%21%28where%3D%22%22%29%3ANil-class-method" class="signature"><strong>.check!</strong>(where = <span class="s">&quot;&quot;</span>) : Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#check_framebuffer_status%28%2Aargs%29-class-method" class="signature"><strong>.check_framebuffer_status</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#clear%28%2Aargs%29-class-method" class="signature"><strong>.clear</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#clear_color%28%2Aargs%29-class-method" class="signature"><strong>.clear_color</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#clear_depth%28%2Aargs%29-class-method" class="signature"><strong>.clear_depth</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#clear_stencil%28%2Aargs%29-class-method" class="signature"><strong>.clear_stencil</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#color_mask%28%2Aargs%29-class-method" class="signature"><strong>.color_mask</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#compile_shader%28%2Aargs%29-class-method" class="signature"><strong>.compile_shader</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#create_program%28%2Aargs%29-class-method" class="signature"><strong>.create_program</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#create_shader%28%2Aargs%29-class-method" class="signature"><strong>.create_shader</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#cull_face%28%2Aargs%29-class-method" class="signature"><strong>.cull_face</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#delete_buffers%28%2Aargs%29-class-method" class="signature"><strong>.delete_buffers</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#delete_framebuffers%28%2Aargs%29-class-method" class="signature"><strong>.delete_framebuffers</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#delete_program%28%2Aargs%29-class-method" class="signature"><strong>.delete_program</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#delete_renderbuffers%28%2Aargs%29-class-method" class="signature"><strong>.delete_renderbuffers</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#delete_shader%28%2Aargs%29-class-method" class="signature"><strong>.delete_shader</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#delete_textures%28%2Aargs%29-class-method" class="signature"><strong>.delete_textures</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#delete_vertex_arrays%28%2Aargs%29-class-method" class="signature"><strong>.delete_vertex_arrays</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#depth_func%28%2Aargs%29-class-method" class="signature"><strong>.depth_func</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#depth_mask%28%2Aargs%29-class-method" class="signature"><strong>.depth_mask</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#disable%28%2Aargs%29-class-method" class="signature"><strong>.disable</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#disable_vertex_attrib_array%28%2Aargs%29-class-method" class="signature"><strong>.disable_vertex_attrib_array</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw_arrays%28%2Aargs%29-class-method" class="signature"><strong>.draw_arrays</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw_arrays_instanced%28%2Aargs%29-class-method" class="signature"><strong>.draw_arrays_instanced</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw_buffers%28%2Aargs%29-class-method" class="signature"><strong>.draw_buffers</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw_elements%28%2Aargs%29-class-method" class="signature"><strong>.draw_elements</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#draw_elements_instanced%28%2Aargs%29-class-method" class="signature"><strong>.draw_elements_instanced</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#enable%28%2Aargs%29-class-method" class="signature"><strong>.enable</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#enable_vertex_attrib_array%28%2Aargs%29-class-method" class="signature"><strong>.enable_vertex_attrib_array</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#finish%28%2Aargs%29-class-method" class="signature"><strong>.finish</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#flush%28%2Aargs%29-class-method" class="signature"><strong>.flush</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#framebuffer_renderbuffer%28%2Aargs%29-class-method" class="signature"><strong>.framebuffer_renderbuffer</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#framebuffer_texture2d%28%2Aargs%29-class-method" class="signature"><strong>.framebuffer_texture2d</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#front_face%28%2Aargs%29-class-method" class="signature"><strong>.front_face</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#gen_buffers%28%2Aargs%29-class-method" class="signature"><strong>.gen_buffers</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#gen_framebuffers%28%2Aargs%29-class-method" class="signature"><strong>.gen_framebuffers</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#gen_renderbuffers%28%2Aargs%29-class-method" class="signature"><strong>.gen_renderbuffers</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#gen_textures%28%2Aargs%29-class-method" class="signature"><strong>.gen_textures</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#gen_vertex_arrays%28%2Aargs%29-class-method" class="signature"><strong>.gen_vertex_arrays</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#generate_mipmap%28%2Aargs%29-class-method" class="signature"><strong>.generate_mipmap</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#get_attrib_location%28%2Aargs%29-class-method" class="signature"><strong>.get_attrib_location</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#get_error%28%2Aargs%29-class-method" class="signature"><strong>.get_error</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#get_integerv%28%2Aargs%29-class-method" class="signature"><strong>.get_integerv</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#get_program_info_log%28%2Aargs%29-class-method" class="signature"><strong>.get_program_info_log</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#get_programiv%28%2Aargs%29-class-method" class="signature"><strong>.get_programiv</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#get_shader_info_log%28%2Aargs%29-class-method" class="signature"><strong>.get_shader_info_log</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#get_shaderiv%28%2Aargs%29-class-method" class="signature"><strong>.get_shaderiv</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#get_string%28%2Aargs%29-class-method" class="signature"><strong>.get_string</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#get_uniform_location%28%2Aargs%29-class-method" class="signature"><strong>.get_uniform_location</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#line_width%28%2Aargs%29-class-method" class="signature"><strong>.line_width</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#link_program%28%2Aargs%29-class-method" class="signature"><strong>.link_program</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#load_all%28%26getter%3AString-%3EPointer%28Void%29%29%3AArray%28String%29-class-method" class="signature"><strong>.load_all</strong>(&getter : String -> Pointer(Void)) : Array(String)</a>
+        
+          <div class="summary"><p>Loads every entry point via the given getter; returns names that failed.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#loaded%3F%3ABool-class-method" class="signature"><strong>.loaded?</strong> : Bool</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#pixel_storei%28%2Aargs%29-class-method" class="signature"><strong>.pixel_storei</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#polygon_mode%28%2Aargs%29-class-method" class="signature"><strong>.polygon_mode</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#read_buffer%28%2Aargs%29-class-method" class="signature"><strong>.read_buffer</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#read_pixels%28%2Aargs%29-class-method" class="signature"><strong>.read_pixels</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#renderbuffer_storage%28%2Aargs%29-class-method" class="signature"><strong>.renderbuffer_storage</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#scissor%28%2Aargs%29-class-method" class="signature"><strong>.scissor</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#shader_source%28%2Aargs%29-class-method" class="signature"><strong>.shader_source</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#stencil_func%28%2Aargs%29-class-method" class="signature"><strong>.stencil_func</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#stencil_mask%28%2Aargs%29-class-method" class="signature"><strong>.stencil_mask</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#stencil_op%28%2Aargs%29-class-method" class="signature"><strong>.stencil_op</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#string%28name%3AUInt32%29%3AString-class-method" class="signature"><strong>.string</strong>(name : UInt32) : String</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#tex_image2d%28%2Aargs%29-class-method" class="signature"><strong>.tex_image2d</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#tex_parameteri%28%2Aargs%29-class-method" class="signature"><strong>.tex_parameteri</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#tex_sub_image2d%28%2Aargs%29-class-method" class="signature"><strong>.tex_sub_image2d</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform1f%28%2Aargs%29-class-method" class="signature"><strong>.uniform1f</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform1fv%28%2Aargs%29-class-method" class="signature"><strong>.uniform1fv</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform1i%28%2Aargs%29-class-method" class="signature"><strong>.uniform1i</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform1iv%28%2Aargs%29-class-method" class="signature"><strong>.uniform1iv</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform2f%28%2Aargs%29-class-method" class="signature"><strong>.uniform2f</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform2fv%28%2Aargs%29-class-method" class="signature"><strong>.uniform2fv</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform3f%28%2Aargs%29-class-method" class="signature"><strong>.uniform3f</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform3fv%28%2Aargs%29-class-method" class="signature"><strong>.uniform3fv</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform4f%28%2Aargs%29-class-method" class="signature"><strong>.uniform4f</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform4fv%28%2Aargs%29-class-method" class="signature"><strong>.uniform4fv</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform_matrix3fv%28%2Aargs%29-class-method" class="signature"><strong>.uniform_matrix3fv</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uniform_matrix4fv%28%2Aargs%29-class-method" class="signature"><strong>.uniform_matrix4fv</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#use_program%28%2Aargs%29-class-method" class="signature"><strong>.use_program</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#vertex_attrib_divisor%28%2Aargs%29-class-method" class="signature"><strong>.vertex_attrib_divisor</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#vertex_attrib_pointer%28%2Aargs%29-class-method" class="signature"><strong>.vertex_attrib_pointer</strong>(*args)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#viewport%28%2Aargs%29-class-method" class="signature"><strong>.viewport</strong>(*args)</a>
+        
+      </li>
+    
+  </ul>
+
+
+  
+
+  
+
+
+  <div class="methods-inherited">
+    
+  </div>
+
+  
+
+  
+  <h2>
+    <a id="class-method-detail" class="anchor" href="#class-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Class Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="active_texture(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>active_texture</strong>(*args)
+
+        <a class="method-permalink" href="#active_texture%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="attach_shader(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>attach_shader</strong>(*args)
+
+        <a class="method-permalink" href="#attach_shader%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="bind_attrib_location(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>bind_attrib_location</strong>(*args)
+
+        <a class="method-permalink" href="#bind_attrib_location%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="bind_buffer(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>bind_buffer</strong>(*args)
+
+        <a class="method-permalink" href="#bind_buffer%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="bind_framebuffer(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>bind_framebuffer</strong>(*args)
+
+        <a class="method-permalink" href="#bind_framebuffer%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="bind_renderbuffer(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>bind_renderbuffer</strong>(*args)
+
+        <a class="method-permalink" href="#bind_renderbuffer%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="bind_texture(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>bind_texture</strong>(*args)
+
+        <a class="method-permalink" href="#bind_texture%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="bind_vertex_array(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>bind_vertex_array</strong>(*args)
+
+        <a class="method-permalink" href="#bind_vertex_array%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="blend_equation(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>blend_equation</strong>(*args)
+
+        <a class="method-permalink" href="#blend_equation%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="blend_func(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>blend_func</strong>(*args)
+
+        <a class="method-permalink" href="#blend_func%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="blend_func_separate(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>blend_func_separate</strong>(*args)
+
+        <a class="method-permalink" href="#blend_func_separate%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="blit_framebuffer(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>blit_framebuffer</strong>(*args)
+
+        <a class="method-permalink" href="#blit_framebuffer%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="buffer_data(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>buffer_data</strong>(*args)
+
+        <a class="method-permalink" href="#buffer_data%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="buffer_sub_data(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>buffer_sub_data</strong>(*args)
+
+        <a class="method-permalink" href="#buffer_sub_data%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="check!(where=&quot;&quot;):Nil-class-method">
+      <div class="signature">
+        
+        def self.<strong>check!</strong>(where = <span class="s">&quot;&quot;</span>) : Nil
+
+        <a class="method-permalink" href="#check%21%28where%3D%22%22%29%3ANil-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="check_framebuffer_status(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>check_framebuffer_status</strong>(*args)
+
+        <a class="method-permalink" href="#check_framebuffer_status%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="clear(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>clear</strong>(*args)
+
+        <a class="method-permalink" href="#clear%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="clear_color(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>clear_color</strong>(*args)
+
+        <a class="method-permalink" href="#clear_color%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="clear_depth(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>clear_depth</strong>(*args)
+
+        <a class="method-permalink" href="#clear_depth%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="clear_stencil(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>clear_stencil</strong>(*args)
+
+        <a class="method-permalink" href="#clear_stencil%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="color_mask(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>color_mask</strong>(*args)
+
+        <a class="method-permalink" href="#color_mask%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="compile_shader(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>compile_shader</strong>(*args)
+
+        <a class="method-permalink" href="#compile_shader%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="create_program(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>create_program</strong>(*args)
+
+        <a class="method-permalink" href="#create_program%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="create_shader(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>create_shader</strong>(*args)
+
+        <a class="method-permalink" href="#create_shader%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="cull_face(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>cull_face</strong>(*args)
+
+        <a class="method-permalink" href="#cull_face%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="delete_buffers(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>delete_buffers</strong>(*args)
+
+        <a class="method-permalink" href="#delete_buffers%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="delete_framebuffers(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>delete_framebuffers</strong>(*args)
+
+        <a class="method-permalink" href="#delete_framebuffers%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="delete_program(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>delete_program</strong>(*args)
+
+        <a class="method-permalink" href="#delete_program%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="delete_renderbuffers(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>delete_renderbuffers</strong>(*args)
+
+        <a class="method-permalink" href="#delete_renderbuffers%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="delete_shader(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>delete_shader</strong>(*args)
+
+        <a class="method-permalink" href="#delete_shader%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="delete_textures(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>delete_textures</strong>(*args)
+
+        <a class="method-permalink" href="#delete_textures%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="delete_vertex_arrays(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>delete_vertex_arrays</strong>(*args)
+
+        <a class="method-permalink" href="#delete_vertex_arrays%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="depth_func(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>depth_func</strong>(*args)
+
+        <a class="method-permalink" href="#depth_func%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="depth_mask(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>depth_mask</strong>(*args)
+
+        <a class="method-permalink" href="#depth_mask%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="disable(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>disable</strong>(*args)
+
+        <a class="method-permalink" href="#disable%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="disable_vertex_attrib_array(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>disable_vertex_attrib_array</strong>(*args)
+
+        <a class="method-permalink" href="#disable_vertex_attrib_array%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw_arrays(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>draw_arrays</strong>(*args)
+
+        <a class="method-permalink" href="#draw_arrays%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw_arrays_instanced(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>draw_arrays_instanced</strong>(*args)
+
+        <a class="method-permalink" href="#draw_arrays_instanced%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw_buffers(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>draw_buffers</strong>(*args)
+
+        <a class="method-permalink" href="#draw_buffers%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw_elements(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>draw_elements</strong>(*args)
+
+        <a class="method-permalink" href="#draw_elements%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="draw_elements_instanced(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>draw_elements_instanced</strong>(*args)
+
+        <a class="method-permalink" href="#draw_elements_instanced%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="enable(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>enable</strong>(*args)
+
+        <a class="method-permalink" href="#enable%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="enable_vertex_attrib_array(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>enable_vertex_attrib_array</strong>(*args)
+
+        <a class="method-permalink" href="#enable_vertex_attrib_array%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="finish(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>finish</strong>(*args)
+
+        <a class="method-permalink" href="#finish%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="flush(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>flush</strong>(*args)
+
+        <a class="method-permalink" href="#flush%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="framebuffer_renderbuffer(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>framebuffer_renderbuffer</strong>(*args)
+
+        <a class="method-permalink" href="#framebuffer_renderbuffer%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="framebuffer_texture2d(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>framebuffer_texture2d</strong>(*args)
+
+        <a class="method-permalink" href="#framebuffer_texture2d%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="front_face(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>front_face</strong>(*args)
+
+        <a class="method-permalink" href="#front_face%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="gen_buffers(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>gen_buffers</strong>(*args)
+
+        <a class="method-permalink" href="#gen_buffers%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="gen_framebuffers(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>gen_framebuffers</strong>(*args)
+
+        <a class="method-permalink" href="#gen_framebuffers%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="gen_renderbuffers(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>gen_renderbuffers</strong>(*args)
+
+        <a class="method-permalink" href="#gen_renderbuffers%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="gen_textures(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>gen_textures</strong>(*args)
+
+        <a class="method-permalink" href="#gen_textures%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="gen_vertex_arrays(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>gen_vertex_arrays</strong>(*args)
+
+        <a class="method-permalink" href="#gen_vertex_arrays%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="generate_mipmap(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>generate_mipmap</strong>(*args)
+
+        <a class="method-permalink" href="#generate_mipmap%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="get_attrib_location(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>get_attrib_location</strong>(*args)
+
+        <a class="method-permalink" href="#get_attrib_location%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="get_error(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>get_error</strong>(*args)
+
+        <a class="method-permalink" href="#get_error%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="get_integerv(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>get_integerv</strong>(*args)
+
+        <a class="method-permalink" href="#get_integerv%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="get_program_info_log(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>get_program_info_log</strong>(*args)
+
+        <a class="method-permalink" href="#get_program_info_log%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="get_programiv(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>get_programiv</strong>(*args)
+
+        <a class="method-permalink" href="#get_programiv%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="get_shader_info_log(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>get_shader_info_log</strong>(*args)
+
+        <a class="method-permalink" href="#get_shader_info_log%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="get_shaderiv(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>get_shaderiv</strong>(*args)
+
+        <a class="method-permalink" href="#get_shaderiv%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="get_string(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>get_string</strong>(*args)
+
+        <a class="method-permalink" href="#get_string%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="get_uniform_location(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>get_uniform_location</strong>(*args)
+
+        <a class="method-permalink" href="#get_uniform_location%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="line_width(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>line_width</strong>(*args)
+
+        <a class="method-permalink" href="#line_width%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="link_program(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>link_program</strong>(*args)
+
+        <a class="method-permalink" href="#link_program%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="load_all(&amp;getter:String-&gt;Pointer(Void)):Array(String)-class-method">
+      <div class="signature">
+        
+        def self.<strong>load_all</strong>(&getter : String -> Pointer(Void)) : Array(String)
+
+        <a class="method-permalink" href="#load_all%28%26getter%3AString-%3EPointer%28Void%29%29%3AArray%28String%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Loads every entry point via the given getter; returns names that failed.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="loaded?:Bool-class-method">
+      <div class="signature">
+        
+        def self.<strong>loaded?</strong> : Bool
+
+        <a class="method-permalink" href="#loaded%3F%3ABool-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="pixel_storei(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>pixel_storei</strong>(*args)
+
+        <a class="method-permalink" href="#pixel_storei%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="polygon_mode(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>polygon_mode</strong>(*args)
+
+        <a class="method-permalink" href="#polygon_mode%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="read_buffer(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>read_buffer</strong>(*args)
+
+        <a class="method-permalink" href="#read_buffer%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="read_pixels(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>read_pixels</strong>(*args)
+
+        <a class="method-permalink" href="#read_pixels%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="renderbuffer_storage(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>renderbuffer_storage</strong>(*args)
+
+        <a class="method-permalink" href="#renderbuffer_storage%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="scissor(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>scissor</strong>(*args)
+
+        <a class="method-permalink" href="#scissor%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="shader_source(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>shader_source</strong>(*args)
+
+        <a class="method-permalink" href="#shader_source%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="stencil_func(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>stencil_func</strong>(*args)
+
+        <a class="method-permalink" href="#stencil_func%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="stencil_mask(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>stencil_mask</strong>(*args)
+
+        <a class="method-permalink" href="#stencil_mask%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="stencil_op(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>stencil_op</strong>(*args)
+
+        <a class="method-permalink" href="#stencil_op%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="string(name:UInt32):String-class-method">
+      <div class="signature">
+        
+        def self.<strong>string</strong>(name : UInt32) : String
+
+        <a class="method-permalink" href="#string%28name%3AUInt32%29%3AString-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="tex_image2d(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>tex_image2d</strong>(*args)
+
+        <a class="method-permalink" href="#tex_image2d%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="tex_parameteri(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>tex_parameteri</strong>(*args)
+
+        <a class="method-permalink" href="#tex_parameteri%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="tex_sub_image2d(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>tex_sub_image2d</strong>(*args)
+
+        <a class="method-permalink" href="#tex_sub_image2d%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform1f(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform1f</strong>(*args)
+
+        <a class="method-permalink" href="#uniform1f%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform1fv(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform1fv</strong>(*args)
+
+        <a class="method-permalink" href="#uniform1fv%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform1i(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform1i</strong>(*args)
+
+        <a class="method-permalink" href="#uniform1i%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform1iv(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform1iv</strong>(*args)
+
+        <a class="method-permalink" href="#uniform1iv%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform2f(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform2f</strong>(*args)
+
+        <a class="method-permalink" href="#uniform2f%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform2fv(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform2fv</strong>(*args)
+
+        <a class="method-permalink" href="#uniform2fv%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform3f(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform3f</strong>(*args)
+
+        <a class="method-permalink" href="#uniform3f%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform3fv(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform3fv</strong>(*args)
+
+        <a class="method-permalink" href="#uniform3fv%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform4f(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform4f</strong>(*args)
+
+        <a class="method-permalink" href="#uniform4f%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform4fv(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform4fv</strong>(*args)
+
+        <a class="method-permalink" href="#uniform4fv%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform_matrix3fv(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform_matrix3fv</strong>(*args)
+
+        <a class="method-permalink" href="#uniform_matrix3fv%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uniform_matrix4fv(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>uniform_matrix4fv</strong>(*args)
+
+        <a class="method-permalink" href="#uniform_matrix4fv%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="use_program(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>use_program</strong>(*args)
+
+        <a class="method-permalink" href="#use_program%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="vertex_attrib_divisor(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>vertex_attrib_divisor</strong>(*args)
+
+        <a class="method-permalink" href="#vertex_attrib_divisor%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="vertex_attrib_pointer(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>vertex_attrib_pointer</strong>(*args)
+
+        <a class="method-permalink" href="#vertex_attrib_pointer%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="viewport(*args)-class-method">
+      <div class="signature">
+        
+        def self.<strong>viewport</strong>(*args)
+
+        <a class="method-permalink" href="#viewport%28%2Aargs%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+
+
+  
+
+  
+
+
+</div>
+
+</body>
+</html>

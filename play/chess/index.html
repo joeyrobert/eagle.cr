@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chess · Eagle</title>
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><div class="play-wrap"><h1>Chess</h1><p class="lead">Full rules with castling, en passant, promotion; perft-verified move generator and an alpha-beta AI.</p><canvas id="eagle"></canvas><p class="controls">Click a piece, then a square. U undo · R restart · N toggle AI · 1-4 AI depth</p>
+<details><summary>Source — examples/chess/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+require &quot;./chess&quot;
+include Eagle
+
+# Chess: click a piece then a destination. You play White; the AI plays Black.
+# Keys: U undo, R restart, N new game vs human (two players), 1-4 set AI depth.
+class ChessGame &lt; App
+  SIZE = 72
+  ORIGIN = v2(60, 40)
+
+  @board = Chess::Board.new
+  @ai = Chess::AI.new(3)
+  @selected : Int32? = nil
+  @legal = [] of Chess::Move
+  @status = &quot;&quot;
+  @vs_ai = true
+  @thinking = false
+  @last : Chess::Move? = nil
+  @move_sound : Sound? = nil
+  @capture_sound : Sound? = nil
+  @font : Font? = nil
+
+  def load
+    @move_sound = Sound.tone(440, 0.06, Sound::Wave::Triangle, 0.4)
+    @capture_sound = Sound.tone(220, 0.12, Sound::Wave::Square, 0.3)
+    ttf = [&quot;/System/Library/Fonts/Supplemental/Arial.ttf&quot;, &quot;/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf&quot;].find { |p| File.exists?(p) }
+    @font = Font.load(ttf, 40) if ttf
+    update_status
+  end
+
+  def square_at(p : Vec2) : Int32?
+    l = p - ORIGIN
+    return nil if l.x &lt; 0 || l.y &lt; 0 || l.x &gt;= SIZE * 8 || l.y &gt;= SIZE * 8
+    f = (l.x / SIZE).to_i; r = 7 - (l.y / SIZE).to_i
+    r * 8 + f
+  end
+
+  def square_pos(i : Int32) : Vec2
+    ORIGIN + v2((i % 8) * SIZE, (7 - i // 8) * SIZE)
+  end
+
+  def input(e : Event)
+    return if @thinking
+    if e.is_a?(MouseButtonEvent) &amp;&amp; e.pressed? &amp;&amp; e.button.left?
+      sq = square_at(e.position)
+      return unless sq
+      if (sel = @selected) &amp;&amp; (mv = @legal.find { |m| m.to == sq })
+        play(mv)
+      else
+        s = @board[sq]
+        if !s.empty? &amp;&amp; s.side == @board.turn
+          @selected = sq
+          @legal = @board.legal_moves_from(sq)
+        else
+          @selected = nil; @legal.clear
+        end
+      end
+    elsif e.is_a?(KeyEvent) &amp;&amp; e.pressed?
+      case e.key
+      when Key::U then undo
+      when Key::R then restart
+      when Key::N then @vs_ai = !@vs_ai; update_status
+      when Key::Num1, Key::Num2, Key::Num3, Key::Num4
+        @ai.depth = e.key.value - Key::Num1.value + 1; update_status
+      end
+    end
+  end
+
+  def play(m : Chess::Move)
+    capture = !@board[m.to].empty? || m.en_passant?
+    # promote to queen by default
+    m = Chess::Move.new(m.from, m.to, Chess::Piece::Queen) unless m.promotion.none?
+    @board.play(m)
+    @last = @board.history.last
+    (capture ? @capture_sound : @move_sound).try(&amp;.play)
+    @selected = nil; @legal.clear
+    update_status
+    if @vs_ai &amp;&amp; @board.turn.black? &amp;&amp; !@board.game_over?
+      @thinking = true
+      @status = &quot;Thinking...&quot;
+    end
+  end
+
+  def update(dt : Float32)
+    if @thinking
+      # AI move (blocking for a few ms at depth 3; fine for a demo)
+      if mv = @ai.best_move(@board)
+        @board.apply(mv)
+        @last = mv
+        @move_sound.try(&amp;.play(pitch: 0.8))
+      end
+      @thinking = false
+      update_status
+    end
+    Eagle.quit if Input.pressed?(Key::Escape)
+  end
+
+  def undo
+    n = (@vs_ai &amp;&amp; @board.history.size &gt;= 2) ? 2 : 1
+    return if @board.history.size &lt; n
+    hist = @board.history[0...-n]
+    @board = Chess::Board.new
+    hist.each { |m| @board.apply(m) }
+    @last = hist.last?
+    @selected = nil; @legal.clear
+    update_status
+  end
+
+  def restart
+    @board = Chess::Board.new
+    @selected = nil; @legal.clear; @last = nil
+    update_status
+  end
+
+  def update_status
+    st = @board.status
+    who = @board.turn.white? ? &quot;White&quot; : &quot;Black&quot;
+    @status = case st
+              when .checkmate? then &quot;Checkmate! #{@board.turn.other.white? ? &quot;White&quot; : &quot;Black&quot;} wins&quot;
+              when .stalemate? then &quot;Stalemate&quot;
+              when .draw? then &quot;Draw&quot;
+              when .check? then &quot;#{who} to move — check!&quot;
+              else &quot;#{who} to move&quot;
+              end
+    @status += &quot;   (vs AI depth #{@ai.depth})&quot; if @vs_ai
+  end
+
+  LETTERS = {Chess::Piece::King =&gt; &quot;K&quot;, Chess::Piece::Queen =&gt; &quot;Q&quot;, Chess::Piece::Rook =&gt; &quot;R&quot;, Chess::Piece::Bishop =&gt; &quot;B&quot;, Chess::Piece::Knight =&gt; &quot;N&quot;, Chess::Piece::Pawn =&gt; &quot;P&quot;}
+  GLYPHS = {Chess::Piece::King =&gt; &quot;♚&quot;, Chess::Piece::Queen =&gt; &quot;♛&quot;, Chess::Piece::Rook =&gt; &quot;♜&quot;, Chess::Piece::Bishop =&gt; &quot;♝&quot;, Chess::Piece::Knight =&gt; &quot;♞&quot;, Chess::Piece::Pawn =&gt; &quot;♟&quot;}
+
+  def draw(g : Graphics)
+    light = Color.hex(&quot;#f0d9b5&quot;); dark = Color.hex(&quot;#b58863&quot;)
+    64.times do |i|
+      p = square_pos(i)
+      c = ((i % 8 + i // 8) % 2 == 0) ? dark : light
+      if (l = @last) &amp;&amp; (l.from == i || l.to == i)
+        c = c.lerp(Color.hex(&quot;#f6f669&quot;), 0.5)
+      end
+      c = c.lerp(Color.hex(&quot;#4caf50&quot;), 0.5) if @selected == i
+      g.rect(p.x, p.y, SIZE, SIZE, color: c)
+    end
+    if @board.in_check?
+      k = square_pos(@board.king_square(@board.turn))
+      g.rect(k.x, k.y, SIZE, SIZE, color: Color::RED.with_alpha(0.4))
+    end
+    @legal.each do |m|
+      p = square_pos(m.to) + v2(SIZE / 2, SIZE / 2)
+      if @board[m.to].empty? &amp;&amp; !m.en_passant?
+        g.circle(p, 10, color: Color.new(0, 0, 0, 0.25))
+      else
+        g.circle(p, SIZE / 2 - 4, DrawMode::Line, color: Color.new(0, 0, 0, 0.3))
+      end
+    end
+    # coordinates
+    8.times do |i|
+      g.print((&#39;a&#39;.ord + i).chr.to_s, ORIGIN.x + i * SIZE + SIZE - 14, ORIGIN.y + SIZE * 8 + 4, Color::GRAY)
+      g.print((8 - i).to_s, ORIGIN.x - 20, ORIGIN.y + i * SIZE + 4, Color::GRAY)
+    end
+    font = @font
+    64.times do |i|
+      s = @board[i]
+      next if s.empty?
+      p = square_pos(i) + v2(SIZE / 2, SIZE / 2)
+      fill = s.side.white? ? Color::WHITE : Color.hex(&quot;#202020&quot;)
+      outline = s.side.white? ? Color.hex(&quot;#202020&quot;) : Color.hex(&quot;#e0e0e0&quot;)
+      if font &amp;&amp; font.is_a?(TrueTypeFont) &amp;&amp; font.as(TrueTypeFont).ttf.has_glyph?(&#39;♚&#39;)
+        glyph = GLYPHS[s.piece]
+        w = font.width(glyph)
+        g.print(glyph, p.x - w / 2 + 2, p.y - font.height / 2 + 2, Color.new(0, 0, 0, 0.35), font)
+        g.print(glyph, p.x - w / 2, p.y - font.height / 2, fill, font)
+      else
+        g.circle(p, SIZE * 0.36, color: outline)
+        g.circle(p, SIZE * 0.32, color: fill)
+        g.print(LETTERS[s.piece], p.x, p.y - 8, outline, scale: 1, align: TextAlign::Center)
+      end
+    end
+    g.print(@status, ORIGIN.x, ORIGIN.y + SIZE * 8 + 28, Color::WHITE)
+    g.print(&quot;click to move  U undo  R restart  N toggle AI  1-4 AI depth  moves #{@board.history.size}  nodes #{@ai.nodes}&quot;, ORIGIN.x, ORIGIN.y + SIZE * 8 + 52, Color::GRAY)
+    g.print(&quot;FEN #{@board.to_fen}&quot;, ORIGIN.x, ORIGIN.y + SIZE * 8 + 76, Color.gray(0.4))
+    # captured pieces
+    cap = @board.captured.reject(&amp;.empty?)
+    x = ORIGIN.x + SIZE * 8 + 30
+    g.print(&quot;Captured&quot;, x, ORIGIN.y, Color::WHITE)
+    cap.each_with_index do |c, i|
+      g.print(LETTERS[c.piece], x + (i % 6) * 22, ORIGIN.y + 26 + (i // 6) * 22, c.side.white? ? Color::WHITE : Color.gray(0.55))
+    end
+  end
+end
+
+Eagle.run(ChessGame, title: &quot;Eagle Chess&quot;, width: 1000, height: 740)
+</code></pre><h3>chess.cr</h3><pre><code># A complete chess rules engine + alpha-beta AI, independent of rendering.
+module Chess
+  enum Piece : Int8
+    None = 0
+    Pawn; Knight; Bishop; Rook; Queen; King
+  end
+
+  enum Side : Int8
+    White = 0
+    Black = 1
+    def other : Side; white? ? Black : White; end
+  end
+
+  # A square holds a piece + side packed as (side &lt;&lt; 3 | piece); 0 = empty.
+  struct Square
+    getter raw : Int8
+    def initialize(@raw : Int8 = 0); end
+    def self.of(piece : Piece, side : Side) : Square; new((side.value &lt;&lt; 3 | piece.value).to_i8); end
+    def empty? : Bool; @raw == 0; end
+    def piece : Piece; Piece.new((@raw &amp; 7).to_i8); end
+    def side : Side; Side.new((@raw &gt;&gt; 3).to_i8); end
+    def ==(o : Square) : Bool; @raw == o.raw; end
+    def to_s : String
+      return &quot;.&quot; if empty?
+      c = {Piece::Pawn =&gt; &#39;p&#39;, Piece::Knight =&gt; &#39;n&#39;, Piece::Bishop =&gt; &#39;b&#39;, Piece::Rook =&gt; &#39;r&#39;, Piece::Queen =&gt; &#39;q&#39;, Piece::King =&gt; &#39;k&#39;}[piece]
+      side.white? ? c.upcase.to_s : c.to_s
+    end
+  end
+
+  struct Move
+    getter from : Int32
+    getter to : Int32
+    getter promotion : Piece
+    getter? castle : Bool
+    getter? en_passant : Bool
+    def initialize(@from, @to, @promotion = Piece::None, @castle = false, @en_passant = false); end
+    def ==(o : Move) : Bool; @from == o.from &amp;&amp; @to == o.to &amp;&amp; @promotion == o.promotion; end
+    def to_s : String
+      s = Chess.square_name(@from) + Chess.square_name(@to)
+      @promotion.none? ? s : s + {Piece::Queen =&gt; &quot;q&quot;, Piece::Rook =&gt; &quot;r&quot;, Piece::Bishop =&gt; &quot;b&quot;, Piece::Knight =&gt; &quot;n&quot;}[@promotion]
+    end
+  end
+
+  def self.square_name(i : Int32) : String
+    &quot;#{(&#39;a&#39;.ord + i % 8).chr}#{i // 8 + 1}&quot;
+  end
+
+  def self.square_index(name : String) : Int32
+    (name[0].ord - &#39;a&#39;.ord) + (name[1].to_i - 1) * 8
+  end
+
+  enum Status
+    Playing
+    Check
+    Checkmate
+    Stalemate
+    Draw
+  end
+
+  class Board
+    getter squares : Array(Square)
+    getter turn : Side
+    # castling rights: [white kingside, white queenside, black kingside, black queenside]
+    getter castling : Array(Bool)
+    getter en_passant : Int32 # target square or -1
+    getter halfmove : Int32
+    getter fullmove : Int32
+    getter history : Array(Move)
+    getter captured : Array(Square)
+
+    def initialize
+      @squares = Array(Square).new(64, Square.new)
+      @turn = Side::White
+      @castling = [true, true, true, true]
+      @en_passant = -1
+      @halfmove = 0
+      @fullmove = 1
+      @history = [] of Move
+      @captured = [] of Square
+      setup
+    end
+
+    protected def initialize(@squares, @turn, @castling, @en_passant, @halfmove, @fullmove, @history, @captured); end
+
+    def clone : Board
+      Board.new(@squares.dup, @turn, @castling.dup, @en_passant, @halfmove, @fullmove, @history.dup, @captured.dup)
+    end
+
+    def setup : Nil
+      @squares.fill(Square.new)
+      back = [Piece::Rook, Piece::Knight, Piece::Bishop, Piece::Queen, Piece::King, Piece::Bishop, Piece::Knight, Piece::Rook]
+      8.times do |f|
+        @squares[f] = Square.of(back[f], Side::White)
+        @squares[8 + f] = Square.of(Piece::Pawn, Side::White)
+        @squares[48 + f] = Square.of(Piece::Pawn, Side::Black)
+        @squares[56 + f] = Square.of(back[f], Side::Black)
+      end
+    end
+
+    # Load a FEN position (board, turn, castling, en passant).
+    def self.from_fen(fen : String) : Board
+      b = new
+      b.squares.fill(Square.new)
+      parts = fen.split
+      rank = 7; file = 0
+      parts[0].each_char do |c|
+        case c
+        when &#39;/&#39; then rank -= 1; file = 0
+        when .ascii_number? then file += c.to_i
+        else
+          piece = {&#39;p&#39; =&gt; Piece::Pawn, &#39;n&#39; =&gt; Piece::Knight, &#39;b&#39; =&gt; Piece::Bishop, &#39;r&#39; =&gt; Piece::Rook, &#39;q&#39; =&gt; Piece::Queen, &#39;k&#39; =&gt; Piece::King}[c.downcase]
+          b.squares[rank * 8 + file] = Square.of(piece, c.uppercase? ? Side::White : Side::Black)
+          file += 1
+        end
+      end
+      b.set_state(parts[1]? == &quot;b&quot; ? Side::Black : Side::White,
+        [parts[2]?.try(&amp;.includes?(&#39;K&#39;)) || false, parts[2]?.try(&amp;.includes?(&#39;Q&#39;)) || false, parts[2]?.try(&amp;.includes?(&#39;k&#39;)) || false, parts[2]?.try(&amp;.includes?(&#39;q&#39;)) || false],
+        (parts[3]? &amp;&amp; parts[3] != &quot;-&quot;) ? Chess.square_index(parts[3]) : -1,
+        parts[4]?.try(&amp;.to_i?) || 0, parts[5]?.try(&amp;.to_i?) || 1)
+      b
+    end
+
+    # :nodoc:
+    def set_state(@turn, @castling, @en_passant, @halfmove = 0, @fullmove = 1); end
+
+    def to_fen : String
+      rows = (0..7).to_a.reverse.map do |r|
+        s = &quot;&quot;; empty = 0
+        8.times do |f|
+          sq = @squares[r * 8 + f]
+          if sq.empty?
+            empty += 1
+          else
+            s += empty.to_s if empty &gt; 0
+            empty = 0
+            s += sq.to_s
+          end
+        end
+        s += empty.to_s if empty &gt; 0
+        s
+      end
+      c = &quot;&quot;
+      c += &quot;K&quot; if @castling[0]; c += &quot;Q&quot; if @castling[1]; c += &quot;k&quot; if @castling[2]; c += &quot;q&quot; if @castling[3]
+      c = &quot;-&quot; if c.empty?
+      &quot;#{rows.join(&quot;/&quot;)} #{@turn.white? ? &quot;w&quot; : &quot;b&quot;} #{c} #{@en_passant &gt;= 0 ? Chess.square_name(@en_passant) : &quot;-&quot;} #{@halfmove} #{@fullmove}&quot;
+    end
+
+    def [](i : Int32) : Square; @squares[i]; end
+    def [](file : Int32, rank : Int32) : Square; @squares[rank * 8 + file]; end
+
+    def king_square(side : Side) : Int32
+      @squares.index { |s| !s.empty? &amp;&amp; s.piece.king? &amp;&amp; s.side == side } || -1
+    end
+
+    # Is `sq` attacked by `by`?
+    def attacked?(sq : Int32, by : Side) : Bool
+      f = sq % 8; r = sq // 8
+      # pawns
+      dir = by.white? ? -1 : 1 # a white pawn attacks upward, so look one rank below the target
+      [-1, 1].each do |df|
+        ff = f + df; rr = r + dir
+        if (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
+          s = @squares[rr * 8 + ff]
+          return true if !s.empty? &amp;&amp; s.side == by &amp;&amp; s.piece.pawn?
+        end
+      end
+      # knights
+      KNIGHT.each do |(df, dr)|
+        ff = f + df; rr = r + dr
+        next unless (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
+        s = @squares[rr * 8 + ff]
+        return true if !s.empty? &amp;&amp; s.side == by &amp;&amp; s.piece.knight?
+      end
+      # king
+      KING.each do |(df, dr)|
+        ff = f + df; rr = r + dr
+        next unless (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
+        s = @squares[rr * 8 + ff]
+        return true if !s.empty? &amp;&amp; s.side == by &amp;&amp; s.piece.king?
+      end
+      # sliders
+      slide_attack?(f, r, by, ROOK_DIRS, Piece::Rook) || slide_attack?(f, r, by, BISHOP_DIRS, Piece::Bishop)
+    end
+
+    private def slide_attack?(f, r, by, dirs, piece) : Bool
+      dirs.each do |(df, dr)|
+        ff = f + df; rr = r + dr
+        while (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
+          s = @squares[rr * 8 + ff]
+          unless s.empty?
+            return true if s.side == by &amp;&amp; (s.piece == piece || s.piece.queen?)
+            break
+          end
+          ff += df; rr += dr
+        end
+      end
+      false
+    end
+
+    def in_check?(side : Side = @turn) : Bool
+      k = king_square(side)
+      k &gt;= 0 &amp;&amp; attacked?(k, side.other)
+    end
+
+    KNIGHT = [{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}]
+    KING = [{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}]
+    ROOK_DIRS = [{1, 0}, {-1, 0}, {0, 1}, {0, -1}]
+    BISHOP_DIRS = [{1, 1}, {1, -1}, {-1, 1}, {-1, -1}]
+
+    # Pseudo-legal moves for the side to move (may leave the king in check).
+    def pseudo_moves : Array(Move)
+      moves = [] of Move
+      64.times do |i|
+        s = @squares[i]
+        next if s.empty? || s.side != @turn
+        gen_piece(i, s, moves)
+      end
+      moves
+    end
+
+    private def add(moves, from, to)
+      moves &lt;&lt; Move.new(from, to)
+    end
+
+    private def gen_piece(i, s, moves)
+      f = i % 8; r = i // 8
+      case s.piece
+      when .pawn?
+        dir = s.side.white? ? 1 : -1
+        start = s.side.white? ? 1 : 6
+        last = s.side.white? ? 7 : 0
+        rr = r + dir
+        if (0 &lt;= rr &lt;= 7) &amp;&amp; @squares[rr * 8 + f].empty?
+          push_pawn(moves, i, rr * 8 + f, rr == last)
+          if r == start &amp;&amp; @squares[(rr + dir) * 8 + f].empty?
+            add(moves, i, (rr + dir) * 8 + f)
+          end
+        end
+        [-1, 1].each do |df|
+          ff = f + df
+          next unless (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
+          t = rr * 8 + ff
+          target = @squares[t]
+          if !target.empty? &amp;&amp; target.side != s.side
+            push_pawn(moves, i, t, rr == last)
+          elsif t == @en_passant
+            moves &lt;&lt; Move.new(i, t, en_passant: true)
+          end
+        end
+      when .knight?
+        KNIGHT.each { |(df, dr)| step(moves, i, f + df, r + dr, s.side) }
+      when .king?
+        KING.each { |(df, dr)| step(moves, i, f + df, r + dr, s.side) }
+        gen_castling(i, s.side, moves)
+      when .rook? then slide(moves, i, f, r, s.side, ROOK_DIRS)
+      when .bishop? then slide(moves, i, f, r, s.side, BISHOP_DIRS)
+      when .queen? then slide(moves, i, f, r, s.side, ROOK_DIRS + BISHOP_DIRS)
+      end
+    end
+
+    private def push_pawn(moves, from, to, promote)
+      if promote
+        [Piece::Queen, Piece::Rook, Piece::Bishop, Piece::Knight].each { |p| moves &lt;&lt; Move.new(from, to, p) }
+      else
+        add(moves, from, to)
+      end
+    end
+
+    private def step(moves, from, ff, rr, side)
+      return unless (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
+      t = @squares[rr * 8 + ff]
+      add(moves, from, rr * 8 + ff) if t.empty? || t.side != side
+    end
+
+    private def slide(moves, from, f, r, side, dirs)
+      dirs.each do |(df, dr)|
+        ff = f + df; rr = r + dr
+        while (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
+          t = @squares[rr * 8 + ff]
+          if t.empty?
+            add(moves, from, rr * 8 + ff)
+          else
+            add(moves, from, rr * 8 + ff) if t.side != side
+            break
+          end
+          ff += df; rr += dr
+        end
+      end
+    end
+
+    private def gen_castling(i, side, moves)
+      rank = side.white? ? 0 : 7
+      return unless i == rank * 8 + 4
+      return if attacked?(i, side.other)
+      ks = side.white? ? @castling[0] : @castling[2]
+      qs = side.white? ? @castling[1] : @castling[3]
+      if ks &amp;&amp; @squares[rank * 8 + 5].empty? &amp;&amp; @squares[rank * 8 + 6].empty? &amp;&amp; rook_at?(rank * 8 + 7, side) &amp;&amp;
+         !attacked?(rank * 8 + 5, side.other) &amp;&amp; !attacked?(rank * 8 + 6, side.other)
+        moves &lt;&lt; Move.new(i, rank * 8 + 6, castle: true)
+      end
+      if qs &amp;&amp; @squares[rank * 8 + 3].empty? &amp;&amp; @squares[rank * 8 + 2].empty? &amp;&amp; @squares[rank * 8 + 1].empty? &amp;&amp; rook_at?(rank * 8, side) &amp;&amp;
+         !attacked?(rank * 8 + 3, side.other) &amp;&amp; !attacked?(rank * 8 + 2, side.other)
+        moves &lt;&lt; Move.new(i, rank * 8 + 2, castle: true)
+      end
+    end
+
+    private def rook_at?(i, side)
+      s = @squares[i]
+      !s.empty? &amp;&amp; s.piece.rook? &amp;&amp; s.side == side
+    end
+
+    # Fully legal moves.
+    def legal_moves : Array(Move)
+      pseudo_moves.select { |m| legal?(m) }
+    end
+
+    def legal?(m : Move) : Bool
+      b = clone
+      b.apply(m)
+      !b.in_check?(@turn)
+    end
+
+    def legal_moves_from(sq : Int32) : Array(Move)
+      legal_moves.select { |m| m.from == sq }
+    end
+
+    # Apply a move without legality checks (used internally and by AI).
+    def apply(m : Move) : Nil
+      s = @squares[m.from]
+      target = @squares[m.to]
+      @captured &lt;&lt; (m.en_passant? ? Square.of(Piece::Pawn, @turn.other) : target)
+      @halfmove = (s.piece.pawn? || !target.empty?) ? 0 : @halfmove + 1
+      @squares[m.to] = m.promotion.none? ? s : Square.of(m.promotion, s.side)
+      @squares[m.from] = Square.new
+      if m.en_passant?
+        cap = m.to + (s.side.white? ? -8 : 8)
+        @squares[cap] = Square.new
+      end
+      if m.castle?
+        rank = m.from // 8
+        if m.to % 8 == 6
+          @squares[rank * 8 + 5] = @squares[rank * 8 + 7]; @squares[rank * 8 + 7] = Square.new
+        else
+          @squares[rank * 8 + 3] = @squares[rank * 8]; @squares[rank * 8] = Square.new
+        end
+      end
+      # castling rights
+      if s.piece.king?
+        if s.side.white?
+          @castling[0] = @castling[1] = false
+        else
+          @castling[2] = @castling[3] = false
+        end
+      end
+      [{0, 1, 7, 0}, {56, 3, 63, 2}].each do |(qsq, qi, ksq, ki)|
+        @castling[qi] = false if m.from == qsq || m.to == qsq
+        @castling[ki] = false if m.from == ksq || m.to == ksq
+      end
+      # en passant target
+      @en_passant = -1
+      if s.piece.pawn? &amp;&amp; (m.to - m.from).abs == 16
+        @en_passant = (m.from + m.to) // 2
+      end
+      @fullmove += 1 if @turn.black?
+      @turn = @turn.other
+      @history &lt;&lt; m
+    end
+
+    # Play a legal move; returns false if illegal.
+    def play(m : Move) : Bool
+      return false unless legal_moves.any? { |lm| lm == m }
+      real = legal_moves.find { |lm| lm == m }.not_nil!
+      apply(real)
+      true
+    end
+
+    def play(from : String, to : String, promotion : Piece = Piece::None) : Bool
+      play(Move.new(Chess.square_index(from), Chess.square_index(to), promotion))
+    end
+
+    def status : Status
+      moves = legal_moves
+      check = in_check?
+      if moves.empty?
+        return check ? Status::Checkmate : Status::Stalemate
+      end
+      return Status::Draw if @halfmove &gt;= 100 || insufficient_material?
+      check ? Status::Check : Status::Playing
+    end
+
+    def game_over? : Bool
+      st = status
+      st.checkmate? || st.stalemate? || st.draw?
+    end
+
+    def insufficient_material? : Bool
+      pieces = @squares.reject(&amp;.empty?).map(&amp;.piece).reject(&amp;.king?)
+      return true if pieces.empty?
+      pieces.size == 1 &amp;&amp; (pieces[0].bishop? || pieces[0].knight?)
+    end
+
+    # Number of leaf nodes at `depth` (perft) — used to validate move generation.
+    def perft(depth : Int32) : Int64
+      return 1_i64 if depth == 0
+      total = 0_i64
+      legal_moves.each do |m|
+        b = clone
+        b.apply(m)
+        total += b.perft(depth - 1)
+      end
+      total
+    end
+
+    def to_s(io : IO) : Nil
+      7.downto(0) do |r|
+        8.times { |f| io &lt;&lt; @squares[r * 8 + f].to_s &lt;&lt; &quot; &quot; }
+        io &lt;&lt; &quot;\n&quot;
+      end
+    end
+  end
+
+  # Alpha-beta search with material + piece-square evaluation.
+  class AI
+    VALUES = {Piece::Pawn =&gt; 100, Piece::Knight =&gt; 320, Piece::Bishop =&gt; 330, Piece::Rook =&gt; 500, Piece::Queen =&gt; 900, Piece::King =&gt; 0, Piece::None =&gt; 0}
+    # Piece-square bonus: encourage centre control and development (from white&#39;s view, rank 0 = bottom).
+    PST = {
+      Piece::Pawn =&gt; [0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 10, -20, -20, 10, 10, 5, 5, -5, -10, 0, 0, -10, -5, 5, 0, 0, 0, 20, 20, 0, 0, 0, 5, 5, 10, 25, 25, 10, 5, 5, 10, 10, 20, 30, 30, 20, 10, 10, 50, 50, 50, 50, 50, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0],
+      Piece::Knight =&gt; [-50, -40, -30, -30, -30, -30, -40, -50, -40, -20, 0, 5, 5, 0, -20, -40, -30, 5, 10, 15, 15, 10, 5, -30, -30, 0, 15, 20, 20, 15, 0, -30, -30, 5, 15, 20, 20, 15, 5, -30, -30, 0, 10, 15, 15, 10, 0, -30, -40, -20, 0, 0, 0, 0, -20, -40, -50, -40, -30, -30, -30, -30, -40, -50],
+      Piece::Bishop =&gt; [-20, -10, -10, -10, -10, -10, -10, -20, -10, 5, 0, 0, 0, 0, 5, -10, -10, 10, 10, 10, 10, 10, 10, -10, -10, 0, 10, 10, 10, 10, 0, -10, -10, 5, 5, 10, 10, 5, 5, -10, -10, 0, 5, 10, 10, 5, 0, -10, -10, 0, 0, 0, 0, 0, 0, -10, -20, -10, -10, -10, -10, -10, -10, -20],
+      Piece::Rook =&gt; [0, 0, 0, 5, 5, 0, 0, 0, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, 5, 10, 10, 10, 10, 10, 10, 5, 0, 0, 0, 0, 0, 0, 0, 0],
+      Piece::Queen =&gt; [-20, -10, -10, -5, -5, -10, -10, -20, -10, 0, 5, 0, 0, 0, 0, -10, -10, 5, 5, 5, 5, 5, 0, -10, 0, 0, 5, 5, 5, 5, 0, -5, -5, 0, 5, 5, 5, 5, 0, -5, -10, 0, 5, 5, 5, 5, 0, -10, -10, 0, 0, 0, 0, 0, 0, -10, -20, -10, -10, -5, -5, -10, -10, -20],
+      Piece::King =&gt; [20, 30, 10, 0, 0, 10, 30, 20, 20, 20, 0, 0, 0, 0, 20, 20, -10, -20, -20, -20, -20, -20, -20, -10, -20, -30, -30, -40, -40, -30, -30, -20, -30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30],
+    }
+
+    getter nodes = 0
+    property depth : Int32
+
+    def initialize(@depth : Int32 = 3); end
+
+    # Static evaluation from the point of view of the side to move.
+    def evaluate(b : Board) : Int32
+      score = 0
+      64.times do |i|
+        s = b[i]
+        next if s.empty?
+        idx = s.side.white? ? i : (7 - i // 8) * 8 + i % 8
+        v = VALUES[s.piece] + PST[s.piece][idx]
+        score += s.side.white? ? v : -v
+      end
+      b.turn.white? ? score : -score
+    end
+
+    def best_move(b : Board) : Move?
+      @nodes = 0
+      moves = order(b, b.legal_moves)
+      return nil if moves.empty?
+      best = moves[0]; best_score = Int32::MIN
+      alpha = -1_000_000; beta = 1_000_000
+      moves.each do |m|
+        c = b.clone; c.apply(m)
+        score = -search(c, @depth - 1, -beta, -alpha)
+        if score &gt; best_score
+          best_score = score; best = m
+        end
+        alpha = Math.max(alpha, score)
+      end
+      best
+    end
+
+    private def search(b : Board, depth : Int32, alpha : Int32, beta : Int32) : Int32
+      @nodes += 1
+      moves = b.legal_moves
+      if moves.empty?
+        return b.in_check? ? -100_000 - depth : 0
+      end
+      return evaluate(b) if depth &lt;= 0
+      order(b, moves).each do |m|
+        c = b.clone; c.apply(m)
+        score = -search(c, depth - 1, -beta, -alpha)
+        return beta if score &gt;= beta
+        alpha = Math.max(alpha, score)
+      end
+      alpha
+    end
+
+    # Captures and promotions first (MVV-LVA).
+    private def order(b : Board, moves : Array(Move)) : Array(Move)
+      moves.sort_by do |m|
+        victim = b[m.to]
+        v = victim.empty? ? 0 : VALUES[victim.piece] * 10 - VALUES[b[m.from].piece] // 10
+        v += 800 unless m.promotion.none?
+        -v
+      end
+    end
+  end
+end
+</code></pre></details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./chess.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

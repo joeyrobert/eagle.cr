@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2D sandbox · Eagle</title>
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><div class="play-wrap"><h1>2D sandbox</h1><p class="lead">Scene tree, tile map, following camera with shake, tweens and a HUD layer.</p><canvas id="eagle"></canvas><p class="controls">WASD moves the player</p>
+<details><summary>Source — examples/sandbox2d/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+include Eagle
+
+# Scene-tree sandbox: a player sprite you move with WASD/arrows/gamepad,
+# a following camera, a tile map, timers, tweens and a HUD on a CanvasLayer.
+
+class Player &lt; Sprite2D
+  SPEED = 220
+
+  def initialize
+    super(&quot;Player&quot;)
+    img = Image.new(24, 24, Color::TRANSPARENT)
+    img.blit(Image.circle(24, Color.hex(&quot;#ffcc00&quot;)), 0, 0)
+    img.fill_rect(15, 8, 4, 4, Color::BLACK)
+    self.texture = Texture.new(img)
+  end
+
+  def ready
+    Input.map &quot;left&quot;, Key::A, Key::Left, Input.axis(GamepadAxis::LeftX, -1)
+    Input.map &quot;right&quot;, Key::D, Key::Right, Input.axis(GamepadAxis::LeftX, 1)
+    Input.map &quot;up&quot;, Key::W, Key::Up, Input.axis(GamepadAxis::LeftY, -1)
+    Input.map &quot;down&quot;, Key::S, Key::Down, Input.axis(GamepadAxis::LeftY, 1)
+  end
+
+  def process(dt : Float32)
+    v = Input.vector(&quot;left&quot;, &quot;right&quot;, &quot;up&quot;, &quot;down&quot;)
+    self.position += v * SPEED * dt
+    self.rotation = v.angle if !v.zero?
+  end
+end
+
+class Sandbox &lt; App
+  @cam = Camera2D.new(zoom: 2)
+  @player = Player.new
+  @hud = Label.new(&quot;&quot;, v2(8, 8))
+  @spin = Polygon2D.regular(6, 20, Color.hex(&quot;#66ccff&quot;))
+
+  def load
+    Texture.default_filter = GPU::Filter::Nearest
+    root = SceneTree.root
+    # Tileset: 2 tiles, 16px, grass and stone
+    ts = Image.new(32, 16)
+    ts.fill_rect(0, 0, 16, 16, Color.hex(&quot;#3a7d44&quot;))
+    ts.fill_rect(16, 0, 16, 16, Color.hex(&quot;#6b6b6b&quot;))
+    4.times { |i| ts[2 + i * 3, 3 + (i % 2) * 5] = Color.hex(&quot;#5cb85c&quot;) }
+    map = TileMap.new(Texture.new(ts), 16, 16)
+    24.times { |y| 32.times { |x| map[x, y] = (x == 0 || y == 0 || x == 31 || y == 23 || (x * y) % 17 == 0) ? 1 : 0 } }
+    map.position = v2(-256, -192)
+    root.add(map)
+
+    @spin.position = v2(80, -40)
+    root.add(@spin)
+    Tween.to(2.0, ease: :sine_in_out) { |t| @spin.rotation = t * Math::PI * 2 }.loop = true
+
+    @player.position = v2(0, 0)
+    root.add(@player)
+    root.add(@cam)
+    @cam.follow(@player)
+    @cam.limits = Rect.new(-256, -192, 512, 384)
+
+    hud_layer = CanvasLayer.new
+    hud_layer.add(@hud)
+    root.add(hud_layer)
+
+    t = Timer.new(1.0) { @cam.shake(3, 0.2) }
+    t.start
+    root.add(t)
+  end
+
+  def update(dt : Float32)
+    @hud.text = &quot;WASD to move  fps #{Clock.fps.round}  pos #{@player.position.round}  nodes #{SceneTree.node_count}&quot;
+    Eagle.quit if Input.pressed?(Key::Escape)
+  end
+
+  def draw(g : Graphics)
+    g.print(&quot;draw calls #{g.draw_calls}&quot;, 8, Window.height - 24, Color::GRAY)
+  end
+end
+
+Eagle.run(Sandbox, title: &quot;Eagle sandbox 2D&quot;, width: 800, height: 600)
+</code></pre></details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./sandbox2d.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roguelike · Eagle</title>
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><div class="play-wrap"><h1>Roguelike</h1><p class="lead">Procedural dungeons, shadowcasting field of view, monsters that chase, items, five levels.</p><canvas id="eagle"></canvas><p class="controls">Arrows/WASD/hjkl move · Space wait · Enter descends on > · R restart</p>
+<details><summary>Source — examples/roguelike/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+require &quot;./dungeon&quot;
+include Eagle
+
+# Dungeon explorer: arrows / WASD / hjkl move &amp; attack, space waits, &gt; descends,
+# R restarts. Fog of war, shadowcasting FOV, monsters, items, 5 levels.
+class RoguelikeApp &lt; App
+  CELL = 20
+  @game = Rogue::Game.new((Random.rand * 10000).to_i)
+  @font : Font? = nil
+  @flash = 0_f32
+  @snd_hit : Sound? = nil
+  @snd_pick : Sound? = nil
+
+  def load
+    ttf = [&quot;/System/Library/Fonts/Menlo.ttc&quot;, &quot;/System/Library/Fonts/Monaco.ttf&quot;, &quot;/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf&quot;].find { |p| File.exists?(p) }
+    @font = Font.load(ttf, 18) if ttf &amp;&amp; !ttf.ends_with?(&quot;.ttc&quot;)
+    @snd_hit = Sound.tone(150, 0.08, Sound::Wave::Saw, 0.25)
+    @snd_pick = Sound.tone(900, 0.06, Sound::Wave::Sine, 0.25)
+    Input.map &quot;left&quot;, Key::Left, Key::A, Key::H, Input.axis(GamepadAxis::LeftX, -1)
+    Input.map &quot;right&quot;, Key::Right, Key::D, Key::L, Input.axis(GamepadAxis::LeftX, 1)
+    Input.map &quot;up&quot;, Key::Up, Key::W, Key::K, Input.axis(GamepadAxis::LeftY, -1)
+    Input.map &quot;down&quot;, Key::Down, Key::S, Key::J, Input.axis(GamepadAxis::LeftY, 1)
+    Input.map &quot;wait&quot;, Key::Space, Key::Period, GamepadButton::B
+    Input.map &quot;descend&quot;, Key::Period, Key::Enter, GamepadButton::A
+    if ENV[&quot;EAGLE_DEMO&quot;]? == &quot;1&quot;
+      # explore a bit for screenshots: walk in the direction with most open floor
+      @game = Rogue::Game.new(4)
+      40.times { |i| Script.at(0.05 * i) { auto_step } }
+    end
+  end
+
+  private def auto_step
+    d = @game.dungeon; p = @game.player
+    best = {1, 0}; best_score = -1
+    [{1, 0}, {-1, 0}, {0, 1}, {0, -1}].each do |(dx, dy)|
+      score = 0
+      (1..6).each { |k| break unless d.walkable?(p.x + dx * k, p.y + dy * k); score += d.explored?(p.x + dx * k, p.y + dy * k) ? 1 : 3 }
+      if score &gt; best_score
+        best_score = score; best = {dx, dy}
+      end
+    end
+    @game.move_player(best[0], best[1]) || @game.wait_turn
+  end
+
+  def update(dt : Float32)
+    @flash = Math.max(0_f32, @flash - dt)
+    before = @game.messages.size
+    moved = false
+    moved = @game.move_player(-1, 0) if Input.pressed?(&quot;left&quot;)
+    moved = @game.move_player(1, 0) if Input.pressed?(&quot;right&quot;)
+    moved = @game.move_player(0, -1) if Input.pressed?(&quot;up&quot;)
+    moved = @game.move_player(0, 1) if Input.pressed?(&quot;down&quot;)
+    @game.wait_turn if Input.pressed?(&quot;wait&quot;) &amp;&amp; !@game.game_over?
+    if Input.pressed?(&quot;descend&quot;) &amp;&amp; Input.shift? || Input.pressed?(Key::Enter)
+      @game.descend
+    end
+    if @game.messages.size &gt; before
+      msg = @game.messages.last
+      if msg.includes?(&quot;hits you&quot;)
+        @flash = 0.2_f32; @snd_hit.try(&amp;.play)
+      elsif msg.includes?(&quot;pick up&quot;) || msg.includes?(&quot;found&quot;) || msg.includes?(&quot;potion&quot;)
+        @snd_pick.try(&amp;.play)
+      end
+    end
+    @game = Rogue::Game.new((Random.rand * 10000).to_i) if Input.pressed?(Key::R)
+    Eagle.quit if Input.pressed?(Key::Escape)
+  end
+
+  def draw(g : Graphics)
+    d = @game.dungeon
+    ox = 10; oy = 40
+    f = @font || g.font
+    d.height.times do |y|
+      d.width.times do |x|
+        next unless d.explored?(x, y)
+        vis = d.visible?(x, y)
+        t = d[x, y]
+        color = case t
+                in Rogue::Tile::Wall then Color.hex(&quot;#5b6b8a&quot;)
+                in Rogue::Tile::Floor then Color.hex(&quot;#2e3448&quot;)
+                in Rogue::Tile::Door then Color.hex(&quot;#a0703c&quot;)
+                in Rogue::Tile::StairsDown then Color.hex(&quot;#e0c060&quot;)
+                end
+        color = color.darken(0.55) unless vis
+        px = ox + x * CELL; py = oy + y * CELL
+        case t
+        in Rogue::Tile::Wall then g.rect(px, py, CELL, CELL, color: color)
+        in Rogue::Tile::Floor then g.rect(px, py, CELL, CELL, color: color); g.rect(px + CELL / 2 - 1, py + CELL / 2 - 1, 2, 2, color: color.lighten(0.2))
+        in Rogue::Tile::Door then g.rect(px, py, CELL, CELL, color: Color.hex(&quot;#2e3448&quot;)); g.rect(px + 4, py + 2, CELL - 8, CELL - 4, color: color)
+        in Rogue::Tile::StairsDown then g.rect(px, py, CELL, CELL, color: Color.hex(&quot;#2e3448&quot;)); g.print(&quot;&gt;&quot;, px + CELL / 2, py + 2, color, f, align: TextAlign::Center)
+        end
+      end
+    end
+    @game.items.each do |it|
+      next unless d.visible?(it.x, it.y)
+      c = it.kind.gold? ? Color::YELLOW : it.kind.potion? ? Color.hex(&quot;#ff6b9d&quot;) : Color.hex(&quot;#9ad0ff&quot;)
+      g.print(it.glyph.to_s, ox + it.x * CELL + CELL / 2, oy + it.y * CELL + 2, c, f, align: TextAlign::Center)
+    end
+    @game.monsters.each do |m|
+      next unless d.visible?(m.x, m.y)
+      c = {&#39;r&#39; =&gt; Color.hex(&quot;#c9a27e&quot;), &#39;g&#39; =&gt; Color.hex(&quot;#7bd88f&quot;), &#39;o&#39; =&gt; Color.hex(&quot;#e07a5f&quot;), &#39;T&#39; =&gt; Color.hex(&quot;#c77dff&quot;)}[m.glyph]? || Color::WHITE
+      g.print(m.glyph.to_s, ox + m.x * CELL + CELL / 2, oy + m.y * CELL + 2, c, f, align: TextAlign::Center)
+      g.rect(ox + m.x * CELL + 2, oy + m.y * CELL + CELL - 3, (CELL - 4) * m.hp / m.max_hp, 2, color: Color::RED)
+    end
+    p = @game.player
+    g.print(&quot;@&quot;, ox + p.x * CELL + CELL / 2, oy + p.y * CELL + 2, Color::WHITE, f, align: TextAlign::Center)
+    # HUD
+    g.rect(0, 0, Window.width, 32, color: Color.hex(&quot;#12141c&quot;))
+    g.print(&quot;HP #{p.hp}/#{p.max_hp}  ATK #{p.attack}  DEF #{p.defense}  Lv #{@game.char_level} (xp #{@game.xp})  Gold #{@game.gold}  Dungeon #{@game.level}/#{Rogue::Game::MAX_LEVEL}  Turn #{@game.turns}&quot;, 10, 8, Color::WHITE)
+    g.rect(Window.width - 210, 8, 200, 16, color: Color.gray(0.2))
+    g.rect(Window.width - 210, 8, 200 * p.hp / p.max_hp, 16, color: p.hp &gt; p.max_hp / 3 ? Color::GREEN : Color::RED)
+    # messages
+    my = oy + d.height * CELL + 6
+    @game.messages.last(5).each_with_index do |m, i|
+      g.print(m, 10, my + i * 18, Color.gray(0.55 + i * 0.1))
+    end
+    g.print(&quot;arrows/WASD/hjkl move - space wait - Enter descends on &gt; - R restart&quot;, Window.width - 10, Window.height - 20, Color.gray(0.4), align: TextAlign::Right)
+    g.rect(0, 0, Window.width, Window.height, color: Color::RED.with_alpha(@flash * 1.5)) if @flash &gt; 0
+    if @game.game_over?
+      g.rect(0, 0, Window.width, Window.height, color: Color.new(0, 0, 0, 0.6))
+      g.print(@game.won? ? &quot;YOU ESCAPED!&quot; : &quot;YOU DIED&quot;, Window.width / 2, Window.height / 2 - 30, @game.won? ? Color::YELLOW : Color::RED, scale: 2, align: TextAlign::Center)
+      g.print(&quot;press R for a new dungeon&quot;, Window.width / 2, Window.height / 2 + 20, Color::WHITE, align: TextAlign::Center)
+    end
+  end
+end
+
+Eagle.run(RoguelikeApp, title: &quot;Eagle Roguelike&quot;, width: 60 * RoguelikeApp::CELL + 20, height: 34 * RoguelikeApp::CELL + 160)
+</code></pre><h3>dungeon.cr</h3><pre><code># Roguelike core: procedural dungeon, shadowcasting FOV, turn-based combat.
+# Independent of rendering so it can be unit tested.
+module Rogue
+  enum Tile : UInt8
+    Wall
+    Floor
+    Door
+    StairsDown
+    def walkable? : Bool; !wall?; end
+    def opaque? : Bool; wall? || door?; end
+  end
+
+  record Room, x : Int32, y : Int32, w : Int32, h : Int32 do
+    def center : {Int32, Int32}; {x + w // 2, y + h // 2}; end
+    def intersects?(o : Room, pad = 1) : Bool
+      x - pad &lt; o.x + o.w &amp;&amp; x + w + pad &gt; o.x &amp;&amp; y - pad &lt; o.y + o.h &amp;&amp; y + h + pad &gt; o.y
+    end
+  end
+
+  class Entity
+    property name : String
+    property x : Int32
+    property y : Int32
+    property hp : Int32
+    property max_hp : Int32
+    property attack : Int32
+    property defense : Int32
+    property glyph : Char
+    property? player : Bool
+    property xp_value : Int32 = 0
+    property sight : Int32 = 6
+
+    def initialize(@name, @x, @y, @hp, @attack, @defense, @glyph, @player = false, @xp_value = 0)
+      @max_hp = @hp
+    end
+
+    def alive? : Bool; @hp &gt; 0; end
+    def pos : {Int32, Int32}; {@x, @y}; end
+  end
+
+  class Item
+    enum Kind
+      Potion
+      Gold
+      Sword
+      Shield
+    end
+    property kind : Kind
+    property x : Int32
+    property y : Int32
+    property value : Int32
+    def initialize(@kind, @x, @y, @value = 1); end
+    def glyph : Char
+      case @kind
+      in Kind::Potion then &#39;!&#39;
+      in Kind::Gold then &#39;$&#39;
+      in Kind::Sword then &#39;/&#39;
+      in Kind::Shield then &#39;]&#39;
+      end
+    end
+  end
+
+  class Dungeon
+    getter width : Int32
+    getter height : Int32
+    getter tiles : Array(Tile)
+    getter rooms = [] of Room
+    getter explored : Array(Bool)
+    getter visible : Array(Bool)
+    getter rng : Random
+
+    def initialize(@width, @height, seed : Int32 = 1, room_attempts = 40)
+      @rng = Random.new(seed)
+      @tiles = Array(Tile).new(@width * @height, Tile::Wall)
+      @explored = Array(Bool).new(@width * @height, false)
+      @visible = Array(Bool).new(@width * @height, false)
+      generate(room_attempts)
+    end
+
+    def [](x : Int32, y : Int32) : Tile
+      in_bounds?(x, y) ? @tiles[y * @width + x] : Tile::Wall
+    end
+
+    def []=(x : Int32, y : Int32, t : Tile); @tiles[y * @width + x] = t; end
+    def in_bounds?(x, y) : Bool; x &gt;= 0 &amp;&amp; y &gt;= 0 &amp;&amp; x &lt; @width &amp;&amp; y &lt; @height; end
+    def walkable?(x, y) : Bool; self[x, y].walkable?; end
+    def visible?(x, y) : Bool; in_bounds?(x, y) &amp;&amp; @visible[y * @width + x]; end
+    def explored?(x, y) : Bool; in_bounds?(x, y) &amp;&amp; @explored[y * @width + x]; end
+
+    private def generate(attempts)
+      attempts.times do
+        w = @rng.rand(4..10); h = @rng.rand(3..7)
+        x = @rng.rand(1..(@width - w - 2)); y = @rng.rand(1..(@height - h - 2))
+        room = Room.new(x, y, w, h)
+        next if @rooms.any? { |r| r.intersects?(room) }
+        carve(room)
+        if last = @rooms.last?
+          corridor(last.center, room.center)
+        end
+        @rooms &lt;&lt; room
+      end
+      # doors where corridors meet room walls, stairs in the last room
+      cx, cy = @rooms.last.center
+      self[cx, cy] = Tile::StairsDown
+      place_doors
+    end
+
+    private def carve(r : Room)
+      (r.y...r.y + r.h).each { |yy| (r.x...r.x + r.w).each { |xx| self[xx, yy] = Tile::Floor } }
+    end
+
+    private def corridor(a, b)
+      x, y = a
+      tx, ty = b
+      if @rng.rand &lt; 0.5
+        until x == tx; self[x, y] = Tile::Floor if self[x, y].wall?; x += x &lt; tx ? 1 : -1; end
+        until y == ty; self[x, y] = Tile::Floor if self[x, y].wall?; y += y &lt; ty ? 1 : -1; end
+      else
+        until y == ty; self[x, y] = Tile::Floor if self[x, y].wall?; y += y &lt; ty ? 1 : -1; end
+        until x == tx; self[x, y] = Tile::Floor if self[x, y].wall?; x += x &lt; tx ? 1 : -1; end
+      end
+      self[x, y] = Tile::Floor if self[x, y].wall?
+    end
+
+    private def place_doors
+      @rooms.each do |r|
+        # scan the room&#39;s outline for corridor openings
+        (r.x - 1..r.x + r.w).each do |xx|
+          [r.y - 1, r.y + r.h].each do |yy|
+            self[xx, yy] = Tile::Door if self[xx, yy].floor? &amp;&amp; corridor_cell?(xx, yy) &amp;&amp; @rng.rand &lt; 0.6
+          end
+        end
+        (r.y - 1..r.y + r.h).each do |yy|
+          [r.x - 1, r.x + r.w].each do |xx|
+            self[xx, yy] = Tile::Door if self[xx, yy].floor? &amp;&amp; corridor_cell?(xx, yy) &amp;&amp; @rng.rand &lt; 0.6
+          end
+        end
+      end
+    end
+
+    private def corridor_cell?(x, y) : Bool
+      h = self[x - 1, y].wall? &amp;&amp; self[x + 1, y].wall?
+      v = self[x, y - 1].wall? &amp;&amp; self[x, y + 1].wall?
+      h || v
+    end
+
+    # All walkable tiles reachable from (x, y) via 4-neighbour moves.
+    def reachable_from(x, y) : Set({Int32, Int32})
+      seen = Set({Int32, Int32}).new
+      stack = [{x, y}]
+      while p = stack.pop?
+        next if seen.includes?(p)
+        seen &lt;&lt; p
+        px, py = p
+        [{1, 0}, {-1, 0}, {0, 1}, {0, -1}].each do |(dx, dy)|
+          nx = px + dx; ny = py + dy
+          stack &lt;&lt; {nx, ny} if walkable?(nx, ny) &amp;&amp; !seen.includes?({nx, ny})
+        end
+      end
+      seen
+    end
+
+    def walkable_count : Int32; @tiles.count(&amp;.walkable?); end
+
+    # Symmetric shadowcasting FOV (recursive, 8 octants).
+    def compute_fov(ox, oy, radius) : Nil
+      @visible.fill(false)
+      mark_visible(ox, oy)
+      8.times { |oct| cast_light(ox, oy, radius, 1, 1.0, 0.0, oct) }
+    end
+
+    private def mark_visible(x, y)
+      return unless in_bounds?(x, y)
+      @visible[y * @width + x] = true
+      @explored[y * @width + x] = true
+    end
+
+    MULT = [[1, 0, 0, -1, -1, 0, 0, 1], [0, 1, -1, 0, 0, -1, 1, 0], [0, 1, 1, 0, 0, -1, -1, 0], [1, 0, 0, 1, -1, 0, 0, -1]]
+
+    private def cast_light(cx, cy, radius, row, start : Float64, finish : Float64, oct)
+      return if start &lt; finish
+      xx = MULT[0][oct]; xy = MULT[1][oct]; yx = MULT[2][oct]; yy = MULT[3][oct]
+      r2 = radius * radius
+      (row..radius).each do |j|
+        dx = -j - 1; dy = -j
+        blocked = false
+        new_start = start
+        while dx &lt;= 0
+          dx += 1
+          x = cx + dx * xx + dy * xy
+          y = cy + dx * yx + dy * yy
+          l_slope = (dx - 0.5) / (dy + 0.5)
+          r_slope = (dx + 0.5) / (dy - 0.5)
+          if start &lt; r_slope
+            next
+          elsif finish &gt; l_slope
+            break
+          end
+          mark_visible(x, y) if dx * dx + dy * dy &lt; r2
+          if blocked
+            if self[x, y].opaque?
+              new_start = r_slope
+              next
+            else
+              blocked = false
+              start = new_start
+            end
+          elsif self[x, y].opaque? &amp;&amp; j &lt; radius
+            blocked = true
+            cast_light(cx, cy, radius, j + 1, start, l_slope, oct)
+            new_start = r_slope
+          end
+        end
+        break if blocked
+      end
+    end
+
+    # Simple BFS path (4-neighbour) avoiding `blocked` cells; returns the next step or nil.
+    def next_step(from : {Int32, Int32}, to : {Int32, Int32}, blocked : Set({Int32, Int32}) = Set({Int32, Int32}).new) : {Int32, Int32}?
+      return nil if from == to
+      prev = {} of {Int32, Int32} =&gt; {Int32, Int32}
+      queue = Deque{from}
+      seen = Set{from}
+      found = false
+      while (cur = queue.shift?)
+        if cur == to
+          found = true
+          break
+        end
+        cx, cy = cur
+        [{1, 0}, {-1, 0}, {0, 1}, {0, -1}].each do |(dx, dy)|
+          n = {cx + dx, cy + dy}
+          next if seen.includes?(n) || !walkable?(n[0], n[1]) || (blocked.includes?(n) &amp;&amp; n != to)
+          seen &lt;&lt; n
+          prev[n] = cur
+          queue &lt;&lt; n
+        end
+        break if seen.size &gt; 4000
+      end
+      return nil unless found
+      step = to
+      while prev[step]? != from
+        step = prev[step]? || return nil
+      end
+      step
+    end
+  end
+
+  class Game
+    getter dungeon : Dungeon
+    getter player : Entity
+    getter monsters = [] of Entity
+    getter items = [] of Item
+    getter messages = [] of String
+    getter level = 1
+    getter turns = 0
+    getter gold = 0
+    getter xp = 0
+    getter char_level = 1
+    getter? game_over = false
+    getter? won = false
+    getter rng : Random
+    property seed : Int32
+
+    MAX_LEVEL = 5
+
+    def initialize(@seed : Int32 = 1, width = 60, height = 34)
+      @rng = Random.new(@seed)
+      @width = width; @height = height
+      @dungeon = Dungeon.new(width, height, @seed)
+      sx, sy = @dungeon.rooms.first.center
+      @player = Entity.new(&quot;You&quot;, sx, sy, 20, 4, 1, &#39;@&#39;, true)
+      populate
+      log(&quot;Welcome to the dungeon. Find the stairs (&gt;) on level #{MAX_LEVEL}.&quot;)
+      @dungeon.compute_fov(@player.x, @player.y, @player.sight)
+    end
+
+    def log(msg : String)
+      @messages &lt;&lt; msg
+      @messages.shift if @messages.size &gt; 50
+    end
+
+    private def populate
+      @monsters.clear; @items.clear
+      @dungeon.rooms.each_with_index do |room, i|
+        next if i == 0
+        count = @rng.rand(0..(1 + @level // 2))
+        count.times do
+          x = @rng.rand(room.x...room.x + room.w); y = @rng.rand(room.y...room.y + room.h)
+          next if @monsters.any? { |m| m.x == x &amp;&amp; m.y == y }
+          kind = @rng.rand(0..2) + (@level &gt;= 3 ? 1 : 0)
+          m = case kind
+              when 0 then Entity.new(&quot;rat&quot;, x, y, 4, 2, 0, &#39;r&#39;, xp_value: 3)
+              when 1 then Entity.new(&quot;goblin&quot;, x, y, 7, 3, 1, &#39;g&#39;, xp_value: 6)
+              when 2 then Entity.new(&quot;orc&quot;, x, y, 12, 5, 1, &#39;o&#39;, xp_value: 12)
+              else Entity.new(&quot;troll&quot;, x, y, 20, 7, 2, &#39;T&#39;, xp_value: 25)
+              end
+          @monsters &lt;&lt; m
+        end
+        if @rng.rand &lt; 0.7
+          x = @rng.rand(room.x...room.x + room.w); y = @rng.rand(room.y...room.y + room.h)
+          r = @rng.rand
+          @items &lt;&lt; (r &lt; 0.45 ? Item.new(Item::Kind::Gold, x, y, @rng.rand(5..25)) : r &lt; 0.85 ? Item.new(Item::Kind::Potion, x, y, 8) : r &lt; 0.93 ? Item.new(Item::Kind::Sword, x, y, 1) : Item.new(Item::Kind::Shield, x, y, 1))
+        end
+      end
+    end
+
+    def monster_at(x, y) : Entity?; @monsters.find { |m| m.alive? &amp;&amp; m.x == x &amp;&amp; m.y == y }; end
+    def item_at(x, y) : Item?; @items.find { |i| i.x == x &amp;&amp; i.y == y }; end
+
+    # Player action: move/attack in a direction. Returns true if a turn passed.
+    def move_player(dx : Int32, dy : Int32) : Bool
+      return false if @game_over
+      nx = @player.x + dx; ny = @player.y + dy
+      if m = monster_at(nx, ny)
+        attack(@player, m)
+      elsif @dungeon.walkable?(nx, ny)
+        @player.x = nx; @player.y = ny
+        pick_up
+      else
+        return false
+      end
+      end_turn
+      true
+    end
+
+    def wait_turn : Nil
+      end_turn
+    end
+
+    def descend : Bool
+      return false unless @dungeon[@player.x, @player.y].stairs_down?
+      @level += 1
+      if @level &gt; MAX_LEVEL
+        @won = true; @game_over = true
+        log(&quot;You escape the dungeon with #{@gold} gold. You win!&quot;)
+        return true
+      end
+      @dungeon = Dungeon.new(@width, @height, @seed * 31 + @level)
+      sx, sy = @dungeon.rooms.first.center
+      @player.x = sx; @player.y = sy
+      populate
+      log(&quot;You descend to level #{@level}.&quot;)
+      @dungeon.compute_fov(@player.x, @player.y, @player.sight)
+      true
+    end
+
+    private def pick_up
+      if item = item_at(@player.x, @player.y)
+        @items.delete(item)
+        case item.kind
+        in Item::Kind::Gold then @gold += item.value; log(&quot;You pick up #{item.value} gold.&quot;)
+        in Item::Kind::Potion
+          heal = Math.min(item.value, @player.max_hp - @player.hp)
+          @player.hp += heal
+          log(&quot;You drink a potion and heal #{heal}.&quot;)
+        in Item::Kind::Sword then @player.attack += 2; log(&quot;You found a sword! Attack +2.&quot;)
+        in Item::Kind::Shield then @player.defense += 1; log(&quot;You found a shield! Defense +1.&quot;)
+        end
+      end
+    end
+
+    def attack(a : Entity, d : Entity) : Nil
+      dmg = Math.max(0, a.attack + @rng.rand(0..2) - d.defense)
+      d.hp -= dmg
+      if a.player?
+        log(dmg &gt; 0 ? &quot;You hit the #{d.name} for #{dmg}.&quot; : &quot;You miss the #{d.name}.&quot;)
+        if !d.alive?
+          log(&quot;The #{d.name} dies.&quot;)
+          gain_xp(d.xp_value)
+        end
+      else
+        log(dmg &gt; 0 ? &quot;The #{a.name} hits you for #{dmg}.&quot; : &quot;The #{a.name} misses.&quot;)
+        if !d.alive?
+          @game_over = true
+          log(&quot;You die on level #{@level} after #{@turns} turns.&quot;)
+        end
+      end
+    end
+
+    private def gain_xp(n)
+      @xp += n
+      while @xp &gt;= @char_level * 10
+        @xp -= @char_level * 10
+        @char_level += 1
+        @player.max_hp += 5; @player.hp = @player.max_hp; @player.attack += 1
+        log(&quot;You reach level #{@char_level}!&quot;)
+      end
+    end
+
+    private def end_turn
+      @turns += 1
+      @monsters.reject! { |m| !m.alive? }
+      @dungeon.compute_fov(@player.x, @player.y, @player.sight)
+      occupied = @monsters.map(&amp;.pos).to_set
+      @monsters.each do |m|
+        next if @game_over
+        dist = (m.x - @player.x).abs + (m.y - @player.y).abs
+        if dist == 1
+          attack(m, @player)
+        elsif @dungeon.visible?(m.x, m.y) &amp;&amp; dist &lt;= 8
+          occupied.delete(m.pos)
+          if step = @dungeon.next_step(m.pos, @player.pos, occupied)
+            if step != @player.pos
+              m.x, m.y = step
+            end
+          end
+          occupied &lt;&lt; m.pos
+        elsif @rng.rand &lt; 0.3
+          dx, dy = [{1, 0}, {-1, 0}, {0, 1}, {0, -1}][@rng.rand(4)]
+          nx = m.x + dx; ny = m.y + dy
+          if @dungeon.walkable?(nx, ny) &amp;&amp; !occupied.includes?({nx, ny}) &amp;&amp; {nx, ny} != @player.pos
+            occupied.delete(m.pos); m.x = nx; m.y = ny; occupied &lt;&lt; m.pos
+          end
+        end
+      end
+      # regenerate slowly
+      @player.hp = Math.min(@player.max_hp, @player.hp + 1) if @turns % 10 == 0 &amp;&amp; !@game_over
+    end
+  end
+end
+</code></pre></details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./roguelike.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

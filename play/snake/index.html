@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snake · Eagle</title>
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><div class="play-wrap"><h1>Snake</h1><p class="lead">Grid logic with a unit-tested core and speed that ramps as you eat.</p><canvas id="eagle"></canvas><p class="controls">Arrows/WASD · Space restarts</p>
+<details><summary>Source — examples/snake/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+require &quot;./snake&quot;
+include Eagle
+
+class SnakeApp &lt; App
+  CELL = 32
+  @game = SnakeGame.new(24, 16)
+  @timer = 0_f32
+  @speed = 8_f32 # cells per second
+  @snd : Sound? = nil
+  @snd_die : Sound? = nil
+  @best = 0
+
+  def load
+    Input.map &quot;up&quot;, Key::Up, Key::W, Input.axis(GamepadAxis::LeftY, -1)
+    Input.map &quot;down&quot;, Key::Down, Key::S, Input.axis(GamepadAxis::LeftY, 1)
+    Input.map &quot;left&quot;, Key::Left, Key::A, Input.axis(GamepadAxis::LeftX, -1)
+    Input.map &quot;right&quot;, Key::Right, Key::D, Input.axis(GamepadAxis::LeftX, 1)
+    @snd = Sound.tone(700, 0.06, Sound::Wave::Sine, 0.3)
+    @snd_die = Sound.tone(110, 0.5, Sound::Wave::Saw, 0.3)
+  end
+
+  def update(dt : Float32)
+    @game.turn(SnakeGame::Dir::Up) if Input.pressed?(&quot;up&quot;)
+    @game.turn(SnakeGame::Dir::Down) if Input.pressed?(&quot;down&quot;)
+    @game.turn(SnakeGame::Dir::Left) if Input.pressed?(&quot;left&quot;)
+    @game.turn(SnakeGame::Dir::Right) if Input.pressed?(&quot;right&quot;)
+    if @game.game_over?
+      if Input.pressed?(Key::Space) || Input.pressed?(Key::Enter)
+        @game = SnakeGame.new(24, 16); @speed = 8_f32
+      end
+      return
+    end
+    @timer += dt
+    while @timer &gt;= 1 / @speed
+      @timer -= 1 / @speed
+      case @game.step
+      when :ate
+        @snd.try(&amp;.play(pitch: 1 + @game.score * 0.02))
+        @speed += 0.25
+        @best = Math.max(@best, @game.score)
+      when :died then @snd_die.try(&amp;.play)
+      end
+    end
+    Eagle.quit if Input.pressed?(Key::Escape)
+  end
+
+  def draw(g : Graphics)
+    ox = (Window.width - @game.width * CELL) / 2; oy = 50
+    g.rect(ox - 2, oy - 2, @game.width * CELL + 4, @game.height * CELL + 4, DrawMode::Line, Color.gray(0.4))
+    @game.height.times { |y| @game.width.times { |x| g.rect(ox + x * CELL, oy + y * CELL, CELL, CELL, color: (x + y).even? ? Color.hex(&quot;#1e2230&quot;) : Color.hex(&quot;#222739&quot;)) } }
+    fx, fy = @game.food
+    g.circle(ox + fx * CELL + CELL / 2, oy + fy * CELL + CELL / 2, CELL * 0.35, color: Color.hex(&quot;#ff5d73&quot;))
+    n = @game.length
+    @game.body.each_with_index do |(x, y), i|
+      t = i / n.to_f
+      c = Color.hex(&quot;#7bed9f&quot;).lerp(Color.hex(&quot;#2ed573&quot;), t)
+      g.rounded_rect(ox + x * CELL + 2, oy + y * CELL + 2, CELL - 4, CELL - 4, 6, color: c)
+    end
+    g.print(&quot;score #{@game.score}   best #{@best}   length #{n}   speed #{@speed.round(1)}&quot;, ox, 14, Color::WHITE)
+    if @game.game_over?
+      g.rect(0, 0, Window.width, Window.height, color: Color.new(0, 0, 0, 0.5))
+      g.print(&quot;GAME OVER&quot;, Window.width / 2, Window.height / 2 - 30, Color::RED, scale: 2, align: TextAlign::Center)
+      g.print(&quot;press space to restart&quot;, Window.width / 2, Window.height / 2 + 20, Color::WHITE, align: TextAlign::Center)
+    end
+  end
+end
+
+Eagle.run(SnakeApp, title: &quot;Eagle Snake&quot;, width: 24 * SnakeApp::CELL + 64, height: 16 * SnakeApp::CELL + 100)
+</code></pre><h3>snake.cr</h3><pre><code># Snake game logic, independent of rendering.
+class SnakeGame
+  enum Dir
+    Up; Down; Left; Right
+    def vec : {Int32, Int32}
+      case self
+      in Up then {0, -1}
+      in Down then {0, 1}
+      in Left then {-1, 0}
+      in Right then {1, 0}
+      end
+    end
+    def opposite?(o : Dir) : Bool
+      v = vec; w = o.vec
+      v[0] == -w[0] &amp;&amp; v[1] == -w[1]
+    end
+  end
+
+  getter width : Int32
+  getter height : Int32
+  getter body : Array({Int32, Int32}) # head first
+  getter dir : Dir = Dir::Right
+  getter food : {Int32, Int32}
+  getter score = 0
+  getter? game_over = false
+  @next_dir : Dir = Dir::Right
+  @grow = 0
+  @rng : Random
+
+  def initialize(@width : Int32 = 20, @height : Int32 = 15, seed : Int32? = nil)
+    @rng = seed ? Random.new(seed) : Random.new
+    cx = @width // 2; cy = @height // 2
+    @body = [{cx, cy}, {cx - 1, cy}, {cx - 2, cy}]
+    @food = {0, 0}
+    place_food
+  end
+
+  def head : {Int32, Int32}; @body.first; end
+
+  # Queue a direction change (ignored if it reverses the snake).
+  def turn(d : Dir) : Nil
+    @next_dir = d unless d.opposite?(@dir)
+  end
+
+  def place_food : Nil
+    free = [] of {Int32, Int32}
+    @height.times { |y| @width.times { |x| free &lt;&lt; {x, y} unless @body.includes?({x, y}) } }
+    if free.empty?
+      @game_over = true
+    else
+      @food = free[@rng.rand(free.size)]
+    end
+  end
+
+  # Advance one cell. Returns :moved, :ate, or :died.
+  def step : Symbol
+    return :died if @game_over
+    @dir = @next_dir
+    dx, dy = @dir.vec
+    nx = head[0] + dx; ny = head[1] + dy
+    if nx &lt; 0 || ny &lt; 0 || nx &gt;= @width || ny &gt;= @height
+      @game_over = true
+      return :died
+    end
+    tail_moves = @grow == 0
+    if @body.includes?({nx, ny}) &amp;&amp; !(tail_moves &amp;&amp; @body.last == {nx, ny})
+      @game_over = true
+      return :died
+    end
+    @body.unshift({nx, ny})
+    if @grow &gt; 0
+      @grow -= 1
+    else
+      @body.pop
+    end
+    if {nx, ny} == @food
+      @score += 1
+      @grow += 2
+      place_food
+      return :ate
+    end
+    :moved
+  end
+
+  def length : Int32; @body.size; end
+end
+</code></pre></details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./snake.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

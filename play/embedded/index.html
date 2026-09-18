@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embedded assets · Eagle</title>
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><div class="play-wrap"><h1>Embedded assets</h1><p class="lead">A game whose PNG, WAV and shader are baked into the binary at compile time.</p><canvas id="eagle"></canvas><p class="controls">Nothing to press — it just works with no files</p>
+<details><summary>Source — examples/embedded/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+include Eagle
+
+# All assets live inside the executable: `Eagle.embed_assets` bakes the
+# `assets/` folder in at compile time, so this game ships as one file.
+Eagle.embed_assets(&quot;examples/embedded/assets&quot;)
+
+class EmbeddedDemo &lt; App
+  @tex : Texture? = nil
+  @fx : Shader? = nil
+
+  def load
+    @tex = Texture.load(&quot;res://tile.png&quot;, GPU::Filter::Nearest, GPU::Wrap::Repeat)
+    @fx = Shader.load(&quot;res://shader.glsl&quot;)
+    Sound.load(&quot;res://blip.wav&quot;).play
+  end
+
+  def draw(g : Graphics)
+    g.with_shader(@fx) { g.draw_tiled(@tex.not_nil!, Rect.new(40, 60, Window.width - 80, Window.height - 120), v2(Clock.elapsed * 30, 0)) }
+    g.print(&quot;embedded assets: #{Assets.embedded_paths.join(&quot;, &quot;)}&quot;, 10, 10)
+    g.print(&quot;no files are read from disk — try moving the executable anywhere&quot;, 10, Window.height - 26, Color::GRAY)
+  end
+end
+
+Eagle.run(EmbeddedDemo, title: &quot;Eagle embedded assets&quot;, width: 640, height: 400)
+</code></pre></details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./embedded.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

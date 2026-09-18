@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2D physics · Eagle</title>
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><div class="play-wrap"><h1>2D physics</h1><p class="lead">Rigid bodies, stacking, ramps, sensors and additive particle bursts.</p><canvas id="eagle"></canvas><p class="controls">Click to spawn bodies</p>
+<details><summary>Source — examples/physics/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+include Eagle
+
+# Physics + particles playground. Click to spawn boxes/balls; watch them pile up.
+class Playground &lt; App
+  @spawned = 0
+  @fx = Particles2D.new(amount: 0, position: v2(400, 300))
+
+  def load
+    root = SceneTree.root
+    root.add(StaticBody2D.new(position: v2(400, 580)).box(760, 40).tap(&amp;.debug = true))
+    root.add(StaticBody2D.new(position: v2(20, 300)).box(40, 600).tap(&amp;.debug = true))
+    root.add(StaticBody2D.new(position: v2(780, 300)).box(40, 600).tap(&amp;.debug = true))
+    ramp = StaticBody2D.new(position: v2(250, 420))
+    ramp.rotation = 0.3
+    ramp.box(300, 20)
+    ramp.debug = true
+    root.add(ramp)
+    30.times { |i| spawn(v2(150 + (i % 10) * 50, 50 + (i // 10) * 60)) }
+    @fx.lifetime = 0.8
+    @fx.speed = 100..250
+    @fx.spread = Math::PI
+    @fx.gravity = v2(0, 400)
+    @fx.scale_start = 1.5
+    @fx.scale_end = 0.2
+    @fx.color_over_life = [Color::YELLOW, Color::ORANGE, Color::RED.with_alpha(0)]
+    @fx.blend = GPU::BlendMode::Additive
+    root.add(@fx)
+    Timer.new(0.7) { @fx.position = v2(rand(200..600), rand(100..300)); @fx.emit(60) }.start.tap { |t| root.add(t) }
+  end
+
+  def spawn(at : Vec2)
+    b = RigidBody2D.new(position: at)
+    if (@spawned += 1).odd?
+      b.circle(rand(10..20))
+    else
+      s = rand(18..36)
+      b.box(s, s)
+    end
+    b.restitution = 0.3
+    b.rotation = (rand * 3).to_f32
+    b.debug = true
+    b.modulate = Color.hsv(@spawned * 25, 0.7, 1)
+    SceneTree.root.add(b)
+  end
+
+  def input(e : Event)
+    if e.is_a?(MouseButtonEvent) &amp;&amp; e.pressed?
+      spawn(e.position)
+    end
+  end
+
+  def draw(g : Graphics)
+    g.print(&quot;click to spawn  bodies #{Physics2D.world.bodies.size}  fps #{Clock.fps.round}  particles #{@fx.alive_count}&quot;, 10, 10, Color::WHITE)
+  end
+end
+
+Eagle.run(Playground, title: &quot;Eagle physics&quot;, width: 800, height: 600)
+</code></pre></details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./physics.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Breakout · Eagle</title>
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><div class="play-wrap"><h1>Breakout</h1><p class="lead">Paddle, ball, bricks with hit points, particles, camera shake and synthesized sounds.</p><canvas id="eagle"></canvas><p class="controls">Mouse or arrows move · Space launches</p>
+<details><summary>Source — examples/breakout/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+include Eagle
+
+# Breakout: move the paddle with the mouse or arrow keys / gamepad. Space launches.
+class Breakout &lt; App
+  W = 800; H = 600
+  record Brick, rect : Rect, color : Color, hp : Int32
+
+  @paddle : Rect = Rect.new(350, 560, 100, 14)
+  @ball : Vec2 = Vec2.new(400, 540)
+  @vel = Vec2::ZERO
+  @radius = 7_f32
+  @bricks = [] of Brick
+  @score = 0
+  @lives = 3
+  @level = 1
+  @launched = false
+  @fx = Particles2D.new(amount: 0)
+  @snd_hit : Sound? = nil
+  @snd_break : Sound? = nil
+  @snd_lose : Sound? = nil
+  @shake = Camera2D.new(current: true)
+  @game_over = false
+
+  def load
+    Input.map &quot;left&quot;, Key::Left, Key::A, Input.axis(GamepadAxis::LeftX, -1)
+    Input.map &quot;right&quot;, Key::Right, Key::D, Input.axis(GamepadAxis::LeftX, 1)
+    Input.map &quot;launch&quot;, Key::Space, GamepadButton::A, MouseButton::Left
+    @snd_hit = Sound.tone(600, 0.04, Sound::Wave::Square, 0.25)
+    @snd_break = Sound.tone(300, 0.08, Sound::Wave::Saw, 0.3)
+    @snd_lose = Sound.tone(120, 0.4, Sound::Wave::Triangle, 0.4)
+    @fx.lifetime = 0.5; @fx.speed = 60..220; @fx.spread = Math::PI; @fx.gravity = v2(0, 500)
+    @fx.scale_start = 0.4; @fx.scale_end = 0.0; @fx.blend = GPU::BlendMode::Additive
+    @shake.position = v2(W / 2, H / 2)
+    SceneTree.root.add(@shake, @fx)
+    build_level
+  end
+
+  def build_level
+    @bricks.clear
+    cols = 10; rows = 4 + @level
+    bw = (W - 40) / cols; bh = 22
+    rows.times do |r|
+      cols.times do |c|
+        next if @level &gt; 1 &amp;&amp; (r + c) % 7 == 0
+        hp = r &lt; 2 &amp;&amp; @level &gt; 1 ? 2 : 1
+        @bricks &lt;&lt; Brick.new(Rect.new(20 + c * bw + 2, 60 + r * (bh + 4), bw - 4, bh), Color.hsv(r * 30 + @level * 40, 0.75, 1), hp)
+      end
+    end
+    reset_ball
+  end
+
+  def reset_ball
+    @launched = false
+    @vel = Vec2::ZERO
+    @ball = v2(@paddle.center.x, @paddle.y - @radius - 1)
+  end
+
+  def update(dt : Float32)
+    return if @game_over
+    px = @paddle.x
+    px += Input.axis(&quot;left&quot;, &quot;right&quot;) * 520 * dt
+    px = Input.mouse.x - @paddle.w / 2 if Input.mouse_delta != Vec2::ZERO
+    @paddle = Rect.new(px.clamp(0_f32, W - @paddle.w), @paddle.y, @paddle.w, @paddle.h)
+    if !@launched
+      @ball = v2(@paddle.center.x, @paddle.y - @radius - 1)
+      if Input.pressed?(&quot;launch&quot;)
+        @launched = true
+        @vel = Vec2.from_angle(-Math::PI / 2 + (rand - 0.5), 330 + @level * 30)
+      end
+      return
+    end
+    steps = 4
+    steps.times { step(dt / steps) }
+    if @bricks.empty?
+      @level += 1
+      build_level
+    end
+  end
+
+  private def step(dt)
+    @ball += @vel * dt
+    if @ball.x - @radius &lt; 0 || @ball.x + @radius &gt; W
+      @vel = v2(-@vel.x, @vel.y); @ball = v2(@ball.x.clamp(@radius, W - @radius), @ball.y); @snd_hit.try(&amp;.play(pitch: 1.5))
+    end
+    if @ball.y - @radius &lt; 40
+      @vel = v2(@vel.x, -@vel.y); @ball = v2(@ball.x, 40 + @radius); @snd_hit.try(&amp;.play(pitch: 1.5))
+    end
+    if @ball.y &gt; H + 20
+      @lives -= 1
+      @snd_lose.try(&amp;.play)
+      @shake.shake(8, 0.3)
+      if @lives &lt;= 0
+        @game_over = true
+      else
+        reset_ball
+      end
+      return
+    end
+    # paddle
+    if @vel.y &gt; 0 &amp;&amp; circle_rect?(@ball, @radius, @paddle)
+      t = ((@ball.x - @paddle.center.x) / (@paddle.w / 2)).clamp(-1_f32, 1_f32)
+      speed = @vel.length * 1.01
+      @vel = Vec2.from_angle(-Math::PI / 2 + t * 1.1, speed)
+      @ball = v2(@ball.x, @paddle.y - @radius - 0.5)
+      @snd_hit.try(&amp;.play)
+    end
+    # bricks
+    @bricks.each_with_index do |b, i|
+      next unless circle_rect?(@ball, @radius, b.rect)
+      # decide bounce axis by penetration
+      dx = @ball.x - b.rect.center.x; dy = @ball.y - b.rect.center.y
+      px = b.rect.w / 2 + @radius - dx.abs; py = b.rect.h / 2 + @radius - dy.abs
+      if px &lt; py
+        @vel = v2(-@vel.x, @vel.y); @ball += v2(Mathf.sign(dx) * px, 0)
+      else
+        @vel = v2(@vel.x, -@vel.y); @ball += v2(0, Mathf.sign(dy) * py)
+      end
+      if b.hp &gt; 1
+        @bricks[i] = Brick.new(b.rect, b.color.darken(0.4), b.hp - 1)
+        @snd_hit.try(&amp;.play(pitch: 0.8))
+      else
+        @bricks.delete_at(i)
+        @score += 10 * @level
+        @snd_break.try(&amp;.play)
+        @fx.position = b.rect.center
+        @fx.color_over_life = [b.color, b.color.with_alpha(0)]
+        @fx.emit(25)
+        @shake.shake(2, 0.1)
+      end
+      break
+    end
+  end
+
+  private def circle_rect?(c : Vec2, r : Float32, rect : Rect) : Bool
+    cx = c.x.clamp(rect.x, rect.right); cy = c.y.clamp(rect.y, rect.bottom)
+    (c - v2(cx, cy)).length_squared &lt;= r * r
+  end
+
+  def input(e : Event)
+    if e.is_a?(KeyEvent) &amp;&amp; e.pressed? &amp;&amp; e.key == Key::R &amp;&amp; @game_over
+      @score = 0; @lives = 3; @level = 1; @game_over = false
+      build_level
+    end
+  end
+
+  def draw(g : Graphics)
+    g.rect(0, 40, W, 2, color: Color::GRAY)
+    @bricks.each do |b|
+      g.rounded_rect(b.rect.x, b.rect.y, b.rect.w, b.rect.h, 4, color: b.color)
+      g.rounded_rect(b.rect.x, b.rect.y, b.rect.w, b.rect.h / 2, 4, color: Color::WHITE.with_alpha(0.15))
+    end
+    g.rounded_rect(@paddle.x, @paddle.y, @paddle.w, @paddle.h, 6, color: Color.hex(&quot;#4fd1c5&quot;))
+    g.circle(@ball, @radius, color: Color::WHITE)
+    g.print(&quot;score #{@score}   lives #{@lives}   level #{@level}&quot;, 12, 10, Color::WHITE)
+    g.print(&quot;press space / click to launch&quot;, W / 2, 300, Color::GRAY, align: TextAlign::Center) unless @launched || @game_over
+    g.print(&quot;GAME OVER — R to restart&quot;, W / 2, 300, Color::RED, align: TextAlign::Center) if @game_over
+  end
+end
+
+Eagle.run(Breakout, title: &quot;Eagle Breakout&quot;, width: Breakout::W, height: Breakout::H)
+</code></pre></details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./breakout.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

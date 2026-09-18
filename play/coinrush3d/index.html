@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coin Rush (3D) · Eagle</title>
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><div class="play-wrap"><h1>Coin Rush (3D)</h1><p class="lead">Roll a ball around a lit, shadowed arena collecting coins before the timer runs out.</p><canvas id="eagle"></canvas><p class="controls">WASD move · Space jump · right-drag orbits the camera</p>
+<details><summary>Source — examples/coinrush3d/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+include Eagle
+
+# Coin Rush (3D game): roll the ball with WASD / left stick, jump with space,
+# collect all coins before time runs out. Third-person follow camera, shadows, UI.
+class CoinRush &lt; App
+  ARENA = 22_f32
+  @cam = Camera3D.new(position: v3(0, 8, 12))
+  @ball = MeshInstance3D.new(Mesh.sphere(0.5, 24, 16), Material.new(Color.hex(&quot;#ff6b6b&quot;), shininess: 64, specular: 0.6), position: v3(0, 0.5, 0))
+  @vel = Vec3::ZERO
+  @coins = [] of MeshInstance3D
+  @obstacles = [] of AABB
+  @score = 0
+  @time_left = 45_f32
+  @state = :playing
+  @hud = Label.new(&quot;&quot;)
+  @big = Label.new(&quot;&quot;, align: TextAlign::Center)
+  @snd_coin : Sound? = nil
+  @snd_jump : Sound? = nil
+  @rng = Random.new(3)
+  @yaw = 0_f32
+
+  def load
+    Input.map &quot;left&quot;, Key::A, Key::Left, Input.axis(GamepadAxis::LeftX, -1)
+    Input.map &quot;right&quot;, Key::D, Key::Right, Input.axis(GamepadAxis::LeftX, 1)
+    Input.map &quot;up&quot;, Key::W, Key::Up, Input.axis(GamepadAxis::LeftY, -1)
+    Input.map &quot;down&quot;, Key::S, Key::Down, Input.axis(GamepadAxis::LeftY, 1)
+    Input.map &quot;jump&quot;, Key::Space, GamepadButton::A
+    @snd_coin = Sound.tone(1300, 0.1, Sound::Wave::Sine, 0.3)
+    @snd_jump = Sound.tone(400, 0.12, Sound::Wave::Triangle, 0.25)
+    root = SceneTree.root
+    env = Scene3D.environment
+    env.fog(25, 70, Color.hex(&quot;#c9d8ee&quot;))
+    env.sky_colors(Color.hex(&quot;#6fa8ff&quot;), Color.hex(&quot;#dbe8ff&quot;), Color.hex(&quot;#4d5a70&quot;))
+    tex = Texture.new(Image.checkerboard(32, 32, 16, Color.hex(&quot;#8bc34a&quot;), Color.hex(&quot;#7cb342&quot;)), wrap: GPU::Wrap::Repeat)
+    root.add(MeshInstance3D.new(Mesh.plane(ARENA * 2, ARENA * 2, 1, uv_scale: 11), Material.new(texture: tex, specular: 0.05)))
+    # walls
+    [{v3(0, 1, -ARENA), v3(ARENA * 2, 2, 1)}, {v3(0, 1, ARENA), v3(ARENA * 2, 2, 1)}, {v3(-ARENA, 1, 0), v3(1, 2, ARENA * 2)}, {v3(ARENA, 1, 0), v3(1, 2, ARENA * 2)}].each do |(pos, size)|
+      root.add(MeshInstance3D.new(Mesh.box(size.x, size.y, size.z), Material.new(Color.hex(&quot;#556270&quot;)), position: pos))
+      @obstacles &lt;&lt; AABB.from_center(pos, size / 2)
+    end
+    # obstacles
+    14.times do
+      size = v3(1 + @rng.rand * 3, 1 + @rng.rand * 2, 1 + @rng.rand * 3)
+      pos = v3((@rng.rand - 0.5) * ARENA * 1.6, size.y / 2, (@rng.rand - 0.5) * ARENA * 1.6)
+      next if pos.xz.length &lt; 4
+      root.add(MeshInstance3D.new(Mesh.box(size.x, size.y, size.z), Material.new(Color.hsv(@rng.rand * 360, 0.35, 0.9)), position: pos))
+      @obstacles &lt;&lt; AABB.from_center(pos, size / 2)
+    end
+    # coins
+    20.times do
+      pos = v3((@rng.rand - 0.5) * ARENA * 1.7, 0.8, (@rng.rand - 0.5) * ARENA * 1.7)
+      next if @obstacles.any? { |o| o.contains?(pos) }
+      coin = MeshInstance3D.new(Mesh.cylinder(0.45, 0.12, 20), Material.new(Color.hex(&quot;#ffd700&quot;), shininess: 96, specular: 0.9, emissive: Color.new(0.15, 0.1, 0)), position: pos)
+      coin.rotate_x(Math::PI / 2)
+      root.add(coin)
+      @coins &lt;&lt; coin
+    end
+    root.add(@ball)
+    root.add(DirectionalLight3D.new(v3(-0.4, -1, -0.5), Color.hex(&quot;#fff4e0&quot;), 1.1))
+    root.add(PointLight3D.new(v3(0, 4, 0), Color.hex(&quot;#ffe0a0&quot;), 1.5, 14))
+    root.add(@cam)
+    hud = CanvasLayer.new
+    @hud.position = v2(12, 10)
+    @hud.shadow = Color::BLACK
+    @hud.shadow_offset = v2(2, 2)
+    @big.anchor = Anchor::Center
+    @big.font_scale = 2
+    @big.shadow = Color::BLACK
+    @big.shadow_offset = v2(3, 3)
+    hud.add(@hud, @big)
+    root.add(hud)
+  end
+
+  def update(dt : Float32)
+    if @state == :playing
+      @time_left -= dt
+      move(dt)
+      @coins.each { |c| c.rotate(Vec3::UP, dt * 2) }
+      @coins.reject! do |c|
+        if c.global_position.distance(@ball.position) &lt; 1.0
+          c.free
+          @score += 1
+          @snd_coin.try(&amp;.play(pitch: 1 + @score * 0.03))
+          true
+        end
+      end
+      if @coins.empty?
+        @state = :won
+      elsif @time_left &lt;= 0
+        @state = :lost
+      end
+    elsif Input.pressed?(Key::R)
+      SceneTree.reset
+      @coins.clear; @obstacles.clear; @score = 0; @time_left = 45_f32; @state = :playing
+      @ball = MeshInstance3D.new(Mesh.sphere(0.5, 24, 16), Material.new(Color.hex(&quot;#ff6b6b&quot;), shininess: 64, specular: 0.6), position: v3(0, 0.5, 0))
+      @vel = Vec3::ZERO
+      @cam = Camera3D.new(position: v3(0, 8, 12))
+      load
+    end
+    # camera: orbit with right drag, follow the ball
+    @yaw -= Input.mouse_delta.x * 0.005 if Input.mouse_down?(MouseButton::Right)
+    if g = Input.gamepad
+      @yaw -= g.right_stick.x * dt * 2
+    end
+    offset = Quat.from_axis_angle(Vec3::UP, @yaw) * v3(0, 6, 10)
+    @cam.position = Mathf.damp(@cam.position, @ball.position + offset, 6, dt)
+    @cam.look_at(@ball.position + v3(0, 0.5, 0))
+    @hud.text = &quot;coins #{@score}/#{@score + @coins.size}   time #{@time_left.clamp(0, 999).ceil.to_i}   fps #{Clock.fps.round.to_i}&quot;
+    @big.text = case @state
+                when :won then &quot;YOU WIN!\nR to play again&quot;
+                when :lost then &quot;TIME&#39;S UP\nR to play again&quot;
+                else &quot;&quot;
+                end
+    Eagle.quit if Input.pressed?(Key::Escape)
+  end
+
+  private def move(dt : Float32)
+    # input relative to the camera yaw
+    inp = Input.vector(&quot;left&quot;, &quot;right&quot;, &quot;up&quot;, &quot;down&quot;)
+    dir = Quat.from_axis_angle(Vec3::UP, @yaw) * v3(inp.x, 0, inp.y)
+    @vel += dir * 40 * dt
+    @vel = v3(@vel.x * (1 / (1 + dt * 2.5)), @vel.y - 25 * dt, @vel.z * (1 / (1 + dt * 2.5)))
+    on_ground = @ball.position.y &lt;= 0.501
+    if on_ground &amp;&amp; Input.pressed?(&quot;jump&quot;)
+      @vel = v3(@vel.x, 9, @vel.z)
+      @snd_jump.try(&amp;.play)
+    end
+    pos = @ball.position + @vel * dt
+    if pos.y &lt; 0.5
+      pos = v3(pos.x, 0.5, pos.z); @vel = v3(@vel.x, 0, @vel.z)
+    end
+    # sphere vs boxes: push out along the smallest axis
+    @obstacles.each do |box|
+      closest = pos.max(box.min).min(box.max)
+      d = pos - closest
+      dist = d.length
+      if dist &lt; 0.5
+        n = dist &gt; 1e-4 ? d / dist : Vec3::UP
+        pos = closest + n * 0.5
+        vn = @vel.dot(n)
+        @vel -= n * vn * 1.3 if vn &lt; 0
+      end
+    end
+    # roll the ball visually
+    horiz = v3(@vel.x, 0, @vel.z)
+    if horiz.length &gt; 0.01
+      axis = Vec3::UP.cross(horiz).normalized
+      @ball.rotate(axis, horiz.length * dt / 0.5)
+    end
+    @ball.position = pos
+  end
+end
+
+Eagle.run(CoinRush, title: &quot;Eagle Coin Rush&quot;, width: 1024, height: 640, msaa: 4)
+</code></pre></details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./coinrush3d.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

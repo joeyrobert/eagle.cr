@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactions · Eagle</title>
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
+<main><div class="play-wrap"><h1>Interactions</h1><p class="lead">Every input pattern with a live event log: clicks, drags, wheel zoom, text, gamepads, signals, timers.</p><canvas id="eagle"></canvas><p class="controls">Try everything; the log on the right narrates</p>
+<details><summary>Source — examples/interactions/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+include Eagle
+
+# Every major interaction pattern in one scene, with a live event log.
+# Run with EAGLE_DEMO=1 to have the engine drive the interactions itself.
+#
+#  1. Keyboard actions (WASD/arrows/gamepad) move the player; modifiers change speed.
+#  2. Mouse hover / click / double-click / right-click on shapes (per-node input).
+#  3. Drag &amp; drop of crates (press, move, release) with snapping.
+#  4. Mouse wheel zooms the camera; middle-drag pans it.
+#  5. UI: buttons, slider, checkbox, text input, Tab focus navigation.
+#  6. Signals between nodes (door opens when the switch is pressed).
+#  7. Area2D triggers (walk into the zone).
+#  8. Timers, tweens &amp; audio feedback on interaction.
+#  9. Pause (P) and scene reset (R); window resize; file drop.
+# 10. Gamepad buttons/axes (real or injected).
+
+class EventLog &lt; CanvasLayer
+  @lines = [] of String
+  @label = Label.new(&quot;&quot;)
+  MAX = 12
+  @@instance : EventLog? = nil
+
+  def self.instance : EventLog; @@instance ||= new; end
+  def self.log(msg : String); instance.log(msg); end
+
+  def initialize
+    super(&quot;Log&quot;, 10)
+    @label.position = v2(Window.width - 460, 40)
+    @label.color = Color.gray(0.85)
+    add(@label)
+  end
+
+  def lines; @lines; end
+
+  def log(msg : String)
+    @lines &lt;&lt; &quot;#{Clock.elapsed.round(1)}s #{msg}&quot;
+    @lines.shift if @lines.size &gt; MAX
+    @label.text = @lines.join(&quot;\n&quot;)
+  end
+
+  def resized(w : Int32, h : Int32)
+    @label.position = v2(w - 460, 40)
+  end
+end
+
+class Player &lt; Sprite2D
+  property speed = 200_f32
+  signal entered_zone
+  signal left_zone
+
+  def initialize
+    super(Texture.new(Image.circle(28, Color.hex(&quot;#ffd166&quot;))), v2(160, 300), &quot;Player&quot;)
+    add(Polygon2D.rect(6, 6, Color::BLACK).tap(&amp;.position = v2(6, -4)))
+  end
+
+  def process(dt : Float32)
+    v = Input.vector(&quot;left&quot;, &quot;right&quot;, &quot;up&quot;, &quot;down&quot;)
+    mult = Input.shift? ? 2.5_f32 : 1_f32
+    self.position += v * @speed * mult * dt
+    self.position = position.clamp(v2(20, 60), Window.size - v2(20, 20))
+  end
+end
+
+# A shape that reacts to hover, click, double-click and right-click.
+class Clickable &lt; Polygon2D
+  property? hovered = false
+  @flash = 0_f32
+  @label : String
+
+  def initialize(@label, position : Vec2, color : Color)
+    super(Polygon2D.circle(26, color).points, color, name: @label, position: position)
+  end
+
+  def inside?(p : Vec2) : Bool; to_local(p).length &lt;= 26; end
+
+  def input(e : Event)
+    case e
+    when MouseMotionEvent
+      was = @hovered
+      @hovered = inside?(e.position)
+      EventLog.log(&quot;hover #{@label}&quot;) if @hovered &amp;&amp; !was
+    when MouseButtonEvent
+      return unless e.pressed? &amp;&amp; inside?(e.position)
+      e.handled = true # stop the click reaching nodes behind
+      @flash = 0.25_f32
+      Sounds.click(e.clicks)
+      if e.button.right?
+        EventLog.log(&quot;right-click #{@label}&quot;)
+        self.color = Color.hsv(rand(360), 0.7, 1)
+      elsif e.clicks &gt;= 2
+        EventLog.log(&quot;double-click #{@label}&quot;)
+        Tween.value(self.scale, v2(1.5, 1.5), 0.15, ease: :back_out) { |s| self.scale = s }.on_complete do
+          Tween.value(self.scale, Vec2::ONE, 0.2) { |s| self.scale = s }
+        end
+      else
+        EventLog.log(&quot;click #{@label} (#{e.button})&quot;)
+      end
+    end
+  end
+
+  def process(dt : Float32)
+    @flash = Math.max(0_f32, @flash - dt)
+  end
+
+  def draw(g : Graphics)
+    g.circle(0, 0, 30, DrawMode::Line, Color::WHITE) if @hovered
+    g.circle(0, 0, 26 + @flash * 40, DrawMode::Line, Color::WHITE.with_alpha(@flash * 3)) if @flash &gt; 0
+    super
+    g.print(@label, 0, -6, Color::BLACK, align: TextAlign::Center)
+  end
+end
+
+# Drag &amp; drop with snapping to a 40px grid.
+class Crate &lt; Polygon2D
+  @dragging = false
+  @offset = Vec2::ZERO
+  @@dragging_any = false
+
+  def initialize(position : Vec2, color : Color)
+    super(Polygon2D.rect(48, 48, color).points, color, name: &quot;Crate&quot;, position: position)
+  end
+
+  def inside?(p : Vec2) : Bool
+    l = to_local(p)
+    l.x.abs &lt;= 24 &amp;&amp; l.y.abs &lt;= 24
+  end
+
+  def input(e : Event)
+    case e
+    when MouseButtonEvent
+      if e.pressed? &amp;&amp; e.button.left? &amp;&amp; inside?(e.position) &amp;&amp; !@@dragging_any
+        @dragging = true; @@dragging_any = true
+        @offset = position - e.position
+        self.z_index = 1
+        e.handled = true
+        EventLog.log(&quot;drag start crate&quot;)
+      elsif e.released? &amp;&amp; @dragging
+        @dragging = false; @@dragging_any = false
+        self.z_index = 0
+        snapped = v2(Mathf.snapped(position.x, 40), Mathf.snapped(position.y, 40))
+        Tween.value(position, snapped, 0.12, ease: :quad_out) { |p| self.position = p }
+        Sounds.drop
+        EventLog.log(&quot;drop crate at #{snapped.round}&quot;)
+      end
+    when MouseMotionEvent
+      self.position = e.position + @offset if @dragging
+    end
+  end
+
+  def draw(g : Graphics)
+    g.rect(-26, -26, 52, 52, DrawMode::Line, Color::WHITE) if @dragging
+    super
+  end
+end
+
+class Switch &lt; Area2D
+  signal toggled(on : Bool)
+  property? on = false
+
+  def initialize(position : Vec2)
+    super(&quot;Switch&quot;, position)
+    box(40, 20)
+    add(Polygon2D.rect(40, 20, Color.hex(&quot;#adb5bd&quot;)))
+    on_body_entered do |b|
+      next unless b.is_a?(Player)
+      @on = !@on
+      emit_toggled(@on)
+      EventLog.log(&quot;switch #{@on ? &quot;on&quot; : &quot;off&quot;} (Area2D signal)&quot;)
+    end
+  end
+
+  def draw(g : Graphics)
+    g.rect(-14, -6, 28, 12, color: @on ? Color::GREEN : Color::RED)
+  end
+end
+
+class Door &lt; StaticBody2D
+  @open = false
+  @height = 100_f32
+
+  def initialize(position : Vec2)
+    super(&quot;Door&quot;, position)
+    box(20, 100)
+  end
+
+  def open=(v : Bool)
+    @open = v
+    Tween.value(@height, v ? 4_f32 : 100_f32, 0.4, ease: :cubic_in_out) { |h| @height = h }
+    body.enabled = !v
+  end
+
+  def draw(g : Graphics)
+    g.rect(-10, -50, 20, @height, color: Color.hex(&quot;#8d99ae&quot;))
+  end
+end
+
+module Sounds
+  @@click : Sound? = nil
+  @@drop : Sound? = nil
+  def self.init
+    @@click = Sound.tone(900, 0.04, Sound::Wave::Square, 0.2)
+    @@drop = Sound.tone(300, 0.1, Sound::Wave::Triangle, 0.3)
+  end
+  def self.click(n); @@click.try(&amp;.play(pitch: n &gt;= 2 ? 1.5 : 1)); end
+  def self.drop; @@drop.try(&amp;.play); end
+end
+
+class InteractionsDemo &lt; App
+  @player = Player.new
+  @cam = Camera2D.new(zoom: 1)
+  @world = Node2D.new(&quot;World&quot;)
+  @paused = false
+  @status = Label.new(&quot;&quot;)
+  @zone_inside = false
+  @gamepad_label = Label.new(&quot;gamepad: none&quot;)
+
+  def load
+    Sounds.init
+    Input.map &quot;left&quot;, Key::A, Key::Left, Input.axis(GamepadAxis::LeftX, -1)
+    Input.map &quot;right&quot;, Key::D, Key::Right, Input.axis(GamepadAxis::LeftX, 1)
+    Input.map &quot;up&quot;, Key::W, Key::Up, Input.axis(GamepadAxis::LeftY, -1)
+    Input.map &quot;down&quot;, Key::S, Key::Down, Input.axis(GamepadAxis::LeftY, 1)
+    Input.map &quot;action&quot;, Key::Space, GamepadButton::A
+    root = SceneTree.root
+    root.add(@world, @cam, EventLog.instance)
+    build_world
+    build_ui
+    @cam.position = Window.center
+    @cam.limits = Rect.new(-400, -300, Window.width + 800, Window.height + 600)
+    demo_script if ENV[&quot;EAGLE_DEMO&quot;]? == &quot;1&quot;
+  end
+
+  def build_world
+    @world.clear_children
+    # 2 &amp; 3: clickable shapes and draggable crates
+    @world.add(Clickable.new(&quot;A&quot;, v2(420, 140), Color.hex(&quot;#4cc9f0&quot;)), Clickable.new(&quot;B&quot;, v2(500, 140), Color.hex(&quot;#f72585&quot;)))
+    @world.add(Crate.new(v2(420, 260), Color.hex(&quot;#b5651d&quot;)), Crate.new(v2(500, 260), Color.hex(&quot;#c98a3c&quot;)))
+    # 6 &amp; 7: switch -&gt; door via signal; trigger zone
+    switch = Switch.new(v2(200, 440))
+    door = Door.new(v2(330, 420))
+    switch.on_toggled { |on| door.open = on }
+    zone = Area2D.new(&quot;Zone&quot;, v2(120, 180)).box(120, 100)
+    zone.on_body_entered { |b| if b.is_a?(Player); @zone_inside = true; EventLog.log(&quot;entered zone&quot;); @player.emit_entered_zone; end }
+    zone.on_body_exited { |b| if b.is_a?(Player); @zone_inside = false; EventLog.log(&quot;left zone&quot;); end }
+    body = KinematicBody2D.new(&quot;PlayerBody&quot;).box(28, 28)
+    body.add(@player.tap(&amp;.position = Vec2::ZERO))
+    body.position = v2(160, 300)
+    @world.add(zone, switch, door, body)
+    @world.add(Timer.new(3.0) { EventLog.log(&quot;timer tick (every 3s)&quot;) }.start)
+  end
+
+  def build_ui
+    ui = CanvasLayer.new(&quot;UI&quot;, 5)
+    panel = Panel.new(size: v2(300, 0))
+    panel.position = v2(Window.width - 360, Window.height - 340)
+    panel.fit_content = true
+    box = VBox.new(size: v2(280, 0))
+    box.position = v2(10, 10)
+    box.fit_content = true
+    box.add(Label.new(&quot;UI interactions (Tab cycles focus)&quot;))
+    row = HBox.new
+    row.add(Button.new(&quot;Beep&quot;) { Sounds.click(1); EventLog.log(&quot;button Beep&quot;) })
+    row.add(Button.new(&quot;Shake&quot;) { @cam.shake(6, 0.3); EventLog.log(&quot;button Shake&quot;) })
+    row.add(Button.new(&quot;Reset (R)&quot;) { build_world; EventLog.log(&quot;scene reset&quot;) })
+    box.add(row)
+    slider = Slider.new(50, 400, 200, step: 10)
+    slider.on_value_changed { |v| @player.speed = v; EventLog.log(&quot;speed #{v.to_i}&quot;) }
+    box.add(HBox.new.tap { |h| h.add(Label.new(&quot;Speed&quot;), slider.tap(&amp;.size_flags = SizeFlags::ExpandX)) })
+    check = CheckBox.new(&quot;Nearest filtering&quot;, false)
+    check.on_toggled { |on| Texture.default_filter = on ? GPU::Filter::Nearest : GPU::Filter::Linear; EventLog.log(&quot;checkbox #{on}&quot;) }
+    box.add(check)
+    input = TextInput.new(&quot;&quot;, &quot;type a message, Enter to send&quot;)
+    input.on_submitted { |t| EventLog.log(&quot;submitted: #{t}&quot;); input.text = &quot;&quot; }
+    box.add(input)
+    box.add(@gamepad_label)
+    panel.add(box)
+    @status.position = v2(10, 10)
+    ui.add(panel, @status)
+    SceneTree.root.add(ui)
+  end
+
+  def input(e : Event)
+    case e
+    when KeyEvent
+      if e.pressed? &amp;&amp; !e.repeat?
+        case e.key
+        when Key::P
+          @paused = !@paused
+          SceneTree.paused = @paused
+          EventLog.log(@paused ? &quot;paused (P)&quot; : &quot;resumed&quot;)
+        when Key::R then build_world; EventLog.log(&quot;scene reset (R)&quot;)
+        when Key::Escape then Eagle.quit unless Control.focused
+        end
+      end
+    when MouseWheelEvent
+      @cam.zoom = (@cam.zoom * (1 + e.delta.y * 0.1)).clamp(0.5_f32, 3_f32)
+      EventLog.log(&quot;wheel zoom #{@cam.zoom.round(2)}&quot;)
+    when MouseMotionEvent
+      @cam.position -= e.delta / @cam.zoom if Input.mouse_down?(MouseButton::Middle)
+    when WindowEvent
+      EventLog.log(&quot;window #{e.kind} #{e.size.round}&quot;) if e.kind.resized?
+    when FileDropEvent then EventLog.log(&quot;file dropped: #{File.basename(e.path)}&quot;)
+    when GamepadConnectionEvent then EventLog.log(&quot;gamepad #{e.connected? ? &quot;connected&quot; : &quot;removed&quot;} ##{e.gamepad}&quot;)
+    when GamepadButtonEvent then EventLog.log(&quot;gamepad button #{e.button} #{e.pressed? ? &quot;down&quot; : &quot;up&quot;}&quot;) if e.pressed?
+    end
+  end
+
+  def update(dt : Float32)
+    if Input.pressed?(&quot;action&quot;)
+      EventLog.log(&quot;action pressed (space / A)&quot;)
+      @cam.shake(3, 0.15)
+    end
+    if g = Input.gamepad
+      @gamepad_label.text = &quot;gamepad: #{g.name} L#{g.left_stick.round} A:#{g.down?(GamepadButton::A)}&quot;
+    end
+    @status.text = &quot;WASD move (Shift = run)  wheel zoom  middle-drag pan  P pause  R reset  Tab focus  Esc quit   zone: #{@zone_inside ? &quot;inside&quot; : &quot;outside&quot;}   #{@paused ? &quot;PAUSED&quot; : &quot;&quot;}   fps #{Clock.fps.round}&quot;
+  end
+
+  def unload
+    puts EventLog.instance.lines.join(&quot;\n&quot;) if ENV[&quot;EAGLE_DEMO&quot;]? == &quot;1&quot;
+  end
+
+  # Scripted walkthrough used for the automated screenshot.
+  def demo_script
+    Script.hold(Key::D, 0.6, start: 0.2)
+    Script.at(0.9) { Script.click(v2(420, 140)) }
+    Script.at(1.1) { Script.click(v2(500, 140), clicks: 2) }
+    Script.at(1.3) { Script.click(v2(420, 140), MouseButton::Right) }
+    Script.drag(v2(500, 260), v2(600, 330), seconds: 0.4, start: 1.5)
+    Script.at(2.1) { Script.wheel(v2(0, 2), v2(400, 300)) }
+    Script.at(2.3) { Script.click(SceneTree.root.find_all(Button).find! { |b| b.text == &quot;Beep&quot; }.global_rect.center) }
+    Script.at(2.5) { Script.key(Key::Tab); Script.key(Key::Tab) } # Tab to the next widgets
+    Script.at(2.6) { Script.click(SceneTree.root.find_all(TextInput).first.global_rect.center) }
+    Script.at(2.7) { Script.type(&quot;hello from a script&quot;); Script.key(Key::Enter) }
+    Script.at(2.9) { Script.connect_gamepad(0); Script.gamepad_button(0, GamepadButton::A) }
+    Script.at(3.1) { Script.key(Key::Escape) }
+    Script.hold(Key::S, 0.6, start: 3.2)
+    Script.hold(Key::A, 0.4, start: 3.9)
+    Script.at(4.4) { Script.drop_file(&quot;/tmp/level.png&quot;) }
+  end
+end
+
+Eagle.run(InteractionsDemo, title: &quot;Eagle interactions&quot;, width: 1100, height: 700)
+</code></pre></details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./interactions.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+</body></html>

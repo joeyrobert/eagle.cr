@@ -1,0 +1,2141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Crystal Docs 1.18.2">
+<meta name="crystal_docs.project_version" content="main-dev">
+<meta name="crystal_docs.project_name" content="eagle">
+
+
+
+<link href="../css/style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/doc.js"></script>
+
+  <meta name="repository-name" content="eagle">
+  <title>Eagle::Area3D - eagle main-dev</title>
+  <script type="text/javascript">
+    CrystalDocs.base_path = "../";
+  </script>
+</head>
+<body>
+
+<svg class="hidden">
+  <symbol id="octicon-link" viewBox="0 0 16 16">
+    <path fill="currentColor" fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+  </symbol>
+</svg>
+<input type="checkbox" id="sidebar-btn">
+<label for="sidebar-btn" id="sidebar-btn-label">
+  <svg class="open" xmlns="http://www.w3.org/2000/svg" height="2em" width="2em" viewBox="0 0 512 512"><title>Open Sidebar</title><path fill="currentColor" d="M80 96v64h352V96H80zm0 112v64h352v-64H80zm0 112v64h352v-64H80z"></path></svg>
+  <svg class="close" xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" viewBox="0 0 512 512"><title>Close Sidebar</title><path fill="currentColor" d="m118.6 73.4-45.2 45.2L210.7 256 73.4 393.4l45.2 45.2L256 301.3l137.4 137.3 45.2-45.2L301.3 256l137.3-137.4-45.2-45.2L256 210.7Z"></path></svg>
+</label>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="search-box">
+      <input type="search" class="search-input" placeholder="Search..." spellcheck="false" aria-label="Search">
+    </div>
+
+    <div class="project-summary">
+      <h1 class="project-name">
+        <a href="../index.html">
+          eagle
+        </a>
+      </h1>
+
+      <span class="project-version">
+        main-dev
+      </span>
+    </div>
+  </div>
+
+  <div class="search-results hidden">
+    <ul class="search-list"></ul>
+  </div>
+
+  <div class="types-list">
+    <ul>
+  
+  <li class=" " data-id="eagle/toplevel" data-name="top level namespace">
+      <a href="../toplevel.html">Top Level Namespace</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="eagle/Eagle" data-name="eagle">
+      <a href="../Eagle.html">Eagle</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/AABB" data-name="eagle::aabb">
+      <a href="../Eagle/AABB.html">AABB</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Anchor" data-name="eagle::anchor">
+      <a href="../Eagle/Anchor.html">Anchor</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/AnimatedSprite2D" data-name="eagle::animatedsprite2d">
+      <a href="../Eagle/AnimatedSprite2D.html">AnimatedSprite2D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/AnimatedSprite2D/Animation" data-name="eagle::animatedsprite2d::animation">
+      <a href="../Eagle/AnimatedSprite2D/Animation.html">Animation</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/App" data-name="eagle::app">
+      <a href="../Eagle/App.html">App</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Area2D" data-name="eagle::area2d">
+      <a href="../Eagle/Area2D.html">Area2D</a>
+      
+    </li>
+  
+  <li class=" current" data-id="eagle/Eagle/Area3D" data-name="eagle::area3d">
+      <a href="../Eagle/Area3D.html">Area3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AssetError" data-name="eagle::asseterror">
+      <a href="../Eagle/AssetError.html">AssetError</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Assets" data-name="eagle::assets">
+      <a href="../Eagle/Assets.html">Assets</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Audio" data-name="eagle::audio">
+      <a href="../Eagle/Audio.html">Audio</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Audio/Bus" data-name="eagle::audio::bus">
+      <a href="../Eagle/Audio/Bus.html">Bus</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioBuffer" data-name="eagle::audiobuffer">
+      <a href="../Eagle/AudioBuffer.html">AudioBuffer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioPlayback" data-name="eagle::audioplayback">
+      <a href="../Eagle/AudioPlayback.html">AudioPlayback</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioPlayer" data-name="eagle::audioplayer">
+      <a href="../Eagle/AudioPlayer.html">AudioPlayer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioPlayer2D" data-name="eagle::audioplayer2d">
+      <a href="../Eagle/AudioPlayer2D.html">AudioPlayer2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/AudioStream" data-name="eagle::audiostream">
+      <a href="../Eagle/AudioStream.html">AudioStream</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/BitmapFont" data-name="eagle::bitmapfont">
+      <a href="../Eagle/BitmapFont.html">BitmapFont</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/BoxContainer" data-name="eagle::boxcontainer">
+      <a href="../Eagle/BoxContainer.html">BoxContainer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Button" data-name="eagle::button">
+      <a href="../Eagle/Button.html">Button</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Camera2D" data-name="eagle::camera2d">
+      <a href="../Eagle/Camera2D.html">Camera2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Camera3D" data-name="eagle::camera3d">
+      <a href="../Eagle/Camera3D.html">Camera3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CameraView" data-name="eagle::cameraview">
+      <a href="../Eagle/CameraView.html">CameraView</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Canvas" data-name="eagle::canvas">
+      <a href="../Eagle/Canvas.html">Canvas</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CanvasLayer" data-name="eagle::canvaslayer">
+      <a href="../Eagle/CanvasLayer.html">CanvasLayer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CharacterBody2D" data-name="eagle::characterbody2d">
+      <a href="../Eagle/CharacterBody2D.html">CharacterBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CharacterBody3D" data-name="eagle::characterbody3d">
+      <a href="../Eagle/CharacterBody3D.html">CharacterBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CheckBox" data-name="eagle::checkbox">
+      <a href="../Eagle/CheckBox.html">CheckBox</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Clock" data-name="eagle::clock">
+      <a href="../Eagle/Clock.html">Clock</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Codecs" data-name="eagle::codecs">
+      <a href="../Eagle/Codecs.html">Codecs</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/BMP" data-name="eagle::codecs::bmp">
+      <a href="../Eagle/Codecs/BMP.html">BMP</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/OBJ" data-name="eagle::codecs::obj">
+      <a href="../Eagle/Codecs/OBJ.html">OBJ</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/PNG" data-name="eagle::codecs::png">
+      <a href="../Eagle/Codecs/PNG.html">PNG</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/QOI" data-name="eagle::codecs::qoi">
+      <a href="../Eagle/Codecs/QOI.html">QOI</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Codecs/Vorbis" data-name="eagle::codecs::vorbis">
+      <a href="../Eagle/Codecs/Vorbis.html">Vorbis</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/BitReader" data-name="eagle::codecs::vorbis::bitreader">
+      <a href="../Eagle/Codecs/Vorbis/BitReader.html">BitReader</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Codebook" data-name="eagle::codecs::vorbis::codebook">
+      <a href="../Eagle/Codecs/Vorbis/Codebook.html">Codebook</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/DecodeError" data-name="eagle::codecs::vorbis::decodeerror">
+      <a href="../Eagle/Codecs/Vorbis/DecodeError.html">DecodeError</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Decoder" data-name="eagle::codecs::vorbis::decoder">
+      <a href="../Eagle/Codecs/Vorbis/Decoder.html">Decoder</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/FFT" data-name="eagle::codecs::vorbis::fft">
+      <a href="../Eagle/Codecs/Vorbis/FFT.html">FFT</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Floor1" data-name="eagle::codecs::vorbis::floor1">
+      <a href="../Eagle/Codecs/Vorbis/Floor1.html">Floor1</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/IMDCT" data-name="eagle::codecs::vorbis::imdct">
+      <a href="../Eagle/Codecs/Vorbis/IMDCT.html">IMDCT</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Mapping" data-name="eagle::codecs::vorbis::mapping">
+      <a href="../Eagle/Codecs/Vorbis/Mapping.html">Mapping</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Mode" data-name="eagle::codecs::vorbis::mode">
+      <a href="../Eagle/Codecs/Vorbis/Mode.html">Mode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Vorbis/Residue" data-name="eagle::codecs::vorbis::residue">
+      <a href="../Eagle/Codecs/Vorbis/Residue.html">Residue</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/WAV" data-name="eagle::codecs::wav">
+      <a href="../Eagle/Codecs/WAV.html">WAV</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Codecs/Zlib" data-name="eagle::codecs::zlib">
+      <a href="../Eagle/Codecs/Zlib.html">Zlib</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Codecs/Zlib/Error" data-name="eagle::codecs::zlib::error">
+      <a href="../Eagle/Codecs/Zlib/Error.html">Error</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CollisionObject2D" data-name="eagle::collisionobject2d">
+      <a href="../Eagle/CollisionObject2D.html">CollisionObject2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CollisionObject3D" data-name="eagle::collisionobject3d">
+      <a href="../Eagle/CollisionObject3D.html">CollisionObject3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/CollisionShape2D" data-name="eagle::collisionshape2d">
+      <a href="../Eagle/CollisionShape2D.html">CollisionShape2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Color" data-name="eagle::color">
+      <a href="../Eagle/Color.html">Color</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Config" data-name="eagle::config">
+      <a href="../Eagle/Config.html">Config</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Container" data-name="eagle::container">
+      <a href="../Eagle/Container.html">Container</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Control" data-name="eagle::control">
+      <a href="../Eagle/Control.html">Control</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/DirectionalLight3D" data-name="eagle::directionallight3d">
+      <a href="../Eagle/DirectionalLight3D.html">DirectionalLight3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Drawable" data-name="eagle::drawable">
+      <a href="../Eagle/Drawable.html">Drawable</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/DrawItem" data-name="eagle::drawitem">
+      <a href="../Eagle/DrawItem.html">DrawItem</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/DrawMode" data-name="eagle::drawmode">
+      <a href="../Eagle/DrawMode.html">DrawMode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Ease" data-name="eagle::ease">
+      <a href="../Eagle/Ease.html">Ease</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Emitter" data-name="eagle::emitter(*t)">
+      <a href="../Eagle/Emitter.html">Emitter</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Environment" data-name="eagle::environment">
+      <a href="../Eagle/Environment.html">Environment</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Error" data-name="eagle::error">
+      <a href="../Eagle/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Event" data-name="eagle::event">
+      <a href="../Eagle/Event.html">Event</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/FileDropEvent" data-name="eagle::filedropevent">
+      <a href="../Eagle/FileDropEvent.html">FileDropEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Focus" data-name="eagle::focus">
+      <a href="../Eagle/Focus.html">Focus</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Font" data-name="eagle::font">
+      <a href="../Eagle/Font.html">Font</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Font/Glyph" data-name="eagle::font::glyph">
+      <a href="../Eagle/Font/Glyph.html">Glyph</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadAxis" data-name="eagle::gamepadaxis">
+      <a href="../Eagle/GamepadAxis.html">GamepadAxis</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadAxisEvent" data-name="eagle::gamepadaxisevent">
+      <a href="../Eagle/GamepadAxisEvent.html">GamepadAxisEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadButton" data-name="eagle::gamepadbutton">
+      <a href="../Eagle/GamepadButton.html">GamepadButton</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadButtonEvent" data-name="eagle::gamepadbuttonevent">
+      <a href="../Eagle/GamepadButtonEvent.html">GamepadButtonEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GamepadConnectionEvent" data-name="eagle::gamepadconnectionevent">
+      <a href="../Eagle/GamepadConnectionEvent.html">GamepadConnectionEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Geometry" data-name="eagle::geometry">
+      <a href="../Eagle/Geometry.html">Geometry</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/GL" data-name="eagle::gl">
+      <a href="../Eagle/GL.html">GL</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Bitfield" data-name="eagle::gl::bitfield">
+      <a href="../Eagle/GL/Bitfield.html">Bitfield</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Boolean" data-name="eagle::gl::boolean">
+      <a href="../Eagle/GL/Boolean.html">Boolean</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Enum" data-name="eagle::gl::enum">
+      <a href="../Eagle/GL/Enum.html">Enum</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Float" data-name="eagle::gl::float">
+      <a href="../Eagle/GL/Float.html">Float</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Int" data-name="eagle::gl::int">
+      <a href="../Eagle/GL/Int.html">Int</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Intptr" data-name="eagle::gl::intptr">
+      <a href="../Eagle/GL/Intptr.html">Intptr</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Sizei" data-name="eagle::gl::sizei">
+      <a href="../Eagle/GL/Sizei.html">Sizei</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Sizeiptr" data-name="eagle::gl::sizeiptr">
+      <a href="../Eagle/GL/Sizeiptr.html">Sizeiptr</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GL/Uint" data-name="eagle::gl::uint">
+      <a href="../Eagle/GL/Uint.html">Uint</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/GPU" data-name="eagle::gpu">
+      <a href="../Eagle/GPU.html">GPU</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/AttribType" data-name="eagle::gpu::attribtype">
+      <a href="../Eagle/GPU/AttribType.html">AttribType</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/BlendMode" data-name="eagle::gpu::blendmode">
+      <a href="../Eagle/GPU/BlendMode.html">BlendMode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/CullMode" data-name="eagle::gpu::cullmode">
+      <a href="../Eagle/GPU/CullMode.html">CullMode</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/DepthFunc" data-name="eagle::gpu::depthfunc">
+      <a href="../Eagle/GPU/DepthFunc.html">DepthFunc</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Device" data-name="eagle::gpu::device">
+      <a href="../Eagle/GPU/Device.html">Device</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Filter" data-name="eagle::gpu::filter">
+      <a href="../Eagle/GPU/Filter.html">Filter</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/GL33" data-name="eagle::gpu::gl33">
+      <a href="../Eagle/GPU/GL33.html">GL33</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/PixelFormat" data-name="eagle::gpu::pixelformat">
+      <a href="../Eagle/GPU/PixelFormat.html">PixelFormat</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Primitive" data-name="eagle::gpu::primitive">
+      <a href="../Eagle/GPU/Primitive.html">Primitive</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/RenderTargetHandle" data-name="eagle::gpu::rendertargethandle">
+      <a href="../Eagle/GPU/RenderTargetHandle.html">RenderTargetHandle</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/UniformValue" data-name="eagle::gpu::uniformvalue">
+      <a href="../Eagle/GPU/UniformValue.html">UniformValue</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Usage" data-name="eagle::gpu::usage">
+      <a href="../Eagle/GPU/Usage.html">Usage</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/VertexAttrib" data-name="eagle::gpu::vertexattrib">
+      <a href="../Eagle/GPU/VertexAttrib.html">VertexAttrib</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/VertexLayout" data-name="eagle::gpu::vertexlayout">
+      <a href="../Eagle/GPU/VertexLayout.html">VertexLayout</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GPU/Wrap" data-name="eagle::gpu::wrap">
+      <a href="../Eagle/GPU/Wrap.html">Wrap</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Graphics" data-name="eagle::graphics">
+      <a href="../Eagle/Graphics.html">Graphics</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/GridContainer" data-name="eagle::gridcontainer">
+      <a href="../Eagle/GridContainer.html">GridContainer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/HBox" data-name="eagle::hbox">
+      <a href="../Eagle/HBox.html">HBox</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Image" data-name="eagle::image">
+      <a href="../Eagle/Image.html">Image</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/ImageControl" data-name="eagle::imagecontrol">
+      <a href="../Eagle/ImageControl.html">ImageControl</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Input" data-name="eagle::input">
+      <a href="../Eagle/Input.html">Input</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Input/AxisBinding" data-name="eagle::input::axisbinding">
+      <a href="../Eagle/Input/AxisBinding.html">AxisBinding</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Input/Binding" data-name="eagle::input::binding">
+      <a href="../Eagle/Input/Binding.html">Binding</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Input/Gamepad" data-name="eagle::input::gamepad">
+      <a href="../Eagle/Input/Gamepad.html">Gamepad</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Key" data-name="eagle::key">
+      <a href="../Eagle/Key.html">Key</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KeyEvent" data-name="eagle::keyevent">
+      <a href="../Eagle/KeyEvent.html">KeyEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KeyMod" data-name="eagle::keymod">
+      <a href="../Eagle/KeyMod.html">KeyMod</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KinematicBody2D" data-name="eagle::kinematicbody2d">
+      <a href="../Eagle/KinematicBody2D.html">KinematicBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/KinematicBody3D" data-name="eagle::kinematicbody3d">
+      <a href="../Eagle/KinematicBody3D.html">KinematicBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Label" data-name="eagle::label">
+      <a href="../Eagle/Label.html">Label</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Light3D" data-name="eagle::light3d">
+      <a href="../Eagle/Light3D.html">Light3D</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/LightData" data-name="eagle::lightdata">
+      <a href="../Eagle/LightData.html">LightData</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/LightData/Kind" data-name="eagle::lightdata::kind">
+      <a href="../Eagle/LightData/Kind.html">Kind</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Line2D" data-name="eagle::line2d">
+      <a href="../Eagle/Line2D.html">Line2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mat3" data-name="eagle::mat3">
+      <a href="../Eagle/Mat3.html">Mat3</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mat4" data-name="eagle::mat4">
+      <a href="../Eagle/Mat4.html">Mat4</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Material" data-name="eagle::material">
+      <a href="../Eagle/Material.html">Material</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mathf" data-name="eagle::mathf">
+      <a href="../Eagle/Mathf.html">Mathf</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Mesh" data-name="eagle::mesh">
+      <a href="../Eagle/Mesh.html">Mesh</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MeshInstance3D" data-name="eagle::meshinstance3d">
+      <a href="../Eagle/MeshInstance3D.html">MeshInstance3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseButton" data-name="eagle::mousebutton">
+      <a href="../Eagle/MouseButton.html">MouseButton</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseButtonEvent" data-name="eagle::mousebuttonevent">
+      <a href="../Eagle/MouseButtonEvent.html">MouseButtonEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseMotionEvent" data-name="eagle::mousemotionevent">
+      <a href="../Eagle/MouseMotionEvent.html">MouseMotionEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/MouseWheelEvent" data-name="eagle::mousewheelevent">
+      <a href="../Eagle/MouseWheelEvent.html">MouseWheelEvent</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Node" data-name="eagle::node">
+      <a href="../Eagle/Node.html">Node</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Node/ProcessMode" data-name="eagle::node::processmode">
+      <a href="../Eagle/Node/ProcessMode.html">ProcessMode</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Node2D" data-name="eagle::node2d">
+      <a href="../Eagle/Node2D.html">Node2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Node3D" data-name="eagle::node3d">
+      <a href="../Eagle/Node3D.html">Node3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Panel" data-name="eagle::panel">
+      <a href="../Eagle/Panel.html">Panel</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Particles2D" data-name="eagle::particles2d">
+      <a href="../Eagle/Particles2D.html">Particles2D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Particles2D/EmissionShape" data-name="eagle::particles2d::emissionshape">
+      <a href="../Eagle/Particles2D/EmissionShape.html">EmissionShape</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Particles2D/Particle" data-name="eagle::particles2d::particle">
+      <a href="../Eagle/Particles2D/Particle.html">Particle</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Physics2D" data-name="eagle::physics2d">
+      <a href="../Eagle/Physics2D.html">Physics2D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Body" data-name="eagle::physics2d::body">
+      <a href="../Eagle/Physics2D/Body.html">Body</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/BodyType" data-name="eagle::physics2d::bodytype">
+      <a href="../Eagle/Physics2D/BodyType.html">BodyType</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Circle" data-name="eagle::physics2d::circle">
+      <a href="../Eagle/Physics2D/Circle.html">Circle</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Collision" data-name="eagle::physics2d::collision">
+      <a href="../Eagle/Physics2D/Collision.html">Collision</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Manifold" data-name="eagle::physics2d::manifold">
+      <a href="../Eagle/Physics2D/Manifold.html">Manifold</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Polygon" data-name="eagle::physics2d::polygon">
+      <a href="../Eagle/Physics2D/Polygon.html">Polygon</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/RayHit" data-name="eagle::physics2d::rayhit">
+      <a href="../Eagle/Physics2D/RayHit.html">RayHit</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/Shape" data-name="eagle::physics2d::shape">
+      <a href="../Eagle/Physics2D/Shape.html">Shape</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics2D/World" data-name="eagle::physics2d::world">
+      <a href="../Eagle/Physics2D/World.html">World</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Physics3D" data-name="eagle::physics3d">
+      <a href="../Eagle/Physics3D.html">Physics3D</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Body" data-name="eagle::physics3d::body">
+      <a href="../Eagle/Physics3D/Body.html">Body</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/BodyType" data-name="eagle::physics3d::bodytype">
+      <a href="../Eagle/Physics3D/BodyType.html">BodyType</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Collision" data-name="eagle::physics3d::collision">
+      <a href="../Eagle/Physics3D/Collision.html">Collision</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Cuboid" data-name="eagle::physics3d::cuboid">
+      <a href="../Eagle/Physics3D/Cuboid.html">Cuboid</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Manifold" data-name="eagle::physics3d::manifold">
+      <a href="../Eagle/Physics3D/Manifold.html">Manifold</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/RayHit" data-name="eagle::physics3d::rayhit">
+      <a href="../Eagle/Physics3D/RayHit.html">RayHit</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Shape" data-name="eagle::physics3d::shape">
+      <a href="../Eagle/Physics3D/Shape.html">Shape</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/Sphere" data-name="eagle::physics3d::sphere">
+      <a href="../Eagle/Physics3D/Sphere.html">Sphere</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/World" data-name="eagle::physics3d::world">
+      <a href="../Eagle/Physics3D/World.html">World</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Physics3D/WorldShape" data-name="eagle::physics3d::worldshape">
+      <a href="../Eagle/Physics3D/WorldShape.html">WorldShape</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Platform" data-name="eagle::platform">
+      <a href="../Eagle/Platform.html">Platform</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Platform/Base" data-name="eagle::platform::base">
+      <a href="../Eagle/Platform/Base.html">Base</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Platform/SDL" data-name="eagle::platform::sdl">
+      <a href="../Eagle/Platform/SDL.html">SDL</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Platform/WindowConfig" data-name="eagle::platform::windowconfig">
+      <a href="../Eagle/Platform/WindowConfig.html">WindowConfig</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/PointLight3D" data-name="eagle::pointlight3d">
+      <a href="../Eagle/PointLight3D.html">PointLight3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Polygon2D" data-name="eagle::polygon2d">
+      <a href="../Eagle/Polygon2D.html">Polygon2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/ProgressBar" data-name="eagle::progressbar">
+      <a href="../Eagle/ProgressBar.html">ProgressBar</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Quat" data-name="eagle::quat">
+      <a href="../Eagle/Quat.html">Quat</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/QuitEvent" data-name="eagle::quitevent">
+      <a href="../Eagle/QuitEvent.html">QuitEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Ray" data-name="eagle::ray">
+      <a href="../Eagle/Ray.html">Ray</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RayCast2D" data-name="eagle::raycast2d">
+      <a href="../Eagle/RayCast2D.html">RayCast2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RayCast3D" data-name="eagle::raycast3d">
+      <a href="../Eagle/RayCast3D.html">RayCast3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Rect" data-name="eagle::rect">
+      <a href="../Eagle/Rect.html">Rect</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Renderer3D" data-name="eagle::renderer3d">
+      <a href="../Eagle/Renderer3D.html">Renderer3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RigidBody2D" data-name="eagle::rigidbody2d">
+      <a href="../Eagle/RigidBody2D.html">RigidBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/RigidBody3D" data-name="eagle::rigidbody3d">
+      <a href="../Eagle/RigidBody3D.html">RigidBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Scene3D" data-name="eagle::scene3d">
+      <a href="../Eagle/Scene3D.html">Scene3D</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/SceneTree" data-name="eagle::scenetree">
+      <a href="../Eagle/SceneTree.html">SceneTree</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/SceneTree/RootNode" data-name="eagle::scenetree::rootnode">
+      <a href="../Eagle/SceneTree/RootNode.html">RootNode</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Script" data-name="eagle::script">
+      <a href="../Eagle/Script.html">Script</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Script/Step" data-name="eagle::script::step">
+      <a href="../Eagle/Script/Step.html">Step</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Shader" data-name="eagle::shader">
+      <a href="../Eagle/Shader.html">Shader</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/ShaderError" data-name="eagle::shadererror">
+      <a href="../Eagle/ShaderError.html">ShaderError</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Shaders3D" data-name="eagle::shaders3d">
+      <a href="../Eagle/Shaders3D.html">Shaders3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/SizeFlags" data-name="eagle::sizeflags">
+      <a href="../Eagle/SizeFlags.html">SizeFlags</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Slider" data-name="eagle::slider">
+      <a href="../Eagle/Slider.html">Slider</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Sound" data-name="eagle::sound">
+      <a href="../Eagle/Sound.html">Sound</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Sound/Wave" data-name="eagle::sound::wave">
+      <a href="../Eagle/Sound/Wave.html">Wave</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Spacer" data-name="eagle::spacer">
+      <a href="../Eagle/Spacer.html">Spacer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/SpotLight3D" data-name="eagle::spotlight3d">
+      <a href="../Eagle/SpotLight3D.html">SpotLight3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Sprite2D" data-name="eagle::sprite2d">
+      <a href="../Eagle/Sprite2D.html">Sprite2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/StaticBody2D" data-name="eagle::staticbody2d">
+      <a href="../Eagle/StaticBody2D.html">StaticBody2D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/StaticBody3D" data-name="eagle::staticbody3d">
+      <a href="../Eagle/StaticBody3D.html">StaticBody3D</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextAlign" data-name="eagle::textalign">
+      <a href="../Eagle/TextAlign.html">TextAlign</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextEvent" data-name="eagle::textevent">
+      <a href="../Eagle/TextEvent.html">TextEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextInput" data-name="eagle::textinput">
+      <a href="../Eagle/TextInput.html">TextInput</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Texture" data-name="eagle::texture">
+      <a href="../Eagle/Texture.html">Texture</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TextureRegion" data-name="eagle::textureregion">
+      <a href="../Eagle/TextureRegion.html">TextureRegion</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Theme" data-name="eagle::theme">
+      <a href="../Eagle/Theme.html">Theme</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TileMap" data-name="eagle::tilemap">
+      <a href="../Eagle/TileMap.html">TileMap</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Timer" data-name="eagle::timer">
+      <a href="../Eagle/Timer.html">Timer</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Transform2D" data-name="eagle::transform2d">
+      <a href="../Eagle/Transform2D.html">Transform2D</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/TrueType" data-name="eagle::truetype">
+      <a href="../Eagle/TrueType.html">TrueType</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/Accumulator" data-name="eagle::truetype::accumulator">
+      <a href="../Eagle/TrueType/Accumulator.html">Accumulator</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/Bitmap" data-name="eagle::truetype::bitmap">
+      <a href="../Eagle/TrueType/Bitmap.html">Bitmap</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/GlyphOutline" data-name="eagle::truetype::glyphoutline">
+      <a href="../Eagle/TrueType/GlyphOutline.html">GlyphOutline</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/HMetric" data-name="eagle::truetype::hmetric">
+      <a href="../Eagle/TrueType/HMetric.html">HMetric</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueType/Point" data-name="eagle::truetype::point">
+      <a href="../Eagle/TrueType/Point.html">Point</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/TrueTypeFont" data-name="eagle::truetypefont">
+      <a href="../Eagle/TrueTypeFont.html">TrueTypeFont</a>
+      
+    </li>
+  
+  <li class="parent " data-id="eagle/Eagle/Tween" data-name="eagle::tween">
+      <a href="../Eagle/Tween.html">Tween</a>
+      
+        <ul>
+  
+  <li class=" " data-id="eagle/Eagle/Tween/Sequence" data-name="eagle::tween::sequence">
+      <a href="../Eagle/Tween/Sequence.html">Sequence</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/VBox" data-name="eagle::vbox">
+      <a href="../Eagle/VBox.html">VBox</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Vec2" data-name="eagle::vec2">
+      <a href="../Eagle/Vec2.html">Vec2</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Vec3" data-name="eagle::vec3">
+      <a href="../Eagle/Vec3.html">Vec3</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Vec4" data-name="eagle::vec4">
+      <a href="../Eagle/Vec4.html">Vec4</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Voice" data-name="eagle::voice">
+      <a href="../Eagle/Voice.html">Voice</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/Window" data-name="eagle::window">
+      <a href="../Eagle/Window.html">Window</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/WindowEvent" data-name="eagle::windowevent">
+      <a href="../Eagle/WindowEvent.html">WindowEvent</a>
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Eagle/WindowEventKind" data-name="eagle::windoweventkind">
+      <a href="../Eagle/WindowEventKind.html">WindowEventKind</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="eagle/Number" data-name="number">
+      <a href="../Number.html">Number</a>
+      
+    </li>
+  
+</ul>
+
+  </div>
+</div>
+
+
+<div class="main-content">
+<h1 class="type-name">
+
+  <span class="kind">
+    class
+  </span> Eagle::<wbr>Area3D
+
+</h1>
+
+
+  <ul class="superclass-hierarchy"><li class="superclass"><a href="../Eagle/Area3D.html">Eagle::Area3D</a></li><li class="superclass"><a href="../Eagle/CollisionObject3D.html">Eagle::CollisionObject3D</a></li><li class="superclass"><a href="../Eagle/Node3D.html">Eagle::Node3D</a></li><li class="superclass"><a href="../Eagle/Node.html">Eagle::Node</a></li><li class="superclass">Reference</li><li class="superclass">Object</li></ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="defined-in" class="anchor" href="#defined-in">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Defined in:
+  </h2>
+  
+    
+      eagle/nodes/physics3d_nodes.cr
+    
+    <br/>
+  
+
+
+
+
+
+  
+  <h2>
+    <a id="constructors" class="anchor" href="#constructors">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructors
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#new%28name%3AString%3D%22%22%2Cposition%3AVec3%3DVec3%3A%3AZERO%2Cshape%3APhysics3D%3A%3AShape%7CNil%3Dnil%29-class-method" class="signature"><strong>.new</strong>(name : String = <span class="s">&quot;&quot;</span>, position : Vec3 = <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>, shape : Physics3D::Shape | Nil = <span class="n">nil</span>)</a>
+        
+      </li>
+    
+  </ul>
+
+
+  
+
+  
+
+  
+  <h2>
+    <a id="instance-method-summary" class="anchor" href="#instance-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#bodies%3AArray%28CollisionObject3D%29-instance-method" class="signature"><strong>#bodies</strong> : Array(CollisionObject3D)</a>
+        
+      </li>
+    
+  </ul>
+
+
+
+  <div class="methods-inherited">
+    
+      
+
+  <h3>Instance methods inherited from class <code><a href="../Eagle/CollisionObject3D.html">Eagle::CollisionObject3D</a></code></h3>
+  
+  
+    <a href="../Eagle/CollisionObject3D.html#add_shape%28s%3APhysics3D%3A%3AShape%29%3Aself-instance-method" class="tooltip">
+      <span>add_shape(s : Physics3D::Shape) : <span class="k">self</span></span>
+    add_shape</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#body%3APhysics3D%3A%3ABody-instance-method" class="tooltip">
+      <span>body : Physics3D::Body</span>
+    body</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#body_entered%3AEagle%3A%3AEmitter%28CollisionObject3D%29-instance-method" class="tooltip">
+      <span>body_entered : Eagle::Emitter(CollisionObject3D)</span>
+    body_entered</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#body_exited%3AEagle%3A%3AEmitter%28CollisionObject3D%29-instance-method" class="tooltip">
+      <span>body_exited : Eagle::Emitter(CollisionObject3D)</span>
+    body_exited</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#box%28w%3ANumber%2Ch%3ANumber%2Cd%3ANumber%29%3Aself-instance-method" class="tooltip">
+      <span>box(w : Number, h : Number, d : Number) : <span class="k">self</span><br/>box(size : Vec3, offset : Vec3 = <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>) : <span class="k">self</span></span>
+    box</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#debug%3D%28debug%3ABool%29-instance-method" class="tooltip">
+      <span>debug=(debug : Bool)</span>
+    debug=</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#debug%3F%3ABool-instance-method" class="tooltip">
+      <span>debug? : Bool</span>
+    debug?</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#emit_body_entered%28%2Aargs%29%3ANil-instance-method" class="tooltip">
+      <span>emit_body_entered(*args) : Nil</span>
+    emit_body_entered</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#emit_body_exited%28%2Aargs%29%3ANil-instance-method" class="tooltip">
+      <span>emit_body_exited(*args) : Nil</span>
+    emit_body_exited</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#enter_tree%3ANil-instance-method" class="tooltip">
+      <span>enter_tree : Nil</span>
+    enter_tree</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#exit_tree%3ANil-instance-method" class="tooltip">
+      <span>exit_tree : Nil</span>
+    exit_tree</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#layer%3AUInt32-instance-method" class="tooltip">
+      <span>layer : UInt32</span>
+    layer</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#layer%3D%28v%3AUInt32%29-instance-method" class="tooltip">
+      <span>layer=(v : UInt32)</span>
+    layer=</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#mask%3AUInt32-instance-method" class="tooltip">
+      <span>mask : UInt32</span>
+    mask</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#mask%3D%28v%3AUInt32%29-instance-method" class="tooltip">
+      <span>mask=(v : UInt32)</span>
+    mask=</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#on_body_entered%28%26block%3ACollisionObject3D-%3ENil%29%3AProc%28CollisionObject3D%2CNil%29-instance-method" class="tooltip">
+      <span>on_body_entered(&block : CollisionObject3D -> Nil) : Proc(CollisionObject3D, Nil)</span>
+    on_body_entered</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#on_body_exited%28%26block%3ACollisionObject3D-%3ENil%29%3AProc%28CollisionObject3D%2CNil%29-instance-method" class="tooltip">
+      <span>on_body_exited(&block : CollisionObject3D -> Nil) : Proc(CollisionObject3D, Nil)</span>
+    on_body_exited</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#overlapping%3AArray%28CollisionObject3D%29-instance-method" class="tooltip">
+      <span>overlapping : Array(CollisionObject3D)</span>
+    overlapping</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#physics_process%28dt%3AFloat32%29%3ANil-instance-method" class="tooltip">
+      <span>physics_process(dt : Float32) : Nil</span>
+    physics_process</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#process%28dt%3AFloat32%29%3ANil-instance-method" class="tooltip">
+      <span>process(dt : Float32) : Nil</span>
+    process</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#pull_transform%3ANil-instance-method" class="tooltip">
+      <span>pull_transform : Nil</span>
+    pull_transform</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#push_transform%3ANil-instance-method" class="tooltip">
+      <span>push_transform : Nil</span>
+    push_transform</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#sphere%28radius%3ANumber%2Coffset%3AVec3%3DVec3%3A%3AZERO%29%3Aself-instance-method" class="tooltip">
+      <span>sphere(radius : Number, offset : Vec3 = <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>) : <span class="k">self</span></span>
+    sphere</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#world%3APhysics3D%3A%3AWorld-instance-method" class="tooltip">
+      <span>world : Physics3D::World</span>
+    world</a>, 
+    
+  
+    <a href="../Eagle/CollisionObject3D.html#world%3D%28world%3APhysics3D%3A%3AWorld%29-instance-method" class="tooltip">
+      <span>world=(world : Physics3D::World)</span>
+    world=</a>
+    
+  
+
+
+      
+
+  <h3>Constructor methods inherited from class <code><a href="../Eagle/CollisionObject3D.html">Eagle::CollisionObject3D</a></code></h3>
+  
+  
+    <a href="../Eagle/CollisionObject3D.html#new%28type%3APhysics3D%3A%3ABodyType%2Cname%3AString%3D%22%22%2Cposition%3AVec3%3DVec3%3A%3AZERO%2Cshape%3APhysics3D%3A%3AShape%7CNil%3Dnil%29-class-method" class="tooltip">
+      <span>new(type : Physics3D::BodyType, name : String = <span class="s">&quot;&quot;</span>, position : Vec3 = <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>, shape : Physics3D::Shape | Nil = <span class="n">nil</span>)</span>
+    new</a>
+    
+  
+
+
+      
+
+
+      
+
+
+    
+      
+
+  <h3>Instance methods inherited from class <code><a href="../Eagle/Node3D.html">Eagle::Node3D</a></code></h3>
+  
+  
+    <a href="../Eagle/Node3D.html#back%3AVec3-instance-method" class="tooltip">
+      <span>back : Vec3</span>
+    back</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#distance_to%28o%3ANode3D%29%3AFloat32-instance-method" class="tooltip">
+      <span>distance_to(o : Node3D) : Float32</span>
+    distance_to</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#draw_tree%28g%3AGraphics%29%3ANil-instance-method" class="tooltip">
+      <span>draw_tree(g : Graphics) : Nil</span>
+    draw_tree</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#euler%3AVec3-instance-method" class="tooltip">
+      <span>euler : Vec3</span>
+    euler</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#euler%3D%28e%3AVec3%29-instance-method" class="tooltip">
+      <span>euler=(e : Vec3)</span>
+    euler=</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#forward%3AVec3-instance-method" class="tooltip">
+      <span>forward : Vec3</span>
+    forward</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#global_position%3AVec3-instance-method" class="tooltip">
+      <span>global_position : Vec3</span>
+    global_position</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#global_position%3D%28p%3AVec3%29-instance-method" class="tooltip">
+      <span>global_position=(p : Vec3)</span>
+    global_position=</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#global_rotation%3AQuat-instance-method" class="tooltip">
+      <span>global_rotation : Quat</span>
+    global_rotation</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#global_transform%3AMat4-instance-method" class="tooltip">
+      <span>global_transform : Mat4</span>
+    global_transform</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#look_at%28target%3AVec3%2Cup%3AVec3%3DVec3%3A%3AUP%29%3ANil-instance-method" class="tooltip">
+      <span>look_at(target : Vec3, up : Vec3 = <span class="t">Vec3</span><span class="t">::</span><span class="t">UP</span>) : Nil</span>
+    look_at</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#parent_3d%3ANode3D%7CNil-instance-method" class="tooltip">
+      <span>parent_3d : Node3D | Nil</span>
+    parent_3d</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#position%3AVec3-instance-method" class="tooltip">
+      <span>position : Vec3</span>
+    position</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#position%3D%28position%3AVec3%29-instance-method" class="tooltip">
+      <span>position=(position : Vec3)</span>
+    position=</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#right%3AVec3-instance-method" class="tooltip">
+      <span>right : Vec3</span>
+    right</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#rotate%28axis%3AVec3%2Crad%3ANumber%29%3ANil-instance-method" class="tooltip">
+      <span>rotate(axis : Vec3, rad : Number) : Nil</span>
+    rotate</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#rotate_local%28axis%3AVec3%2Crad%3ANumber%29%3ANil-instance-method" class="tooltip">
+      <span>rotate_local(axis : Vec3, rad : Number) : Nil</span>
+    rotate_local</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#rotate_x%28rad%3ANumber%29%3ANil-instance-method" class="tooltip">
+      <span>rotate_x(rad : Number) : Nil</span>
+    rotate_x</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#rotate_y%28rad%3ANumber%29%3ANil-instance-method" class="tooltip">
+      <span>rotate_y(rad : Number) : Nil</span>
+    rotate_y</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#rotate_z%28rad%3ANumber%29%3ANil-instance-method" class="tooltip">
+      <span>rotate_z(rad : Number) : Nil</span>
+    rotate_z</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#rotation%3AQuat-instance-method" class="tooltip">
+      <span>rotation : Quat</span>
+    rotation</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#rotation%3D%28rotation%3AQuat%29-instance-method" class="tooltip">
+      <span>rotation=(rotation : Quat)</span>
+    rotation=</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#scale%3AVec3-instance-method" class="tooltip">
+      <span>scale : Vec3</span>
+    scale</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#scale%3D%28s%3AVec3%29-instance-method" class="tooltip">
+      <span>scale=(s : Vec3)<br/>scale=(s : Number)</span>
+    scale=</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#set_euler%28pitch%3ANumber%2Cyaw%3ANumber%2Croll%3ANumber%3D0%29%3Aself-instance-method" class="tooltip">
+      <span>set_euler(pitch : Number, yaw : Number, roll : Number = <span class="n">0</span>) : <span class="k">self</span></span>
+    set_euler</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#to_global%28local%3AVec3%29%3AVec3-instance-method" class="tooltip">
+      <span>to_global(local : Vec3) : Vec3</span>
+    to_global</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#to_local%28global%3AVec3%29%3AVec3-instance-method" class="tooltip">
+      <span>to_local(global : Vec3) : Vec3</span>
+    to_local</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#top_level%3D%28top_level%3ABool%29-instance-method" class="tooltip">
+      <span>top_level=(top_level : Bool)</span>
+    top_level=</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#top_level%3F%3ABool-instance-method" class="tooltip">
+      <span>top_level? : Bool</span>
+    top_level?</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#transform%3AMat4-instance-method" class="tooltip">
+      <span>transform : Mat4</span>
+    transform</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#translate%28v%3AVec3%29%3ANil-instance-method" class="tooltip">
+      <span>translate(v : Vec3) : Nil</span>
+    translate</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#translate_local%28v%3AVec3%29%3ANil-instance-method" class="tooltip">
+      <span>translate_local(v : Vec3) : Nil</span>
+    translate_local</a>, 
+    
+  
+    <a href="../Eagle/Node3D.html#up%3AVec3-instance-method" class="tooltip">
+      <span>up : Vec3</span>
+    up</a>
+    
+  
+
+
+      
+
+  <h3>Constructor methods inherited from class <code><a href="../Eagle/Node3D.html">Eagle::Node3D</a></code></h3>
+  
+  
+    <a href="../Eagle/Node3D.html#new%28name%3AString%3D%22%22%2Cposition%3AEagle%3A%3AVec3%3DVec3%3A%3AZERO%2Crotation%3AEagle%3A%3AQuat%3DQuat%3A%3AIDENTITY%2Cscale%3AEagle%3A%3AVec3%3DVec3%3A%3AONE%29-class-method" class="tooltip">
+      <span>new(name : String = <span class="s">&quot;&quot;</span>, position : Eagle::Vec3 = <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>, rotation : Eagle::Quat = <span class="t">Quat</span><span class="t">::</span><span class="t">IDENTITY</span>, scale : Eagle::Vec3 = <span class="t">Vec3</span><span class="t">::</span><span class="t">ONE</span>)</span>
+    new</a>
+    
+  
+
+
+      
+
+
+      
+
+
+    
+      
+
+  <h3>Instance methods inherited from class <code><a href="../Eagle/Node.html">Eagle::Node</a></code></h3>
+  
+  
+    <a href="../Eagle/Node.html#%3C%3C%28child%3ANode%29%3Aself-instance-method" class="tooltip">
+      <span><<(child : Node) : <span class="k">self</span></span>
+    <<</a>, 
+    
+  
+    <a href="../Eagle/Node.html#%5B%5D%28path%3AString%29%3ANode-instance-method" class="tooltip">
+      <span>[](path : String) : Node</span>
+    []</a>, 
+    
+  
+    <a href="../Eagle/Node.html#%5B%5D%3F%28path%3AString%29%3ANode%7CNil-instance-method" class="tooltip">
+      <span>[]?(path : String) : Node | Nil</span>
+    []?</a>, 
+    
+  
+    <a href="../Eagle/Node.html#add%28child%3ANode%29%3ANode-instance-method" class="tooltip">
+      <span>add(child : Node) : Node<br/>add(*children : Node) : Nil</span>
+    add</a>, 
+    
+  
+    <a href="../Eagle/Node.html#add_child%28child%3ANode%29%3ANode-instance-method" class="tooltip">
+      <span>add_child(child : Node) : Node</span>
+    add_child</a>, 
+    
+  
+    <a href="../Eagle/Node.html#add_to_group%28group%3AString%29%3Aself-instance-method" class="tooltip">
+      <span>add_to_group(group : String) : <span class="k">self</span></span>
+    add_to_group</a>, 
+    
+  
+    <a href="../Eagle/Node.html#ancestor_of%3F%28node%3ANode%29%3ABool-instance-method" class="tooltip">
+      <span>ancestor_of?(node : Node) : Bool</span>
+    ancestor_of?</a>, 
+    
+  
+    <a href="../Eagle/Node.html#can_process%3F%3ABool-instance-method" class="tooltip">
+      <span>can_process? : Bool</span>
+    can_process?</a>, 
+    
+  
+    <a href="../Eagle/Node.html#child%3F%28name%3AString%29%3ANode%7CNil-instance-method" class="tooltip">
+      <span>child?(name : String) : Node | Nil</span>
+    child?</a>, 
+    
+  
+    <a href="../Eagle/Node.html#child_added%3AEagle%3A%3AEmitter%28Node%29-instance-method" class="tooltip">
+      <span>child_added : Eagle::Emitter(Node)</span>
+    child_added</a>, 
+    
+  
+    <a href="../Eagle/Node.html#child_count%3AInt32-instance-method" class="tooltip">
+      <span>child_count : Int32</span>
+    child_count</a>, 
+    
+  
+    <a href="../Eagle/Node.html#child_removed%3AEagle%3A%3AEmitter%28Node%29-instance-method" class="tooltip">
+      <span>child_removed : Eagle::Emitter(Node)</span>
+    child_removed</a>, 
+    
+  
+    <a href="../Eagle/Node.html#children%3AArray%28Eagle%3A%3ANode%29-instance-method" class="tooltip">
+      <span>children : Array(Eagle::Node)</span>
+    children</a>, 
+    
+  
+    <a href="../Eagle/Node.html#children_of%28type%3AT.class%29%3AArray%28T%29forallT-instance-method" class="tooltip">
+      <span>children_of(type : <span class="t">T</span>.<span class="k">class</span>) : Array(T) forall T</span>
+    children_of</a>, 
+    
+  
+    <a href="../Eagle/Node.html#clear_children%3ANil-instance-method" class="tooltip">
+      <span>clear_children : Nil</span>
+    clear_children</a>, 
+    
+  
+    <a href="../Eagle/Node.html#draw%28g%3AGraphics%29%3ANil-instance-method" class="tooltip">
+      <span>draw(g : Graphics) : Nil</span>
+    draw</a>, 
+    
+  
+    <a href="../Eagle/Node.html#dump%28io%3AIO%3DSTDOUT%2Cindent%3D0%29%3ANil-instance-method" class="tooltip">
+      <span>dump(io : IO = <span class="t">STDOUT</span>, indent = <span class="n">0</span>) : Nil</span>
+    dump</a>, 
+    
+  
+    <a href="../Eagle/Node.html#each_ancestor%28%26%3ANode-%3E%29%3ANil-instance-method" class="tooltip">
+      <span>each_ancestor(& : Node -> ) : Nil</span>
+    each_ancestor</a>, 
+    
+  
+    <a href="../Eagle/Node.html#each_child%28%26%3ANode-%3E%29%3ANil-instance-method" class="tooltip">
+      <span>each_child(& : Node -> ) : Nil</span>
+    each_child</a>, 
+    
+  
+    <a href="../Eagle/Node.html#each_descendant%28%26block%3ANode-%3E%29%3ANil-instance-method" class="tooltip">
+      <span>each_descendant(&block : Node -> ) : Nil</span>
+    each_descendant</a>, 
+    
+  
+    <a href="../Eagle/Node.html#emit_child_added%28%2Aargs%29%3ANil-instance-method" class="tooltip">
+      <span>emit_child_added(*args) : Nil</span>
+    emit_child_added</a>, 
+    
+  
+    <a href="../Eagle/Node.html#emit_child_removed%28%2Aargs%29%3ANil-instance-method" class="tooltip">
+      <span>emit_child_removed(*args) : Nil</span>
+    emit_child_removed</a>, 
+    
+  
+    <a href="../Eagle/Node.html#emit_tree_entered%28%2Aargs%29%3ANil-instance-method" class="tooltip">
+      <span>emit_tree_entered(*args) : Nil</span>
+    emit_tree_entered</a>, 
+    
+  
+    <a href="../Eagle/Node.html#emit_tree_exited%28%2Aargs%29%3ANil-instance-method" class="tooltip">
+      <span>emit_tree_exited(*args) : Nil</span>
+    emit_tree_exited</a>, 
+    
+  
+    <a href="../Eagle/Node.html#enter_tree%3ANil-instance-method" class="tooltip">
+      <span>enter_tree : Nil</span>
+    enter_tree</a>, 
+    
+  
+    <a href="../Eagle/Node.html#exit_tree%3ANil-instance-method" class="tooltip">
+      <span>exit_tree : Nil</span>
+    exit_tree</a>, 
+    
+  
+    <a href="../Eagle/Node.html#find%28name%3AString%29%3ANode%7CNil-instance-method" class="tooltip">
+      <span>find(name : String) : Node | Nil</span>
+    find</a>, 
+    
+  
+    <a href="../Eagle/Node.html#find_all%28type%3AT.class%29%3AArray%28T%29forallT-instance-method" class="tooltip">
+      <span>find_all(type : <span class="t">T</span>.<span class="k">class</span>) : Array(T) forall T</span>
+    find_all</a>, 
+    
+  
+    <a href="../Eagle/Node.html#first_child%3ANode%7CNil-instance-method" class="tooltip">
+      <span>first_child : Node | Nil</span>
+    first_child</a>, 
+    
+  
+    <a href="../Eagle/Node.html#free%3ANil-instance-method" class="tooltip">
+      <span>free : Nil</span>
+    free</a>, 
+    
+  
+    <a href="../Eagle/Node.html#get_node%28path%3AString%2Ctype%3AT.class%29%3ATforallT-instance-method" class="tooltip">
+      <span>get_node(path : String, type : <span class="t">T</span>.<span class="k">class</span>) : T forall T<br/>get_node(path : String) : Node</span>
+    get_node</a>, 
+    
+  
+    <a href="../Eagle/Node.html#get_node%3F%28path%3AString%29%3ANode%7CNil-instance-method" class="tooltip">
+      <span>get_node?(path : String) : Node | Nil</span>
+    get_node?</a>, 
+    
+  
+    <a href="../Eagle/Node.html#groups%3ASet%28String%29-instance-method" class="tooltip">
+      <span>groups : Set(String)</span>
+    groups</a>, 
+    
+  
+    <a href="../Eagle/Node.html#in_group%3F%28group%3AString%29%3ABool-instance-method" class="tooltip">
+      <span>in_group?(group : String) : Bool</span>
+    in_group?</a>, 
+    
+  
+    <a href="../Eagle/Node.html#in_tree%3F%3ABool-instance-method" class="tooltip">
+      <span>in_tree? : Bool</span>
+    in_tree?</a>, 
+    
+  
+    <a href="../Eagle/Node.html#input%28event%3AEvent%29%3ANil-instance-method" class="tooltip">
+      <span>input(event : Event) : Nil</span>
+    input</a>, 
+    
+  
+    <a href="../Eagle/Node.html#name%3AString-instance-method" class="tooltip">
+      <span>name : String</span>
+    name</a>, 
+    
+  
+    <a href="../Eagle/Node.html#name%3D%28name%3AString%29-instance-method" class="tooltip">
+      <span>name=(name : String)</span>
+    name=</a>, 
+    
+  
+    <a href="../Eagle/Node.html#on_child_added%28%26block%3ANode-%3ENil%29%3AProc%28Node%2CNil%29-instance-method" class="tooltip">
+      <span>on_child_added(&block : Node -> Nil) : Proc(Node, Nil)</span>
+    on_child_added</a>, 
+    
+  
+    <a href="../Eagle/Node.html#on_child_removed%28%26block%3ANode-%3ENil%29%3AProc%28Node%2CNil%29-instance-method" class="tooltip">
+      <span>on_child_removed(&block : Node -> Nil) : Proc(Node, Nil)</span>
+    on_child_removed</a>, 
+    
+  
+    <a href="../Eagle/Node.html#on_tree_entered%28%26block%3A-%3ENil%29%3AProc%28Nil%29-instance-method" class="tooltip">
+      <span>on_tree_entered(&block :  -> Nil) : Proc(Nil)</span>
+    on_tree_entered</a>, 
+    
+  
+    <a href="../Eagle/Node.html#on_tree_exited%28%26block%3A-%3ENil%29%3AProc%28Nil%29-instance-method" class="tooltip">
+      <span>on_tree_exited(&block :  -> Nil) : Proc(Nil)</span>
+    on_tree_exited</a>, 
+    
+  
+    <a href="../Eagle/Node.html#parent%3ANode%7CNil-instance-method" class="tooltip">
+      <span>parent : Node | Nil</span>
+    parent</a>, 
+    
+  
+    <a href="../Eagle/Node.html#path%3AString-instance-method" class="tooltip">
+      <span>path : String</span>
+    path</a>, 
+    
+  
+    <a href="../Eagle/Node.html#physics_process%28dt%3AFloat32%29%3ANil-instance-method" class="tooltip">
+      <span>physics_process(dt : Float32) : Nil</span>
+    physics_process</a>, 
+    
+  
+    <a href="../Eagle/Node.html#process%28dt%3AFloat32%29%3ANil-instance-method" class="tooltip">
+      <span>process(dt : Float32) : Nil</span>
+    process</a>, 
+    
+  
+    <a href="../Eagle/Node.html#process_mode%3AEagle%3A%3ANode%3A%3AProcessMode-instance-method" class="tooltip">
+      <span>process_mode : Eagle::Node::ProcessMode</span>
+    process_mode</a>, 
+    
+  
+    <a href="../Eagle/Node.html#process_mode%3D%28process_mode%3AEagle%3A%3ANode%3A%3AProcessMode%29-instance-method" class="tooltip">
+      <span>process_mode=(process_mode : Eagle::Node::ProcessMode)</span>
+    process_mode=</a>, 
+    
+  
+    <a href="../Eagle/Node.html#queue_free%3ANil-instance-method" class="tooltip">
+      <span>queue_free : Nil</span>
+    queue_free</a>, 
+    
+  
+    <a href="../Eagle/Node.html#queued_free%3F%3ABool-instance-method" class="tooltip">
+      <span>queued_free? : Bool</span>
+    queued_free?</a>, 
+    
+  
+    <a href="../Eagle/Node.html#ready%3ANil-instance-method" class="tooltip">
+      <span>ready : Nil</span>
+    ready</a>, 
+    
+  
+    <a href="../Eagle/Node.html#ready_called%3F%3ABool-instance-method" class="tooltip">
+      <span>ready_called? : Bool</span>
+    ready_called?</a>, 
+    
+  
+    <a href="../Eagle/Node.html#remove%28child%3ANode%29%3ANil-instance-method" class="tooltip">
+      <span>remove(child : Node) : Nil</span>
+    remove</a>, 
+    
+  
+    <a href="../Eagle/Node.html#remove_child%28child%3ANode%29%3ANil-instance-method" class="tooltip">
+      <span>remove_child(child : Node) : Nil</span>
+    remove_child</a>, 
+    
+  
+    <a href="../Eagle/Node.html#remove_from_group%28group%3AString%29%3ANil-instance-method" class="tooltip">
+      <span>remove_from_group(group : String) : Nil</span>
+    remove_from_group</a>, 
+    
+  
+    <a href="../Eagle/Node.html#remove_from_parent%3ANil-instance-method" class="tooltip">
+      <span>remove_from_parent : Nil</span>
+    remove_from_parent</a>, 
+    
+  
+    <a href="../Eagle/Node.html#resized%28width%3AInt32%2Cheight%3AInt32%29%3ANil-instance-method" class="tooltip">
+      <span>resized(width : Int32, height : Int32) : Nil</span>
+    resized</a>, 
+    
+  
+    <a href="../Eagle/Node.html#root%3ANode-instance-method" class="tooltip">
+      <span>root : Node</span>
+    root</a>, 
+    
+  
+    <a href="../Eagle/Node.html#to_s%28io%3AIO%29%3ANil-instance-method" class="tooltip">
+      <span>to_s(io : IO) : Nil</span>
+    to_s</a>, 
+    
+  
+    <a href="../Eagle/Node.html#tree_entered%3AEagle%3A%3AEmitter%28%29-instance-method" class="tooltip">
+      <span>tree_entered : Eagle::Emitter()</span>
+    tree_entered</a>, 
+    
+  
+    <a href="../Eagle/Node.html#tree_exited%3AEagle%3A%3AEmitter%28%29-instance-method" class="tooltip">
+      <span>tree_exited : Eagle::Emitter()</span>
+    tree_exited</a>, 
+    
+  
+    <a href="../Eagle/Node.html#visible%3D%28visible%3ABool%29-instance-method" class="tooltip">
+      <span>visible=(visible : Bool)</span>
+    visible=</a>, 
+    
+  
+    <a href="../Eagle/Node.html#visible%3F%3ABool-instance-method" class="tooltip">
+      <span>visible? : Bool</span>
+    visible?</a>, 
+    
+  
+    <a href="../Eagle/Node.html#z_index%3AInt32-instance-method" class="tooltip">
+      <span>z_index : Int32</span>
+    z_index</a>, 
+    
+  
+    <a href="../Eagle/Node.html#z_index%3D%28z_index%3AInt32%29-instance-method" class="tooltip">
+      <span>z_index=(z_index : Int32)</span>
+    z_index=</a>
+    
+  
+
+
+      
+
+  <h3>Constructor methods inherited from class <code><a href="../Eagle/Node.html">Eagle::Node</a></code></h3>
+  
+  
+    <a href="../Eagle/Node.html#new%28name%3AString%3D%22%22%29-class-method" class="tooltip">
+      <span>new(name : String = <span class="s">&quot;&quot;</span>)</span>
+    new</a>
+    
+  
+
+
+      
+
+
+      
+
+
+    
+      
+
+
+      
+
+
+      
+
+
+      
+
+
+    
+      
+
+
+      
+
+
+      
+
+
+      
+
+
+    
+  </div>
+
+  
+  <h2>
+    <a id="constructor-detail" class="anchor" href="#constructor-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructor Detail
+  </h2>
+  
+    <div class="entry-detail" id="new(name:String=&quot;&quot;,position:Vec3=Vec3::ZERO,shape:Physics3D::Shape|Nil=nil)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(name : String = <span class="s">&quot;&quot;</span>, position : <a href="../Eagle/Vec3.html">Vec3</a> = <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>, shape : <a href="../Eagle/Physics3D/Shape.html">Physics3D::Shape</a> | Nil = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#new%28name%3AString%3D%22%22%2Cposition%3AVec3%3DVec3%3A%3AZERO%2Cshape%3APhysics3D%3A%3AShape%7CNil%3Dnil%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+
+
+  
+
+  
+
+  
+  <h2>
+    <a id="instance-method-detail" class="anchor" href="#instance-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="bodies:Array(CollisionObject3D)-instance-method">
+      <div class="signature">
+        
+        def <strong>bodies</strong> : Array(<a href="../Eagle/CollisionObject3D.html">CollisionObject3D</a>)
+
+        <a class="method-permalink" href="#bodies%3AArray%28CollisionObject3D%29-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+      </div>
+    </div>
+  
+
+
+
+</div>
+
+</body>
+</html>
