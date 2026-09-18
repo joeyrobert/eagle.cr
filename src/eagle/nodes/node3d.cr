@@ -176,7 +176,7 @@ module Eagle
     def draw_item : DrawItem?
       m = @mesh
       return nil unless m
-      DrawItem.new(m, @material, global_transform)
+      DrawItem.new(m, @material, global_transform, @cast_shadows)
     end
   end
 
