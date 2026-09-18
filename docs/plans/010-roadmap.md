@@ -55,7 +55,7 @@ Requirements gathered from the project owner (2026-09-18):
 
 ## Phase 5: Games & polish
 - [x] 2D games: Chess (full rules, perft-verified move generator, alpha-beta AI), Checkers (1/2 players, forced captures, multi-jumps, kings, AI), Breakout, Asteroids, Platformer, Snake, all self-contained (procedural assets & sounds)
-- [x] 3D: feature fly-through (`flythrough3d`), Coin Rush (`coinrush3d`), and streamed open-world driving (`joyride`)
+- [x] 3D: feature fly-through (`flythrough3d`), Coin Rush (`coinrush3d`), streamed open-world driving (`joyride`), and first-person shooter (`fps` / Neon Bastion)
 - [x] CLI: `eagle new/run/build/view/examples`; viewers for PNG/QOI/BMP, OBJ, TTF, WAV, GLSL (hot reload)
 - [x] README + docs/guide.md
 - [ ] Windows/Linux: link flags are in place (`@[Link("SDL2")]`) but untested on those platforms
@@ -86,6 +86,7 @@ Requirements gathered from the project owner (2026-09-18):
 - [x] Usage docs on every public type: overview, when to use it, and an example; 125 doc examples type-checked by `script/check_doc_examples.cr`
 
 ## Log
+- 2026-09-18: Neon Bastion FPS example (`examples/fps`): mouse look via `Window.relative_mouse` (click-to-capture for pointer lock; browsers need a gesture), pulse rifle + scattergun, procedural arena, grunt (keep distance and shoot on sight) and charger (rush melee) AI, Waves and Deathmatch, spatial stereo through `Audio.play_at` / `AudioPlayer3D` (shots, footsteps, enemy hums, deaths). Simulation is in `game.cr` with headless specs. Native builds lock the mouse on load so `EAGLE_FRAMES` can screenshot without a click.
 - 2026-09-18: 3D spatial audio (`AudioPlayer3D`, `AudioListener3D`, `Audio.listener`, `Audio.play_at`, `Spatial3D`, `Attenuation`) and the `spatial_audio3d` example. Per voice: inverse/linear/exponential distance models with min/max/rolloff, equal-power pan in listener space (limited to `PAN_WIDTH` 0.8 so the far ear is never silent; a hard equal-power pan zeroed the far ear and hid the ITD entirely), up to 0.66 ms interaural delay through a 64-sample fractional delay line, one-pole head-shadow low-pass on the far ear and on sources behind, optional doppler. All parameters ramp linearly across each mixed buffer; the non-spatial path is untouched. Findings: `AudioPlayer3D` must seed its previous position in `enter_tree`, or the first frame reports zero velocity; `nodes.cr` had to require `audio_player` after `node3d`; stereo sources are downmixed to mono before spatializing. Not done: HRTF, occlusion/obstruction by geometry, reverb zones, cone (directional) sources.
 - 2026-09-18: API docs pass. Findings: `Voice`/`AudioPlayback` setters only took `Float32`, so `voice.pitch = 0.8 + x` didn't compile (added `Number` setters); `CanvasLayer#layer` is not used for ordering (documented; order is tree order + `z_index`); the guide's Sprite2D example assigned locals instead of `self.position`; the full spec suite crashes intermittently inside a GL call (seen at the pre-docs commit too, roughly 1 run in 8), unresolved.
 - 2026-09-18: project started; Phase 0 and Phase 1 landed (99 specs green). Smoke and sandbox2d screenshots verified visually.
