@@ -56,6 +56,7 @@ Eagle.run(Game, title: "My Game", width: 960, height: 540)
 | UI | `Control`, `Panel`, `Label`, `Button`, `CheckBox`, `Slider`, `ProgressBar`, `TextInput`, `VBox`/`HBox`/`GridContainer`, themes, focus & keyboard navigation |
 | 3D | `Mesh` primitives + OBJ, `Material` (Blinn-Phong, textures, transparency, wireframe, custom shaders), `Camera3D`, directional/point/spot lights, PCF shadow maps, procedural sky, fog |
 | Tween | `Tween.to/value/after/sequence` with 17 easings |
+| Algorithms | Seeded PCG32 `Rng` and dice, Perlin/simplex/fBm/Worley noise, grid FOV and A*, Poisson/BSP/caves/mazes, geometry, quadtrees, steering and behavior trees |
 | Tools | `eagle init/run/build/export/view/examples` CLI with a project wizard; viewers for images, OBJ, TTF, WAV, GLSL (hot reload) |
 
 ## Install
@@ -197,7 +198,7 @@ cd .. && eagle.cr/bin/eagle init mygame --local eagle.cr --yes   # a game that u
 
 * **Games (2D):** `chess` (full rules + alpha-beta AI), `checkers` (1 or 2 players, AI), `breakout`, `asteroids`, `platformer`, `snake`, `roguelike`
 * **Games (3D):** `coinrush3d`, `joyride` (an infinite streamed city/countryside driving game with traffic, police, pedestrians and missions), `fps` (Neon Bastion: mouse-look arena shooter with two weapons, grunt/charger AI, Waves and Deathmatch)
-* **Feature tests:** `smoke`, `sandbox2d`, `physics`, `physics3d`, `ui`, `interactions`, `embedded`, `flythrough3d`, `spatial_audio3d`
+* **Feature tests:** `smoke`, `sandbox2d`, `physics`, `physics3d`, `ui`, `interactions`, `embedded`, `flythrough3d`, `spatial_audio3d`, `algorithms` (A*, noise, Poisson disk, flocking, FOV)
 
 Every example supports `EAGLE_FRAMES=60 EAGLE_SCREENSHOT=out.png` for automated verification.
 

@@ -1,5 +1,13 @@
 require "./eagle/version"
 require "./eagle/math/math"
+require "./eagle/algorithms/rng"
+require "./eagle/algorithms/noise"
+require "./eagle/algorithms/grid"
+require "./eagle/algorithms/pathfinding"
+require "./eagle/algorithms/procedural"
+require "./eagle/algorithms/geometry"
+require "./eagle/algorithms/spatial"
+require "./eagle/algorithms/ai"
 require "./eagle/core/error"
 require "./eagle/core/log"
 require "./eagle/core/clock"
@@ -60,6 +68,7 @@ require "./eagle/core/engine"
 # * **Assets:** `Assets`, `Texture`, `Image`, `Font`, `Shader`
 # * **Timing:** `Clock`, `Timer`, `Tween`
 # * **Math:** `Vec2`, `Vec3`, `Rect`, `Color`, `Mathf`, `Transform2D`, `Quat`
+# * **Algorithms:** `Rng`, `Noise`, `Grid`, `Pathfinding`, `Procedural`, `Geometry`, `Quadtree`, `Steering`
 #
 # ## A complete game
 #

@@ -181,6 +181,40 @@ Units are pixels and seconds; default gravity 980 px/s². Layers/masks are bit
 sets on `body.layer` / `body.mask`. `Area2D` is a sensor. `debug = true` on
 any body draws its shapes.
 
+## Algorithms
+
+Seeded helpers for procedural content, grid games and lightweight AI. `Rng` is a
+PCG32 generator that includes Crystal's `Random`, so `array.shuffle(rng)` works
+and the same seed replays on native and wasm. `Noise` is Perlin, simplex, fBm
+and Worley. `Grid` and `Pathfinding` cover Bresenham, shadowcasting FOV, A*,
+Dijkstra and flow fields. `Procedural` builds Poisson-disk points, BSP rooms,
+caves and mazes. `Geometry`, `Quadtree` / `SpatialHash`, `Steering` and the
+behavior-tree types sit beside them.
+
+```crystal
+rng = Rng.new(2026)
+dmg = rng.roll("2d6+1")
+
+n = Noise.new(42)
+height = n.fbm(12.5, 8.0)
+
+grid = CostGrid.new(20, 12)
+grid.block(5, 5)
+path = Pathfinding.a_star(grid, {0, 0}, {19, 11})
+
+seen = Grid.field_of_view({10, 8}, 8) { |x, y| !x.in?(0...20) || !y.in?(0...12) || !grid.passable?(x, y) }
+trees = Procedural.poisson_disk(320, 180, 16, rng)
+```
+
+The `algorithms` example tabs through A*, noise terrain, Poisson-disk sampling,
+flocking and shadowcasting FOV. The roguelike uses `Grid.field_of_view` for its
+fog of war.
+
+```sh
+crystal run examples/algorithms/main.cr
+# 1-5 or Tab switch scenes, click sets the A* goal, WASD moves in FOV
+```
+
 ## UI
 
 ```crystal
