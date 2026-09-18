@@ -1,36 +1,68 @@
 module Eagle
-  # Unit quaternion for 3D rotations. (x, y, z, w)
+  # A unit quaternion: the way Eagle stores 3D rotations.
+  #
+  # You rarely touch the four components. Build rotations from something readable,
+  # combine them by multiplication, and apply them to vectors:
+  #
+  # * `from_axis_angle(Vec3::UP, angle)` spins around an axis.
+  # * `from_euler(pitch, yaw, roll)` takes angles in radians.
+  # * `look_rotation(dir)` faces along a direction.
+  # * `a * b` applies *b* first, then *a*. `q * v` rotates the vector *v*.
+  # * `slerp` blends smoothly between two orientations.
+  #
+  # `Node3D#rotation` is a `Quat`, and `Node3D` has helpers like `rotate_y` and `look_at`
+  # that cover most needs.
+  #
+  # ```
+  # spin = Quat.from_axis_angle(Vec3::UP, Mathf.deg2rad(90))
+  # spin * Vec3::FORWARD # => roughly (-1, 0, 0): forward turned left
+  #
+  # from = Quat.look_rotation(v3(0, 0, -1))
+  # to = Quat.look_rotation(v3(1, 0, 0))
+  # halfway = from.slerp(to, 0.5)
+  #
+  # node = Node3D.new
+  # node.rotation = halfway
+  # ```
   struct Quat
     property x : Float32
     property y : Float32
     property z : Float32
     property w : Float32
 
+    # Creates a quaternion from raw components. Prefer the named constructors.
     def initialize(x : Number, y : Number, z : Number, w : Number)
       @x = x.to_f32; @y = y.to_f32; @z = z.to_f32; @w = w.to_f32
     end
 
+    # Creates the identity rotation.
     def initialize
       @x = @y = @z = 0_f32; @w = 1_f32
     end
 
+    # No rotation.
     IDENTITY = Quat.new
 
+    # Returns `IDENTITY`.
     def self.identity : Quat; Quat.new; end
 
+    # A rotation of *rad* radians around *axis*. The axis doesn't need to be normalized.
     def self.from_axis_angle(axis : Vec3, rad : Number) : Quat
       a = axis.normalized
       s = Math.sin(rad / 2)
       Quat.new(a.x * s, a.y * s, a.z * s, Math.cos(rad / 2))
     end
 
-    # Yaw (Y), pitch (X), roll (Z) in radians, applied as Y * X * Z.
+    # Builds a rotation from Euler angles in radians. Yaw turns around Y, pitch around X and roll
+    # around Z, applied as yaw, then pitch, then roll. This matches how an FPS camera turns.
     def self.from_euler(pitch : Number, yaw : Number, roll : Number) : Quat
       from_axis_angle(Vec3::UP, yaw) * from_axis_angle(Vec3::RIGHT, pitch) * from_axis_angle(Vec3::BACK, roll)
     end
 
+    # `from_euler` with `(pitch, yaw, roll)` packed into a `Vec3`.
     def self.from_euler(v : Vec3) : Quat; from_euler(v.x, v.y, v.z); end
 
+    # A rotation whose forward (-Z) points along *forward*, keeping *up* as close to up as possible.
     def self.look_rotation(forward : Vec3, up : Vec3 = Vec3::UP) : Quat
       f = forward.normalized
       up = (up.dot(f).abs > 0.999 ? (f.y.abs > 0.9 ? Vec3::BACK : Vec3::UP) : up)
@@ -56,6 +88,7 @@ module Eagle
       end
     end
 
+    # Combines rotations: `a * b` applies *b* first, then *a*.
     def *(o : Quat) : Quat
       Quat.new(
         @w * o.x + @x * o.w + @y * o.z - @z * o.y,
@@ -64,7 +97,7 @@ module Eagle
         @w * o.w - @x * o.x - @y * o.y - @z * o.z)
     end
 
-    # Rotate a vector.
+    # Rotates the vector *v*.
     def *(v : Vec3) : Vec3
       q = Vec3.new(@x, @y, @z)
       t = q.cross(v) * 2
@@ -72,18 +105,26 @@ module Eagle
     end
 
     def ==(o : Quat) : Bool; @x == o.x && @y == o.y && @z == o.z && @w == o.w; end
+    # The conjugate. For unit quaternions this equals the inverse rotation.
     def conjugate : Quat; Quat.new(-@x, -@y, -@z, @w); end
+    # The rotation that undoes this one.
     def inverse : Quat; conjugate / length_squared; end
     def /(s : Number) : Quat; Quat.new(@x / s, @y / s, @z / s, @w / s); end
+    # Dot product. Values near ±1 mean the rotations are almost the same.
     def dot(o : Quat) : Float32; @x * o.x + @y * o.y + @z * o.z + @w * o.w; end
+    # Squared length. It is 1 for a proper rotation.
     def length_squared : Float32; dot(self); end
+    # Length. It is 1 for a proper rotation.
     def length : Float32; Math.sqrt(length_squared).to_f32; end
 
+    # Rescales to unit length. Call it after many multiplications to stop drift.
     def normalized : Quat
       l = length
       l > 0 ? self / l : Quat::IDENTITY
     end
 
+    # Spherical interpolation, which blends orientations at constant angular speed.
+    # Takes the short way round.
     def slerp(o : Quat, t : Number) : Quat
       d = dot(o)
       b = o
@@ -101,6 +142,7 @@ module Eagle
       Quat.new(@x * s0 + b.x * s1, @y * s0 + b.y * s1, @z * s0 + b.z * s1, @w * s0 + b.w * s1)
     end
 
+    # The rotation as a 4x4 matrix.
     def to_mat4 : Mat4
       xx = @x * @x; yy = @y * @y; zz = @z * @z
       xy = @x * @y; xz = @x * @z; yz = @y * @z
@@ -112,7 +154,7 @@ module Eagle
       m
     end
 
-    # Euler angles (pitch, yaw, roll): approximate inverse of from_euler.
+    # Euler angles `(pitch, yaw, roll)` in radians, the approximate inverse of `from_euler`.
     def to_euler : Vec3
       sinp = 2 * (@w * @x - @y * @z)
       pitch = sinp.abs >= 1 ? Math.copysign(Math::PI / 2, sinp) : Math.asin(sinp)
@@ -121,10 +163,14 @@ module Eagle
       Vec3.new(pitch, yaw, roll)
     end
 
+    # This rotation's forward direction: where -Z ends up.
     def forward : Vec3; self * Vec3::FORWARD; end
+    # This rotation's up direction: where +Y ends up.
     def up : Vec3; self * Vec3::UP; end
+    # This rotation's right direction: where +X ends up.
     def right : Vec3; self * Vec3::RIGHT; end
 
+    # True when the components are within *eps*.
     def approx?(o : Quat, eps = 1e-4) : Bool
       (@x - o.x).abs <= eps && (@y - o.y).abs <= eps && (@z - o.z).abs <= eps && (@w - o.w).abs <= eps
     end

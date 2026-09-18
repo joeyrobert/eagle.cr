@@ -1,29 +1,73 @@
 module Eagle
-  # Base of the scene tree. Subclass it and override the lifecycle hooks:
-  #   ready / process(dt) / physics_process(dt) / draw(g) / input(event)
-  # Node2D / Node3D add transforms; Sprite2D, Camera2D, Label… add behaviour.
+  # The building block of Eagle's scene tree. Everything in a scene is a node: sprites,
+  # cameras, bodies, sounds, UI widgets and your own game objects.
+  #
+  # Nodes form a tree. Adding a node under `SceneTree.root` (directly or through a parent)
+  # brings it to life, and Eagle then calls its hooks:
+  #
+  # * `ready` once, after it and its children have entered the tree
+  # * `process(dt)` every frame
+  # * `physics_process(dt)` at the fixed rate
+  # * `draw(g)` every frame, in tree order, with `z_index` breaking ties among siblings
+  # * `input(event)` for each event, deepest node first
+  #
+  # Subclass a node type and override the hooks you need. Plain `Node` has no position;
+  # use `Node2D` or `Node3D` for things that live in space.
+  #
+  # ```
+  # class Blinker < Node2D
+  #   @t = 0.0
+  #
+  #   def ready : Nil
+  #     add(Label.new("hello"))
+  #   end
+  #
+  #   def process(dt : Float32) : Nil
+  #     @t += dt
+  #     self.visible = @t % 1 < 0.5
+  #     queue_free if @t > 10
+  #   end
+  # end
+  #
+  # blinker = Blinker.new
+  # blinker.position = v2(200, 100)
+  # SceneTree.root.add(blinker)
+  # ```
+  #
+  # Nodes are found by name with `get_node("Player/Sprite")`, by type with `find_all`, and
+  # by group with `add_to_group` plus `SceneTree.group`.
   class Node
+    # Whether a node keeps processing while the tree is paused.
     enum ProcessMode
-      # Follow the parent (root: process when unpaused).
+      # Do what the parent does. At the root this means "pause with the tree".
       Inherit
-      # Always process, even when the tree is paused.
+      # Keep processing while paused. Use it for pause menus.
       Always
-      # Never process while paused.
+      # Stop processing while paused.
       Pausable
-      # Only process while paused.
+      # Process only while paused.
       WhenPaused
+      # Never process. The node still draws.
       Disabled
     end
 
+    # The node's name, used by `get_node` paths. Defaults to the class name.
     property name : String
+    # The parent node, or `nil` if this node hasn't been added anywhere.
     getter parent : Node? = nil
+    # Child nodes in the order they were added.
     getter children = [] of Node
+    # Hidden nodes and their children are not drawn. They still process.
     property? visible = true
+    # Controls behavior while the tree is paused; see `ProcessMode`.
     property process_mode = ProcessMode::Inherit
-    # Drawing order among siblings (higher draws later / on top).
+    # Draw order among siblings: higher values draw later, on top.
     property z_index = 0
+    # True while the node is attached, directly or indirectly, to `SceneTree.root`.
     getter? in_tree = false
+    # True once `ready` has run. It runs only the first time the node enters the tree.
     getter? ready_called = false
+    # Names of the groups this node belongs to.
     getter groups = Set(String).new
     @queued_free = false
 
@@ -32,26 +76,39 @@ module Eagle
     signal child_added(child : Node)
     signal child_removed(child : Node)
 
+    # Creates a node. When *name* is empty, the class name is used.
     def initialize(@name : String = "")
       @name = self.class.name.split("::").last if @name.empty?
     end
 
     # --- overridable hooks ----------------------------------------------------
-    # Called once when the node first enters the tree, after its children.
+    # Called once, the first time this node enters the tree, after its children are ready.
+    # Build child nodes, look up siblings and connect signals here.
     def ready : Nil; end
+    # Called every time the node is attached to the tree, before `ready`.
     def enter_tree : Nil; end
+    # Called every time the node leaves the tree. Undo anything `enter_tree` did.
     def exit_tree : Nil; end
-    # Every frame with the variable delta.
+    # Called every frame with the frame time in seconds. Put per-frame logic here.
     def process(dt : Float32) : Nil; end
-    # Fixed-rate updates (Config#fixed_fps).
+    # Called at the fixed rate (`Config#fixed_fps`), after the physics world steps.
+    # Move physics bodies and read contacts here.
     def physics_process(dt : Float32) : Nil; end
-    # Draw this node. Node2D applies its transform before calling this.
+    # Draws this node. `Node2D` has already applied its transform, so draw around `(0, 0)`.
     def draw(g : Graphics) : Nil; end
-    # Input events; set `event.handled = true` to stop propagation.
+    # Receives input events. Set `event.handled = true` to stop them from reaching other nodes.
     def input(event : Event) : Nil; end
+    # Called on every node in the tree when the window is resized.
     def resized(width : Int32, height : Int32) : Nil; end
 
     # --- tree manipulation ----------------------------------------------------
+    # Adds *child* as the last child and returns it. If this node is in the tree, the child
+    # enters too and gets `ready`. Raises if *child* already has a parent.
+    #
+    # ```
+    # enemy = Node2D.new("Enemy")
+    # SceneTree.root.add(enemy).add(Sprite2D.new(Texture.new(Image.circle(8, Color::RED))))
+    # ```
     def add(child : Node) : Node
       raise Error.new("#{child.name} already has a parent") if child.parent
       raise Error.new("cannot add a node to itself") if child == self
@@ -62,17 +119,21 @@ module Eagle
       child
     end
 
+    # Adds several children in order.
     def add(*children : Node) : Nil
       children.each { |c| add(c) }
     end
 
+    # Same as `add`, for readers coming from Godot.
     def add_child(child : Node) : Node; add(child); end
 
+    # Adds *child* and returns self, so additions can be chained.
     def <<(child : Node) : self
       add(child)
       self
     end
 
+    # Detaches *child* right away. It leaves the tree and gets `exit_tree`. You can add it again later.
     def remove(child : Node) : Nil
       return unless @children.delete(child)
       child.propagate_exit if @in_tree
@@ -80,38 +141,47 @@ module Eagle
       emit_child_removed(child)
     end
 
+    # Same as `remove`.
     def remove_child(child : Node) : Nil; remove(child); end
 
+    # Detaches this node from its parent right away.
     def remove_from_parent : Nil
       @parent.try(&.remove(self))
     end
 
-    # Remove and drop this node at the end of the frame (safe inside callbacks).
+    # Removes this node at the end of the frame. This is the safe way for a node to delete
+    # itself from inside `process`, a signal handler or a collision callback.
     def queue_free : Nil
       return if @queued_free
       @queued_free = true
       SceneTree.defer { remove_from_parent }
     end
 
+    # True after `queue_free` and before the removal happens.
     def queued_free? : Bool; @queued_free; end
 
-    # Remove immediately.
+    # Removes this node right away. Prefer `queue_free` from inside callbacks.
     def free : Nil
       remove_from_parent
     end
 
+    # Removes every child.
     def clear_children : Nil
       @children.dup.each { |c| remove(c) }
     end
 
+    # Number of direct children.
     def child_count : Int32; @children.size; end
+    # The first child, or `nil`.
     def first_child : Node?; @children.first?; end
 
+    # The direct child called *name*, or `nil`.
     def child?(name : String) : Node?
       @children.find { |c| c.name == name }
     end
 
-    # Godot-style path lookup: "Player/Sprite", "../Sibling", "/root/Hud".
+    # Finds a node by path, or returns `nil`. Paths work like file paths:
+    # `"Sprite"`, `"Player/Gun"`, `"../Sibling"`, and `"/root/Hud"` from the top.
     def get_node?(path : String) : Node?
       node : Node? = path.starts_with?('/') ? SceneTree.root : self
       path.split('/').each do |part|
@@ -127,41 +197,60 @@ module Eagle
       node
     end
 
+    # Finds a node by path and raises if it doesn't exist.
     def get_node(path : String) : Node
       get_node?(path) || raise Error.new("Node not found: #{path} (from #{self.path})")
     end
 
+    # Short form of `get_node`.
     def [](path : String) : Node; get_node(path); end
+    # Short form of `get_node?`.
     def []?(path : String) : Node?; get_node?(path); end
 
-    # Typed lookup: `get_node("Sprite", Sprite2D)`
+    # Finds a node by path and casts it, so you get a typed result.
+    #
+    # ```
+    # class Player < Node2D
+    #   def ready : Nil
+    #     add(Label.new("P1", name: "Tag"))
+    #     get_node("Tag", Label).text = "Player 1"
+    #   end
+    # end
+    # ```
     def get_node(path : String, type : T.class) : T forall T
       n = get_node(path)
       n.as?(T) || raise Error.new("#{path} is a #{n.class}, not #{T}")
     end
 
-    # First descendant (depth-first) whose name matches.
+    # The first descendant with this name, searched depth-first.
     def find(name : String) : Node?
       found : Node? = nil
       each_descendant { |n| found = n if found.nil? && n.name == name }
       found
     end
 
-    # All descendants of a type.
+    # Every descendant of the given type.
+    #
+    # ```
+    # SceneTree.root.find_all(Sprite2D).each { |s| s.modulate = Color::RED }
+    # ```
     def find_all(type : T.class) : Array(T) forall T
       out_nodes = [] of T
       each_descendant { |n| out_nodes << n if n.is_a?(T) }
       out_nodes
     end
 
+    # Direct children of the given type.
     def children_of(type : T.class) : Array(T) forall T
       @children.compact_map(&.as?(T))
     end
 
+    # Yields each direct child.
     def each_child(& : Node ->) : Nil
       @children.each { |c| yield c }
     end
 
+    # Yields every descendant, depth-first.
     def each_descendant(&block : Node ->) : Nil
       @children.each do |c|
         block.call(c)
@@ -169,6 +258,7 @@ module Eagle
       end
     end
 
+    # Yields the parent, then its parent, up to the root.
     def each_ancestor(& : Node ->) : Nil
       p = @parent
       while p
@@ -177,6 +267,7 @@ module Eagle
       end
     end
 
+    # The topmost ancestor. It is `SceneTree.root` when the node is in the tree.
     def root : Node
       n = self
       while (p = n.parent)
@@ -185,6 +276,7 @@ module Eagle
       n
     end
 
+    # The node's path from the root, such as `"/root/Level/Player"`.
     def path : String
       parts = [] of String
       n : Node? = self
@@ -195,6 +287,7 @@ module Eagle
       "/" + parts.join("/")
     end
 
+    # True when *node* is somewhere below this one.
     def ancestor_of?(node : Node) : Bool
       p = node.parent
       while p
@@ -205,20 +298,25 @@ module Eagle
     end
 
     # --- groups ---------------------------------------------------------------
+    # Adds this node to a named group and returns self. Groups make it easy to act on many
+    # nodes at once with `SceneTree.group` and `SceneTree.call_group`.
     def add_to_group(group : String) : self
       @groups << group
       SceneTree.register_group(group, self) if @in_tree
       self
     end
 
+    # Removes this node from a group.
     def remove_from_group(group : String) : Nil
       @groups.delete(group)
       SceneTree.unregister_group(group, self)
     end
 
+    # True when this node belongs to *group*.
     def in_group?(group : String) : Bool; @groups.includes?(group); end
 
     # --- processing -----------------------------------------------------------
+    # True when this node should run `process` right now, given pause state and `process_mode`.
     def can_process? : Bool
       case @process_mode
       in ProcessMode::Always then true
@@ -312,7 +410,7 @@ module Eagle
       io << self.class.name << "(" << @name << ")"
     end
 
-    # Pretty tree dump for debugging.
+    # Prints the subtree with indentation, which is handy when debugging.
     def dump(io : IO = STDOUT, indent = 0) : Nil
       io << "  " * indent << self << "\n"
       @children.each(&.dump(io, indent + 1))

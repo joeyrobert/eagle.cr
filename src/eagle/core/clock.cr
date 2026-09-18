@@ -1,5 +1,23 @@
 module Eagle
-  # Frame timing. Read anywhere: `Clock.delta`, `Clock.elapsed`, `Clock.fps`.
+  # Frame timing you can read from anywhere: how long the last frame took, how long the
+  # game has been running, the frame rate, and a global time scale.
+  #
+  # The `dt` passed to `App#update` and `Node#process` is the same as `Clock.delta`.
+  # Multiply speeds by it so movement is the same at any frame rate.
+  #
+  # `scale` slows down or speeds up everything that uses `delta`: set it to 0.3 for
+  # slow motion or 0 to freeze gameplay while menus keep working through `raw_delta`.
+  #
+  # ```
+  # class Hud < Node2D
+  #   def draw(g : Graphics) : Nil
+  #     g.print("fps #{Clock.fps.round}  t=#{Clock.elapsed.round(1)}s", 10, 10)
+  #   end
+  # end
+  #
+  # Clock.scale = 0.25 # bullet time
+  # pulse = Math.sin(Clock.elapsed * 4) # a value that oscillates over time
+  # ```
   module Clock
     @@delta = 0_f32
     @@raw_delta = 0_f32
@@ -13,24 +31,32 @@ module Eagle
     @@fixed_accumulator = 0_f64
     @@max_delta = 0.25_f32
 
-    # Seconds since last frame, scaled by `scale`.
+    # Seconds since the last frame, multiplied by `scale`. Clamped so a long hitch
+    # (for example after a breakpoint) doesn't teleport everything.
     def self.delta : Float32; @@delta; end
-    # Unscaled seconds since last frame.
+    # Seconds since the last frame, ignoring `scale`. Use it for UI and menus that must keep
+    # moving while the game is paused or slowed down.
     def self.raw_delta : Float32; @@raw_delta; end
-    # Seconds since the engine started.
+    # Real seconds since the engine started. Handy for animations driven by `Math.sin`.
     def self.elapsed : Float64; @@elapsed; end
+    # Number of frames since start.
     def self.frame : Int64; @@frame; end
+    # Measured frames per second, updated twice a second.
     def self.fps : Float32; @@fps; end
-    # Time scale (1 = normal, 0 = paused, 0.5 = slow motion).
+    # Time scale applied to `delta`: 1 is normal, 0.5 is half speed and 0 pauses gameplay.
     def self.scale : Float32; @@scale; end
+    # Sets the time scale. Tweens and fixed steps follow it too.
     def self.scale=(v : Number); @@scale = v.to_f32; end
-    # Fixed timestep used for `physics_process`.
+    # Length of one fixed step in seconds, which is `1 / Config#fixed_fps`.
     def self.fixed_delta : Float32; @@fixed_delta; end
+    # Changes the fixed step length.
     def self.fixed_delta=(v : Number); @@fixed_delta = v.to_f32; end
-    # Clamp for huge frame times (e.g. after a breakpoint) to avoid spiral of death.
+    # Largest `delta` a single frame can report, 0.25 s by default. This stops a long
+    # stall from causing a burst of physics steps.
     def self.max_delta=(v : Number); @@max_delta = v.to_f32; end
 
-    # Interpolation alpha between the last two fixed steps (for smooth rendering).
+    # How far the current frame sits between the last fixed step and the next, from 0 to 1.
+    # Use it to interpolate positions of physics objects for smooth rendering at high refresh rates.
     def self.fixed_alpha : Float32
       (@@fixed_accumulator / @@fixed_delta).to_f32.clamp(0_f32, 1_f32)
     end

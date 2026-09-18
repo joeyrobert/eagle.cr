@@ -1,24 +1,57 @@
 module Eagle
-  # Engine configuration. Every field has a sensible default.
+  # Settings for the window and the engine loop. Every field has a sensible default.
+  #
+  # You rarely build a `Config` yourself. Pass the fields as named arguments to
+  # `Eagle.run`, or override `App#configure` to compute them:
+  #
+  # ```
+  # class Game < App
+  #   def configure(config : Config) : Nil
+  #     config.msaa = 4
+  #     config.fixed_fps = 120 # finer physics steps
+  #   end
+  # end
+  #
+  # Eagle.run(Game, title: "Space Rocks", width: 1280, height: 720, vsync: true)
+  # ```
+  #
+  # A few environment variables override the config, which is handy for CI and screenshots:
+  #
+  # * `EAGLE_FRAMES=60` quits after 60 frames.
+  # * `EAGLE_SCREENSHOT=out.png` saves the last frame before quitting.
+  # * `EAGLE_HEADLESS=1` hides the window.
+  # * `EAGLE_SIZE=800x600` overrides the window size.
   class Config
+    # Window title.
     property title : String = "Eagle"
+    # Initial window width in logical pixels.
     property width : Int32 = 1280
+    # Initial window height in logical pixels.
     property height : Int32 = 720
+    # Whether the player can resize the window. `App#resize` and `Node#resized` fire when they do.
     property resizable : Bool = true
+    # Start fullscreen. Toggle later with `Window.fullscreen=`.
     property fullscreen : Bool = false
+    # Sync presentation to the display's refresh rate. Leave it on unless you are measuring performance.
     property vsync : Bool = true
+    # Multisample anti-aliasing samples (0, 2, 4 or 8). Smooths 3D edges and shape outlines.
     property msaa : Int32 = 0
+    # Render at full resolution on Retina and other high-DPI screens.
     property highdpi : Bool = true
-    # Fixed timestep rate for physics_process (Hz).
+    # How many times per second `physics_process` and `App#fixed_update` run, independent of the frame rate.
     property fixed_fps : Int32 = 60
-    # Cap for the variable-rate loop when vsync is off (0 = uncapped).
+    # Frame-rate cap used when vsync is off. 0 means uncapped.
     property max_fps : Int32 = 0
+    # Background color the screen is cleared to at the start of every frame.
     property clear_color : Color = Color.rgb(24, 26, 32)
-    # Root for `res://` paths. nil = auto-detect (see Assets).
+    # Folder that `res://` paths resolve against. `nil` auto-detects it; see `Assets`.
     property assets_dir : String? = nil
+    # Set to false to skip opening an audio device, for tools and servers.
     property audio : Bool = true
+    # Open the window hidden, for tests and offscreen rendering.
     property hidden : Bool = false
 
+    # Builds a config from named arguments that match the property names.
     def initialize(**opts)
       {% for ivar in @type.instance_vars %}
         if v = opts[{{ivar.symbolize}}]?
@@ -28,14 +61,54 @@ module Eagle
     end
   end
 
-  # Subclass (or use the block helpers) to make a game. All hooks are optional.
+  # The base class for a game. Subclass it, override the hooks you need, and hand it to `Eagle.run`.
   #
-  #   class Game < Eagle::App
-  #     def load; end
-  #     def update(dt : Float32); end
-  #     def draw(g : Graphics); end
+  # Every hook is optional. Eagle calls them in this order each frame:
+  #
+  # 1. `input` for each new event (key presses, clicks, window events)
+  # 2. `fixed_update` zero or more times, at `Config#fixed_fps`
+  # 3. `update` once, with the time since the last frame
+  # 4. `draw`, after the scene tree has drawn itself
+  #
+  # `load` runs once, when the window and GPU are ready. Create textures, sounds and
+  # nodes there, or pass the class (not an instance) to `Eagle.run` so instance-variable
+  # initializers can create them too.
+  #
+  # ```
+  # class Game < App
+  #   @pos = Vec2.new(100, 100)
+  #   @tex : Texture? = nil
+  #
+  #   def load : Nil
+  #     @tex = Texture.new(Image.circle(16, Color::YELLOW))
+  #     Input.map "left", Key::A, Key::Left
+  #     Input.map "right", Key::D, Key::Right
   #   end
-  #   Eagle.run(Game.new, title: "Hi")
+  #
+  #   def update(dt : Float32) : Nil
+  #     @pos += v2(Input.axis("left", "right") * 200 * dt, 0)
+  #     Eagle.quit if Input.pressed?(Key::Escape)
+  #   end
+  #
+  #   def draw(g : Graphics) : Nil
+  #     @tex.try { |t| g.draw(t, @pos) }
+  #     g.print("fps #{Clock.fps.round}", 10, 10)
+  #   end
+  # end
+  #
+  # Eagle.run(Game, title: "My Game", width: 960, height: 540)
+  # ```
+  #
+  # You can mix this immediate-mode style with the scene tree: add nodes to
+  # `SceneTree.root` in `load` and they update and draw themselves before your `draw`.
+  #
+  # For tiny programs, skip the subclass and use the block helpers:
+  #
+  # ```
+  # Eagle.run(title: "Blocks") do |app|
+  #   app.on_draw { |g| g.circle(Window.center, 50) }
+  # end
+  # ```
   class App
     @load_blocks = [] of ->
     @update_blocks = [] of Float32 ->
@@ -43,27 +116,39 @@ module Eagle
     @draw_blocks = [] of Graphics ->
     @input_blocks = [] of Event ->
 
-    # Override to tweak configuration before the window opens.
+    # Adjust the configuration before the window opens. Runs before `load`.
     def configure(config : Config) : Nil; end
-    # Called once after the window and GPU are ready.
+    # Called once after the window, GPU and audio are ready. Load assets and build your scene here.
     def load : Nil; end
-    # Variable timestep, once per frame.
+    # Called once per frame. *dt* is the time since the last frame in seconds, already scaled by `Clock.scale`.
+    # Put movement, game rules and animation here, multiplying speeds by *dt*.
     def update(dt : Float32) : Nil; end
-    # Fixed timestep (Config#fixed_fps), zero or more times per frame.
+    # Called at a fixed rate (`Config#fixed_fps`), zero or more times per frame. *dt* is always
+    # the same value. Put physics and anything that must be deterministic here.
     def fixed_update(dt : Float32) : Nil; end
-    # 2D drawing. The scene tree is drawn before this.
+    # Called once per frame after the scene tree is drawn, so anything you draw here appears on top.
+    # *g* is the immediate-mode drawing context.
     def draw(g : Graphics) : Nil; end
-    # Raw input events, before the scene tree sees them.
+    # Receives every raw event before the scene tree sees it. Set `event.handled = true` to stop
+    # nodes from receiving it. For "is this key held?" checks, use `Input` instead.
     def input(event : Event) : Nil; end
+    # Called when the window size changes, with the new size in logical pixels.
     def resize(width : Int32, height : Int32) : Nil; end
-    # Return false to veto quitting.
+    # Called when the player closes the window. Return false to keep running, for example to
+    # show an "unsaved changes" prompt.
     def quit? : Bool; true; end
+    # Called once during shutdown. Save settings or high scores here.
     def unload : Nil; end
 
+    # Adds a block that runs after `load`. Returns self so calls can be chained.
     def on_load(&block : ->) : self; @load_blocks << block; self; end
+    # Adds a block that runs after `update` every frame.
     def on_update(&block : Float32 ->) : self; @update_blocks << block; self; end
+    # Adds a block that runs after each `fixed_update`.
     def on_fixed_update(&block : Float32 ->) : self; @fixed_blocks << block; self; end
+    # Adds a block that runs after `draw`.
     def on_draw(&block : Graphics ->) : self; @draw_blocks << block; self; end
+    # Adds a block that runs after `input` for each event.
     def on_input(&block : Event ->) : self; @input_blocks << block; self; end
 
     # :nodoc:
@@ -90,20 +175,38 @@ module Eagle
   @@initialized = false
   @@frame_hooks = [] of ->
 
+  # The platform backend (SDL on desktop, the browser on the web). Raises if Eagle isn't running.
+  # You rarely need it; `Window`, `Input` and `Audio` wrap it.
   def self.platform : Platform::Base
     @@platform || raise Error.new("Eagle is not initialised. Call Eagle.run or Eagle.init.")
   end
 
+  # The platform backend, or `nil` before `Eagle.run`.
   def self.platform? : Platform::Base?; @@platform; end
+  # The active configuration.
   def self.config : Config; @@config; end
+  # The running app. Raises if nothing is running.
   def self.app : App; @@app || raise Error.new("No app running"); end
+  # True while the main loop is running.
   def self.running? : Bool; @@running; end
+  # True after the window and GPU are open.
   def self.initialized? : Bool; @@initialized; end
+  # The 2D drawing context, the same object passed to `App#draw`.
   def self.graphics : Graphics; @@graphics || raise Error.new("Graphics not ready"); end
-  # 2D immediate-mode drawing context (same object as passed to `draw`).
+  # Short alias for `graphics`.
   def self.g : Graphics; graphics; end
 
-  # Run a game. `Eagle.run(MyGame.new, title: "x")` or `Eagle.run(title: "x") { |app| ... }`.
+  # Opens the window, calls `App#load`, runs the main loop until quit, then shuts down.
+  # Named arguments set `Config` fields.
+  #
+  # ```
+  # class Game < App
+  # end
+  #
+  # Eagle.run(Game.new, title: "Hi", width: 800, height: 600)
+  # ```
+  #
+  # On the web the browser drives frames, so this returns right away.
   def self.run(app : App = App.new, **opts) : Nil
     init(app, **opts)
     {% if flag?(:wasm32) %}
@@ -118,14 +221,24 @@ module Eagle
     {% end %}
   end
 
+  # Creates a plain `App`, lets the block attach hooks with `App#on_draw` and friends, then runs it.
   def self.run(**opts, &block : App ->) : Nil
     app = App.new
     block.call(app)
     run(app, **opts)
   end
 
-  # Pass the App class to have it constructed *after* the window and GPU exist,
-  # so instance-variable initialisers may create textures etc.
+  # Runs a game given its class. The app is constructed after the window and GPU exist,
+  # so instance-variable initializers can create textures, fonts and sounds. This is
+  # the recommended form.
+  #
+  # ```
+  # class Game < App
+  #   @logo = Texture.new(Image.circle(32, Color::WHITE)) # safe: the GPU is ready
+  # end
+  #
+  # Eagle.run(Game, title: "Hi")
+  # ```
   def self.run(app_class : App.class, **opts) : Nil
     init(app_class, **opts)
     {% if flag?(:wasm32) %}
@@ -139,11 +252,13 @@ module Eagle
     {% end %}
   end
 
+  # Opens the window and GPU and constructs *app_class*, without entering the loop.
+  # Drive frames with `step` and finish with `shutdown`.
   def self.init(app_class : App.class, **opts) : Nil
     init(App.new, **opts) { app_class.new }
   end
 
-  # Open the window and GPU without entering the loop (tests, tools). Pair with `shutdown`.
+  # Opens everything with a placeholder, then builds the real app with *factory*.
   def self.init(app : App = App.new, **opts, &factory : -> App) : Nil
     init(app, **opts) # opens everything with a placeholder app
     real = factory.call
@@ -152,6 +267,15 @@ module Eagle
     SceneTree.root.ready_tree
   end
 
+  # Opens the window and GPU and calls `App#load`, without entering the loop.
+  # Use it in tests and tools, then call `step` to advance frames and `shutdown` when done.
+  #
+  # ```
+  # Eagle.init(title: "test", hidden: true)
+  # 3.times { Eagle.step }
+  # image = Eagle.screenshot
+  # Eagle.shutdown
+  # ```
   def self.init(app : App = App.new, **opts) : Nil
     return if @@initialized
     setup_logging
@@ -200,6 +324,7 @@ module Eagle
     c.highdpi = false if ENV["EAGLE_HIGHDPI"]? == "0"
   end
 
+  # Asks the loop to stop after the current frame. `App#unload` runs during shutdown.
   def self.quit : Nil
     @@quit_requested = true
   end
@@ -215,7 +340,8 @@ module Eagle
     end
   end
 
-  # Advance exactly one frame. Public so tests and tools can drive the loop.
+  # Runs exactly one frame: input, fixed updates, update, tweens, audio and drawing.
+  # `run` calls this in a loop. Call it yourself after `init` to drive the engine from tests.
   def self.step : Nil
     pf = platform
     app = self.app
@@ -284,13 +410,17 @@ module Eagle
 
   @@injected = [] of Event
 
-  # Queue synthetic events for the next frame (tests, demos, replays, accessibility tools).
-  # They flow through exactly the same path as real input: Input state, App#input, the node tree.
+  # Queues synthetic events for the next frame. They go through the same path as real
+  # input, so `Input`, `App#input` and nodes all see them. Use it for tests, demos and replays.
+  #
+  # ```
+  # Eagle.inject(KeyEvent.new(Key::Space, pressed: true))
+  # ```
   def self.inject(*events : Event) : Nil
     events.each { |e| @@injected << e }
   end
 
-  # Route one event through Input, the App and the scene tree.
+  # Routes one event through `Input`, the app and the scene tree right away. Most code should use `inject`.
   def self.handle_event(ev : Event) : Nil
     pf = platform
     app = self.app
@@ -314,8 +444,11 @@ module Eagle
     Control.handle_focus_navigation(ev) unless ev.handled?
   end
 
-  # Capture the current back buffer (call after drawing, before swap), or the
-  # last presented frame during a normal frame. Returns the image; saves if `path`.
+  # Reads the current frame back from the GPU and returns it as an `Image`. Saves a PNG if you give a path.
+  #
+  # ```
+  # Eagle.screenshot("shot.png") if Input.pressed?(Key::F12)
+  # ```
   def self.screenshot(path : String? = nil) : Image
     w, h = platform.drawable_size
     GPU.device.bind_render_target(nil)
@@ -332,6 +465,7 @@ module Eagle
     img
   end
 
+  # Closes the window and frees GPU, audio and asset resources. `run` calls it for you.
   def self.shutdown : Nil
     return unless @@initialized
     @@app.try(&.unload)
