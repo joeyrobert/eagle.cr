@@ -1016,7 +1016,8 @@ pre .k{color:#e8a93a}pre .t{color:#9dc4d6}pre .s{color:#bccc8c}pre .n{color:#e79
 .entry-detail .signature .k,.entry-summary .signature .k{color:var(--link)}.signature .t{color:#2e5a70}.signature .n{color:#a4532c}
 @media (prefers-color-scheme:dark){.signature .t{color:#9dc4d6}.signature .n{color:#e7916a}}
 span.flag.purple{background:var(--paper2);color:var(--ink);border-color:var(--gold)}
-table{border-collapse:collapse;width:100%;max-width:62em;margin:16px 0 28px;border-top:2px solid var(--ink);font-size:15px;line-height:1.55}
+table{display:table;white-space:normal;background:transparent;border:0;padding:0;text-align:left;border-collapse:collapse;width:100%;max-width:62em;margin:16px 0 28px;border-top:2px solid var(--ink);font-size:15px;line-height:1.55}
+th{letter-spacing:0}
 th,td{border-bottom:1px solid var(--rule);padding:9px 14px 9px 0;text-align:left;vertical-align:top}
 th{font-weight:600}td:first-child{font-weight:600;white-space:nowrap}
 .main-content img{max-width:100%;border:1.5px solid var(--ink)}

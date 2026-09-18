@@ -24,80 +24,105 @@
 
 <span class="k">class</span> <span class="t">Game</span> <span class="o">&lt;</span> <span class="t">App</span>
   @player <span class="o">=</span> <span class="t">Sprite2D</span>.new(<span class="t">Texture</span>.load(<span class="s">&quot;res://player.png&quot;</span>), <span class="t">Window</span>.center)
+  @score <span class="o">=</span> <span class="n">0</span>
 
-  <span class="k">def</span> <span class="m">load</span>
+  <span class="k">def</span> <span class="m">load</span> : <span class="t">Nil</span>
     <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">-1</span>)
     <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Right</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">1</span>)
     <span class="t">SceneTree</span>.root.add(@player)
   <span class="k">end</span>
 
-  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>) : <span class="t">Nil</span>
     @player.x <span class="o">+=</span> <span class="t">Input</span>.axis(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>) <span class="o">*</span> <span class="n">250</span> <span class="o">*</span> dt
+    @score <span class="o">+=</span> <span class="n">1</span> <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Space</span>)
   <span class="k">end</span>
 
-  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
-    g.print(<span class="s">&quot;score </span><span class="i">#{</span>@score<span class="i">}</span><span class="s">&quot;</span>, <span class="n">10</span>, <span class="n">10</span>)
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>) : <span class="t">Nil</span>
+    g.print(<span class="s">&quot;score </span><span class="i">#{</span>@score<span class="i">}</span><span class="s">&quot;</span>, <span class="n">10</span>, <span class="n">10</span>, scale: <span class="n">2</span>)
   <span class="k">end</span>
 <span class="k">end</span>
 
 <span class="t">Eagle</span>.run(<span class="t">Game</span>, title: <span class="s">&quot;My Game&quot;</span>, width: <span class="n">960</span>, height: <span class="n">540</span>)</code></pre>
-</div><div class="tabpane " data-pane="1"><pre class="code"><code class="lang-crystal"><span class="k">class</span> <span class="t">Enemy</span> <span class="o">&lt;</span> <span class="t">Area2D</span>
+</div><div class="tabpane " data-pane="1"><pre class="code"><code class="lang-crystal"><span class="k">class</span> <span class="t">Bullet</span> <span class="o">&lt;</span> <span class="t">Area2D</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="t">Enemy</span> <span class="o">&lt;</span> <span class="t">Area2D</span>
   signal died(points : <span class="t">Int32</span>)
 
-  <span class="k">def</span> <span class="m">initialize</span>(pos : <span class="t">Vec2</span>)
-    <span class="k">super</span>(<span class="s">&quot;Enemy&quot;</span>, pos)
+  <span class="k">def</span> <span class="m">initialize</span>(position : <span class="t">Vec2</span>)
+    <span class="k">super</span>(<span class="s">&quot;Enemy&quot;</span>, position)
     circle(<span class="n">12</span>)
-    add(<span class="t">AnimatedSprite2D</span>.new.tap { <span class="o">|</span>s<span class="o">|</span> s.add_animation(<span class="s">&quot;idle&quot;</span>, sheet.frames(<span class="n">32</span>, <span class="n">32</span>), fps: <span class="n">8</span>) })
+    add(<span class="t">Sprite2D</span>.new(<span class="t">Texture</span>.new(<span class="t">Image</span>.circle(<span class="n">24</span>, <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>))))
     on_body_entered { <span class="o">|</span>other<span class="o">|</span> hit <span class="k">if</span> other.<span class="k">is_a?</span>(<span class="t">Bullet</span>) }
   <span class="k">end</span>
 
-  <span class="k">def</span> <span class="m">hit</span>
+  <span class="k">def</span> <span class="m">hit</span> : <span class="t">Nil</span>
     emit_died(<span class="n">100</span>)
-    <span class="t">Tween</span>.value(<span class="n">1.0</span>, <span class="n">0.0</span>, <span class="n">0.2</span>) { <span class="o">|</span>a<span class="o">|</span> modulate <span class="o">=</span> <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>.with_alpha(a) }.on_complete { queue_free }
+    <span class="t">Tween</span>.value(<span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, <span class="t">Color</span><span class="t">::</span><span class="t">TRANSPARENT</span>, <span class="n">0.2</span>) { <span class="o">|</span>c<span class="o">|</span> <span class="k">self</span>.modulate <span class="o">=</span> c }
+      .on_complete { queue_free }
   <span class="k">end</span>
 <span class="k">end</span>
 
+score <span class="o">=</span> <span class="n">0</span>
+boom <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">90</span>, <span class="n">0.3</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Noise</span>)
 enemy <span class="o">=</span> <span class="t">Enemy</span>.new(v2(<span class="n">300</span>, <span class="n">200</span>))
-enemy.on_died { <span class="o">|</span>points<span class="o">|</span> @score <span class="o">+=</span> points; <span class="t">Sounds</span>.explode.play }
+enemy.on_died { <span class="o">|</span>points<span class="o">|</span> score <span class="o">+=</span> points; boom.play }
 <span class="t">SceneTree</span>.root.add(enemy)</code></pre>
-</div><div class="tabpane " data-pane="2"><pre class="code"><code class="lang-crystal">ground <span class="o">=</span> <span class="t">StaticBody2D</span>.new(position: v2(<span class="n">400</span>, <span class="n">580</span>)).box(<span class="n">800</span>, <span class="n">40</span>)
-ball   <span class="o">=</span> <span class="t">RigidBody2D</span>.new(position: v2(<span class="n">400</span>, <span class="n">0</span>)).circle(<span class="n">16</span>)
-ball.restitution <span class="o">=</span> <span class="n">0.6</span>
-ball.on_body_entered { <span class="o">|</span>other<span class="o">|</span> <span class="t">Sounds</span>.bounce.play }
-
-player <span class="o">=</span> <span class="t">KinematicBody2D</span>.new(position: v2(<span class="n">100</span>, <span class="n">100</span>)).box(<span class="n">24</span>, <span class="n">40</span>)
-
-<span class="k">def</span> <span class="m">physics_process</span>(dt : <span class="t">Float32</span>)
-  player.velocity <span class="o">+=</span> v2(<span class="n">0</span>, <span class="n">1400</span> <span class="o">*</span> dt)                    <span class="c"># gravity</span>
-  player.velocity <span class="o">=</span> v2(<span class="t">Input</span>.axis(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>) <span class="o">*</span> <span class="n">220</span>, player.velocity.y)
-  player.velocity <span class="o">=</span> v2(player.velocity.x, <span class="n">-520</span>) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;jump&quot;</span>) <span class="o">&amp;&amp;</span> player.on_floor?
-  player.move_and_slide(dt)
+</div><div class="tabpane " data-pane="2"><pre class="code"><code class="lang-crystal"><span class="k">class</span> <span class="t">Player</span> <span class="o">&lt;</span> <span class="t">KinematicBody2D</span>
+  <span class="k">def</span> <span class="m">physics_process</span>(dt : <span class="t">Float32</span>) : <span class="t">Nil</span>
+    <span class="k">self</span>.velocity <span class="o">+=</span> v2(<span class="n">0</span>, <span class="n">1400</span> <span class="o">*</span> dt) <span class="c"># gravity</span>
+    <span class="k">self</span>.velocity <span class="o">=</span> v2(<span class="t">Input</span>.axis(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>) <span class="o">*</span> <span class="n">220</span>, velocity.y)
+    <span class="k">self</span>.velocity <span class="o">=</span> v2(velocity.x, <span class="n">-520</span>) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;jump&quot;</span>) <span class="o">&amp;&amp;</span> on_floor?
+    move_and_slide(dt)
+  <span class="k">end</span>
 <span class="k">end</span>
 
-hit <span class="o">=</span> <span class="t">Physics2D</span>.world.raycast(player.position, v2(<span class="n">1</span>, <span class="n">0</span>), <span class="n">200</span>)</code></pre>
+ground <span class="o">=</span> <span class="t">StaticBody2D</span>.new(position: v2(<span class="n">400</span>, <span class="n">580</span>)).box(<span class="n">800</span>, <span class="n">40</span>)
+ball <span class="o">=</span> <span class="t">RigidBody2D</span>.new(position: v2(<span class="n">400</span>, <span class="n">0</span>)).circle(<span class="n">16</span>)
+ball.restitution <span class="o">=</span> <span class="n">0.6</span>
+bounce <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">440</span>, <span class="n">0.08</span>)
+ball.on_body_entered { <span class="o">|</span>other<span class="o">|</span> bounce.play }
+player <span class="o">=</span> <span class="t">Player</span>.new(position: v2(<span class="n">100</span>, <span class="n">100</span>)).box(<span class="n">24</span>, <span class="n">40</span>)
+<span class="t">SceneTree</span>.root.add(ground, ball, player)
+
+<span class="k">if</span> hit <span class="o">=</span> <span class="t">Physics2D</span>.world.raycast(player.position, v2(<span class="n">1</span>, <span class="n">0</span>), <span class="n">200</span>)
+  puts <span class="s">&quot;wall </span><span class="i">#{</span>hit.distance<span class="i">}</span><span class="s"> px ahead&quot;</span>
+<span class="k">end</span></code></pre>
 </div><div class="tabpane " data-pane="3"><pre class="code"><code class="lang-crystal">root <span class="o">=</span> <span class="t">SceneTree</span>.root
-root.add(<span class="t">Camera3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">3</span>, <span class="n">8</span>)).tap(<span class="o">&amp;</span>.look_at(<span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>)))
-root.add(<span class="t">DirectionalLight3D</span>.new(v3(<span class="n">-0.5</span>, <span class="n">-1</span>, <span class="n">-0.3</span>)))          <span class="c"># casts PCF shadows</span>
-root.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.plane(<span class="n">40</span>, <span class="n">40</span>), <span class="t">Material</span>.new(texture: <span class="t">Texture</span>.load(<span class="s">&quot;res://grass.png&quot;</span>))))
+cam <span class="o">=</span> <span class="t">Camera3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">3</span>, <span class="n">8</span>))
+cam.look_at(<span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>)
+root.add(cam)
+root.add(<span class="t">DirectionalLight3D</span>.new(v3(<span class="n">-0.5</span>, <span class="n">-1</span>, <span class="n">-0.3</span>))) <span class="c"># casts PCF shadows</span>
+
+grass <span class="o">=</span> <span class="t">Texture</span>.new(<span class="t">Image</span>.checkerboard(<span class="n">64</span>, <span class="n">64</span>, <span class="n">8</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#4a7a3a&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#3d6630&quot;</span>)), wrap: <span class="t">GPU</span><span class="t">::</span><span class="t">Wrap</span><span class="t">::</span><span class="t">Repeat</span>)
+root.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.plane(<span class="n">40</span>, <span class="n">40</span>, uv_scale: <span class="n">10</span>), <span class="t">Material</span>.new(texture: grass)))
 crate <span class="o">=</span> <span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.cube, <span class="t">Material</span>.new(<span class="t">Color</span><span class="t">::</span><span class="t">ORANGE</span>, shininess: <span class="n">48</span>), position: v3(<span class="n">0</span>, <span class="n">0.5</span>, <span class="n">0</span>))
 root.add(crate)
 
 <span class="t">Scene3D</span>.environment.fog(<span class="n">20</span>, <span class="n">80</span>)
 <span class="t">Scene3D</span>.environment.sky_colors(<span class="t">Color</span>.hex(<span class="s">&quot;#3b6fd6&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#b9d4f5&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#3a3a44&quot;</span>))
 
-<span class="c"># picking</span>
-<span class="k">if</span> (hit <span class="o">=</span> cam.mouse_ray.intersect_aabb(crate.global_bounds.not_nil!))
+<span class="c"># picking: turn the crate red while the mouse is over it</span>
+<span class="k">if</span> (box <span class="o">=</span> crate.global_bounds) <span class="o">&amp;&amp;</span> cam.mouse_ray.intersect_aabb(box)
   crate.material.albedo <span class="o">=</span> <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>
 <span class="k">end</span></code></pre>
 </div><div class="tabpane " data-pane="4"><pre class="code"><code class="lang-crystal">hud <span class="o">=</span> <span class="t">CanvasLayer</span>.new
-panel <span class="o">=</span> <span class="t">Panel</span>.new(size: v2(<span class="n">320</span>, <span class="n">0</span>)).tap { <span class="o">|</span>p<span class="o">|</span> p.anchor <span class="o">=</span> <span class="t">Anchor</span><span class="t">::</span><span class="t">Center</span>; p.fit_content <span class="o">=</span> <span class="n">true</span> }
-box <span class="o">=</span> <span class="t">VBox</span>.new(size: v2(<span class="n">300</span>, <span class="n">0</span>)).tap { <span class="o">|</span>b<span class="o">|</span> b.position <span class="o">=</span> v2(<span class="n">10</span>, <span class="n">10</span>); b.fit_content <span class="o">=</span> <span class="n">true</span> }
+panel <span class="o">=</span> <span class="t">Panel</span>.new(size: v2(<span class="n">320</span>, <span class="n">0</span>))
+panel.anchor <span class="o">=</span> <span class="t">Anchor</span><span class="t">::</span><span class="t">Center</span>
+panel.fit_content <span class="o">=</span> <span class="n">true</span>
+
+box <span class="o">=</span> <span class="t">VBox</span>.new(size: v2(<span class="n">300</span>, <span class="n">0</span>))
+box.position <span class="o">=</span> v2(<span class="n">10</span>, <span class="n">10</span>)
+box.fit_content <span class="o">=</span> <span class="n">true</span>
 box.add(<span class="t">Label</span>.new(<span class="s">&quot;Settings&quot;</span>),
-        <span class="t">Slider</span>.new(<span class="n">0</span>, <span class="n">100</span>, <span class="n">50</span>).tap { <span class="o">|</span>s<span class="o">|</span> s.on_value_changed { <span class="o">|</span>v<span class="o">|</span> <span class="t">Audio</span>.volume <span class="o">=</span> v <span class="o">/</span> <span class="n">100</span> } },
-        <span class="t">CheckBox</span>.new(<span class="s">&quot;Fullscreen&quot;</span>, <span class="n">false</span>).tap { <span class="o">|</span>c<span class="o">|</span> c.on_toggled { <span class="o">|</span>on<span class="o">|</span> <span class="t">Window</span>.fullscreen <span class="o">=</span> on } },
-        <span class="t">TextInput</span>.new(<span class="s">&quot;&quot;</span>, <span class="s">&quot;player name&quot;</span>).tap { <span class="o">|</span>t<span class="o">|</span> t.on_submitted { <span class="o">|</span>name<span class="o">|</span> save(name) } },
-        <span class="t">Button</span>.new(<span class="s">&quot;Start&quot;</span>) { <span class="t">SceneTree</span>.change_scene(<span class="t">Level</span>.new) })
-panel.add(box); hud.add(panel); <span class="t">SceneTree</span>.root.add(hud)
+  <span class="t">Slider</span>.new(<span class="n">0</span>, <span class="n">100</span>, <span class="n">50</span>).tap { <span class="o">|</span>s<span class="o">|</span> s.on_value_changed { <span class="o">|</span>v<span class="o">|</span> <span class="t">Audio</span>.volume <span class="o">=</span> v <span class="o">/</span> <span class="n">100</span> } },
+  <span class="t">CheckBox</span>.new(<span class="s">&quot;Fullscreen&quot;</span>).tap { <span class="o">|</span>c<span class="o">|</span> c.on_toggled { <span class="o">|</span>on<span class="o">|</span> <span class="t">Window</span>.fullscreen <span class="o">=</span> on } },
+  <span class="t">TextInput</span>.new(<span class="s">&quot;&quot;</span>, <span class="s">&quot;player name&quot;</span>).tap { <span class="o">|</span>t<span class="o">|</span> t.on_submitted { <span class="o">|</span>name<span class="o">|</span> puts <span class="s">&quot;hi </span><span class="i">#{</span>name<span class="i">}</span><span class="s">&quot;</span> } },
+  <span class="t">Button</span>.new(<span class="s">&quot;Start&quot;</span>) { <span class="t">SceneTree</span>.change_scene(<span class="t">Node2D</span>.new(<span class="s">&quot;Level&quot;</span>)) })
+
+panel.add(box)
+hud.add(panel)
+<span class="t">SceneTree</span>.root.add(hud)
 <span class="t">Theme</span>.default.font <span class="o">=</span> <span class="t">Font</span>.load(<span class="s">&quot;res://Inter.ttf&quot;</span>, <span class="n">18</span>)</code></pre>
 </div><div class="tabpane " data-pane="5"><pre class="code"><code class="lang-crystal">glow <span class="o">=</span> <span class="t">Shader</span>.effect(<span class="s">&lt;&lt;-GLSL</span>)
 <span class="s">  uniform float u_strength;
@@ -108,9 +133,13 @@ panel.add(box); hud.add(panel); <span class="t">SceneTree</span>.root.add(hud)
   }
   GLSL</span>
 
-canvas <span class="o">=</span> <span class="t">Canvas</span>.new(<span class="n">320</span>, <span class="n">180</span>)              <span class="c"># low-res render target</span>
-g.with_canvas(canvas) { draw_world(g) }
-g.with_shader(glow) { glow[<span class="s">&quot;u_strength&quot;</span>] <span class="o">=</span> <span class="n">0.3</span>; g.draw(canvas, <span class="t">Rect</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="t">Window</span>.width, <span class="t">Window</span>.height)) }</code></pre>
+canvas <span class="o">=</span> <span class="t">Canvas</span>.new(<span class="n">320</span>, <span class="n">180</span>) <span class="c"># low-res render target</span>
+g.with_canvas(canvas) <span class="k">do</span>
+  g.circle(<span class="n">160</span>, <span class="n">90</span>, <span class="n">40</span>, color: <span class="t">Color</span><span class="t">::</span><span class="t">YELLOW</span>)
+  g.print(<span class="s">&quot;pixel perfect&quot;</span>, <span class="n">110</span>, <span class="n">150</span>)
+<span class="k">end</span>
+glow[<span class="s">&quot;u_strength&quot;</span>] <span class="o">=</span> <span class="n">0.3</span>
+g.with_shader(glow) { g.draw(canvas, <span class="t">Window</span>.rect) }</code></pre>
 </div></section>
 <section class="block"><h2 class="section">API reference<small>Generated from the source by <code>crystal docs</code>. Each type explains what it is for and shows how to use it.</small></h2>
 <div class="api"><div><h3>Core</h3><ul><li><a href="docs/api/Eagle/App.html">App</a></li><li><a href="docs/api/Eagle/Config.html">Config</a></li><li><a href="docs/api/Eagle/Clock.html">Clock</a></li><li><a href="docs/api/Eagle/Node.html">Node</a></li><li><a href="docs/api/Eagle/Node2D.html">Node2D</a></li><li><a href="docs/api/Eagle/Node3D.html">Node3D</a></li><li><a href="docs/api/Eagle/SceneTree.html">SceneTree</a></li><li><a href="docs/api/Eagle/Emitter.html">Emitter</a></li><li><a href="docs/api/Eagle/Tween.html">Tween</a></li><li><a href="docs/api/Eagle/Ease.html">Ease</a></li><li><a href="docs/api/Eagle/Script.html">Script</a></li><li><a href="docs/api/Eagle/Window.html">Window</a></li><li><a href="docs/api/Eagle/Input.html">Input</a></li></ul></div><div><h3>2D</h3><ul><li><a href="docs/api/Eagle/Graphics.html">Graphics</a></li><li><a href="docs/api/Eagle/Texture.html">Texture</a></li><li><a href="docs/api/Eagle/TextureRegion.html">TextureRegion</a></li><li><a href="docs/api/Eagle/Canvas.html">Canvas</a></li><li><a href="docs/api/Eagle/Shader.html">Shader</a></li><li><a href="docs/api/Eagle/Font.html">Font</a></li><li><a href="docs/api/Eagle/TrueTypeFont.html">TrueTypeFont</a></li><li><a href="docs/api/Eagle/Camera2D.html">Camera2D</a></li><li><a href="docs/api/Eagle/Sprite2D.html">Sprite2D</a></li><li><a href="docs/api/Eagle/AnimatedSprite2D.html">AnimatedSprite2D</a></li><li><a href="docs/api/Eagle/TileMap.html">TileMap</a></li><li><a href="docs/api/Eagle/Particles2D.html">Particles2D</a></li><li><a href="docs/api/Eagle/Polygon2D.html">Polygon2D</a></li><li><a href="docs/api/Eagle/Line2D.html">Line2D</a></li><li><a href="docs/api/Eagle/CanvasLayer.html">CanvasLayer</a></li><li><a href="docs/api/Eagle/Timer.html">Timer</a></li></ul></div><div><h3>Physics</h3><ul><li><a href="docs/api/Eagle/Physics2D/World.html">Physics2D::World</a></li><li><a href="docs/api/Eagle/Physics2D/Body.html">Physics2D::Body</a></li><li><a href="docs/api/Eagle/RigidBody2D.html">RigidBody2D</a></li><li><a href="docs/api/Eagle/StaticBody2D.html">StaticBody2D</a></li><li><a href="docs/api/Eagle/KinematicBody2D.html">KinematicBody2D</a></li><li><a href="docs/api/Eagle/Area2D.html">Area2D</a></li><li><a href="docs/api/Eagle/RayCast2D.html">RayCast2D</a></li><li><a href="docs/api/Eagle/Physics3D/World.html">Physics3D::World</a></li><li><a href="docs/api/Eagle/RigidBody3D.html">RigidBody3D</a></li><li><a href="docs/api/Eagle/KinematicBody3D.html">KinematicBody3D</a></li><li><a href="docs/api/Eagle/Area3D.html">Area3D</a></li></ul></div><div><h3>3D</h3><ul><li><a href="docs/api/Eagle/Mesh.html">Mesh</a></li><li><a href="docs/api/Eagle/Material.html">Material</a></li><li><a href="docs/api/Eagle/Renderer3D.html">Renderer3D</a></li><li><a href="docs/api/Eagle/Environment.html">Environment</a></li><li><a href="docs/api/Eagle/Camera3D.html">Camera3D</a></li><li><a href="docs/api/Eagle/MeshInstance3D.html">MeshInstance3D</a></li><li><a href="docs/api/Eagle/DirectionalLight3D.html">DirectionalLight3D</a></li><li><a href="docs/api/Eagle/PointLight3D.html">PointLight3D</a></li><li><a href="docs/api/Eagle/SpotLight3D.html">SpotLight3D</a></li><li><a href="docs/api/Eagle/Scene3D.html">Scene3D</a></li></ul></div><div><h3>UI</h3><ul><li><a href="docs/api/Eagle/Control.html">Control</a></li><li><a href="docs/api/Eagle/Panel.html">Panel</a></li><li><a href="docs/api/Eagle/Label.html">Label</a></li><li><a href="docs/api/Eagle/Button.html">Button</a></li><li><a href="docs/api/Eagle/CheckBox.html">CheckBox</a></li><li><a href="docs/api/Eagle/Slider.html">Slider</a></li><li><a href="docs/api/Eagle/ProgressBar.html">ProgressBar</a></li><li><a href="docs/api/Eagle/TextInput.html">TextInput</a></li><li><a href="docs/api/Eagle/VBox.html">VBox</a></li><li><a href="docs/api/Eagle/HBox.html">HBox</a></li><li><a href="docs/api/Eagle/GridContainer.html">GridContainer</a></li><li><a href="docs/api/Eagle/Theme.html">Theme</a></li></ul></div><div><h3>Audio & assets</h3><ul><li><a href="docs/api/Eagle/Audio.html">Audio</a></li><li><a href="docs/api/Eagle/Sound.html">Sound</a></li><li><a href="docs/api/Eagle/Voice.html">Voice</a></li><li><a href="docs/api/Eagle/AudioPlayer.html">AudioPlayer</a></li><li><a href="docs/api/Eagle/AudioPlayer2D.html">AudioPlayer2D</a></li><li><a href="docs/api/Eagle/Assets.html">Assets</a></li><li><a href="docs/api/Eagle/Image.html">Image</a></li><li><a href="docs/api/Eagle/Codecs/PNG.html">Codecs::PNG</a></li><li><a href="docs/api/Eagle/Codecs/Vorbis.html">Codecs::Vorbis</a></li><li><a href="docs/api/Eagle/Codecs/Zlib.html">Codecs::Zlib</a></li></ul></div><div><h3>Math</h3><ul><li><a href="docs/api/Eagle/Vec2.html">Vec2</a></li><li><a href="docs/api/Eagle/Vec3.html">Vec3</a></li><li><a href="docs/api/Eagle/Vec4.html">Vec4</a></li><li><a href="docs/api/Eagle/Mat4.html">Mat4</a></li><li><a href="docs/api/Eagle/Quat.html">Quat</a></li><li><a href="docs/api/Eagle/Rect.html">Rect</a></li><li><a href="docs/api/Eagle/AABB.html">AABB</a></li><li><a href="docs/api/Eagle/Ray.html">Ray</a></li><li><a href="docs/api/Eagle/Color.html">Color</a></li><li><a href="docs/api/Eagle/Transform2D.html">Transform2D</a></li><li><a href="docs/api/Eagle/Mathf.html">Mathf</a></li></ul></div></div>
