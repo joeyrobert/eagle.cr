@@ -71,7 +71,7 @@ module Eagle
       getter center : Vec3
       getter rotation : Quat
       getter axes : {Vec3, Vec3, Vec3}
-      # Creates a body, optionally with a first shape.
+      # :nodoc:
       def initialize(@shape, @center, @rotation)
         @axes = {@rotation * Vec3::RIGHT, @rotation * Vec3::UP, @rotation * Vec3::BACK}
       end
@@ -402,6 +402,7 @@ module Eagle
       getter id : Int32
       @@next_id = 0
 
+      # Creates a body, optionally with a first shape.
       def initialize(@type : BodyType = BodyType::Dynamic, @position : Vec3 = Vec3::ZERO, shape : Shape? = nil)
         @id = (@@next_id += 1)
         add_shape(shape) if shape
