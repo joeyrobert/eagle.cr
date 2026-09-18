@@ -1,5 +1,15 @@
 module Eagle
-  # Physical key codes (USB HID / SDL scancode values). Layout independent.
+  # A physical key, named after its position on a US keyboard.
+  #
+  # Keys are layout-independent: `Key::W` is the key above `S` whether the player uses
+  # QWERTY, AZERTY or Dvorak, which is what you want for movement. For typed text, use
+  # `TextEvent` or `TextInput` instead.
+  #
+  # ```
+  # Input.pressed?(Key::Space)
+  # Input.down?(Key::LShift)
+  # Key.named?("escape") # => Key::Escape, for loading bindings from a config file
+  # ```
   enum Key
     Unknown = 0
     A = 4; B; C; D; E; F; G; H; I; J; K; L; M; N; O; P; Q; R; S; T; U; V; W; X; Y; Z
@@ -14,7 +24,7 @@ module Eagle
 
     Count = 512
 
-    # Case-insensitive lookup: "space", "Space", "SPACE".
+    # Looks up a key by name, ignoring case. Returns `nil` for unknown names.
     def self.named?(name : String) : Key?
       n = name.downcase
       each { |k| return k if k.to_s.downcase == n }
@@ -23,6 +33,8 @@ module Eagle
   end
 
   @[Flags]
+  # Modifier keys held during a key event. It is a flags enum, so several can be set at once:
+  # `event.mods.ctrl?`.
   enum KeyMod
     Shift
     Ctrl
@@ -30,6 +42,7 @@ module Eagle
     Gui
   end
 
+  # A mouse button.
   enum MouseButton
     Left   = 1
     Middle = 2
@@ -38,6 +51,8 @@ module Eagle
     X2     = 5
   end
 
+  # A controller button, named after the Xbox layout. `A` is the bottom face button on every
+  # controller, including PlayStation's cross.
   enum GamepadButton
     A = 0; B; X; Y
     Back; Guide; Start
@@ -48,6 +63,7 @@ module Eagle
     Count
   end
 
+  # A controller stick or trigger axis. Sticks range from -1 to 1 and triggers from 0 to 1.
   enum GamepadAxis
     LeftX = 0; LeftY; RightX; RightY; TriggerLeft; TriggerRight
     Count

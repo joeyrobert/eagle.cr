@@ -1,34 +1,81 @@
 module Eagle
+  # Whether a shape is filled or drawn as an outline.
   enum DrawMode
     Fill
     Line
   end
 
+  # Horizontal alignment for `Graphics#print` and `Graphics#printf`. With `Center` and `Right`,
+  # the x you pass is the center or right edge of the text.
   enum TextAlign
     Left
     Center
     Right
   end
 
-  # Immediate-mode 2D drawing (LÖVE-style), batched into as few draw calls as
-  # possible. Coordinates are in logical points with (0,0) top-left.
+  # The 2D drawing context: shapes, sprites, text, transforms, cameras and render targets.
+  #
+  # You get one as `g` in `App#draw` and `Node#draw`. Every call is batched, so drawing
+  # thousands of sprites costs only a few GPU draw calls. Coordinates are in logical points,
+  # with `(0, 0)` at the top-left and y growing downward.
+  #
+  # ```
+  # class Game < App
+  #   @ship = Texture.new(Image.circle(32, Color::WHITE))
+  #
+  #   def draw(g : Graphics) : Nil
+  #     g.clear(Color.hex("#1d1611"))
+  #
+  #     g.rect(20, 20, 200, 120, color: Color::GRAY)              # filled box
+  #     g.rect(20, 20, 200, 120, DrawMode::Line, Color::WHITE)     # outline
+  #     g.circle(Window.center, 40, color: Color::ORANGE)
+  #     g.line(v2(0, 0), Input.mouse, Color::CYAN, width: 3)
+  #
+  #     g.draw(@ship, 300, 200, rotation: Clock.elapsed, ox: 16, oy: 16) # spin around its center
+  #
+  #     g.push do # everything in here is rotated around (500, 300)
+  #       g.translate(500, 300)
+  #       g.rotate(0.3)
+  #       g.rect(-25, -25, 50, 50)
+  #     end
+  #
+  #     g.print("Score 1200", 10, 10, scale: 2)
+  #     g.printf("Centered and wrapped text", 0, 400, Window.width, align: TextAlign::Center)
+  #   end
+  # end
+  # ```
+  #
+  # State such as `color`, `line_width`, `blend`, `shader` and `font` persists until you
+  # change it, and resets at the start of each frame. The `with_*` methods set something
+  # for one block and restore it afterwards, which is the tidy way to make temporary changes.
   class Graphics
     MAX_VERTICES = 65532
     VERTEX_FLOATS = 8 # x y u v r g b a
 
+    # Draw calls issued so far this frame. Show it in a debug overlay to check batching.
     getter stats_draw_calls = 0
+    # Vertices submitted so far this frame.
     getter stats_vertices = 0
-    # Current tint; multiplies everything drawn.
+    # Default color for shapes, text and texture tint. Most methods also take a `color:` argument.
     property color : Color = Color::WHITE
+    # Default thickness, in points, for lines, polylines and outlines.
     property line_width : Float32 = 1_f32
-    # Anti-aliased circle segment count is derived from radius; override here.
+    # Fixed segment count for circles. `nil` picks a count from the radius, so small circles stay cheap
+    # and big ones stay round.
     property circle_segments : Int32? = nil
+    # Font used by `print` when you don't pass one. Starts as `Font.default`, the built-in pixel font.
     property font : Font
+    # The current transform applied to everything drawn.
     getter transform : Transform2D = Transform2D::IDENTITY
+    # The current blend mode.
     getter blend : GPU::BlendMode = GPU::BlendMode::Alpha
+    # The custom shader in use, or `nil` for the default.
     getter shader : Shader?
+    # The canvas being drawn into, or `nil` for the screen.
     getter canvas : Canvas?
+    # The 2D camera in use, or `nil` for screen space.
     getter camera : Camera2D?
+    # The current clip rectangle, or `nil` when clipping is off.
     getter scissor_rect : Rect?
 
     @default_shader : Shader
@@ -44,6 +91,7 @@ module Eagle
     @frame_vertices = 0
     @target_size = Vec2::ZERO
 
+    # Creates a drawing context. The engine makes one for you; see `Eagle.graphics`.
     def initialize
       @default_shader = Shader.default_2d
       @shader = nil
@@ -58,6 +106,7 @@ module Eagle
       @scissor_rect = nil
     end
 
+    # Frees GPU buffers. The engine calls it on shutdown.
     def dispose : Nil
       GPU.device.delete_geometry(@geom) if GPU.ready?
       @default_shader.dispose
@@ -109,9 +158,20 @@ module Eagle
       GPU.device.blend_mode(@blend)
     end
 
+    # Size of what you are drawing into: the window, or the canvas inside `with_canvas`.
     def target_size : Vec2; @target_size; end
 
-    # Draw into an off-screen canvas for the duration of the block.
+    # Draws into *canvas* instead of the screen for the duration of the block. The canvas is
+    # cleared to *clear* first; pass `nil` to keep what it already has. The transform starts
+    # fresh inside the block.
+    #
+    # ```
+    # canvas = Canvas.new(320, 180)
+    # g.with_canvas(canvas) do
+    #   g.circle(160, 90, 40, color: Color::YELLOW)
+    # end
+    # g.draw(canvas, 0, 0, sx: 4) # upscale the low-res image to fill a 1280x720 window
+    # ```
     def with_canvas(canvas : Canvas, clear : Color? = Color::TRANSPARENT, &) : Nil
       prev = @canvas
       prev_t = @transform
@@ -134,13 +194,15 @@ module Eagle
       end
     end
 
-    # Clear the current target.
+    # Clears the whole target to *color*. On the screen this replaces `Config#clear_color` for this frame.
     def clear(color : Color = Color::BLACK) : Nil
       flush
       GPU.device.clear(color, depth: true, stencil: true)
     end
 
     # --- state ---------------------------------------------------------------
+    # Sets how new pixels combine with what's already drawn. `Additive` makes glows and fire,
+    # `Multiply` darkens, and `Alpha` is the normal default.
     def blend=(mode : GPU::BlendMode)
       return if mode == @blend
       flush
@@ -148,6 +210,11 @@ module Eagle
       GPU.device.blend_mode(mode)
     end
 
+    # Uses a blend mode for the block, then restores the previous one.
+    #
+    # ```
+    # g.with_blend(GPU::BlendMode::Additive) { g.circle(200, 200, 30, color: Color::ORANGE.alpha(0.5)) }
+    # ```
     def with_blend(mode : GPU::BlendMode, &) : Nil
       prev = @blend
       self.blend = mode
@@ -155,14 +222,15 @@ module Eagle
       self.blend = prev
     end
 
-    # Set a custom shader (nil = default). Uniforms `u_projection`, `u_texture`,
-    # `u_time`, `u_resolution` are provided.
+    # Uses a custom shader for everything drawn afterwards. `nil` restores the default.
+    # Eagle sets `u_projection`, `u_texture`, `u_time` and `u_resolution` for you. See `Shader.effect`.
     def shader=(s : Shader?)
       return if s == @shader
       flush
       @shader = s
     end
 
+    # Uses a shader for the block, then restores the previous one.
     def with_shader(s : Shader?, &) : Nil
       prev = @shader
       self.shader = s
@@ -170,6 +238,7 @@ module Eagle
       self.shader = prev
     end
 
+    # Uses a default color for the block, then restores the previous one.
     def with_color(c : Color, &) : Nil
       prev = @color
       @color = c
@@ -177,7 +246,8 @@ module Eagle
       @color = prev
     end
 
-    # Clip drawing to a rectangle (in current target coordinates), nil to disable.
+    # Clips drawing to a rectangle in target coordinates, for example to keep a scrolling list
+    # inside its panel. `nil` turns clipping off.
     def scissor=(r : Rect?)
       flush
       @scissor_rect = r
@@ -194,6 +264,7 @@ module Eagle
       end
     end
 
+    # Clips drawing to a rectangle for the block.
     def with_scissor(r : Rect?, &) : Nil
       prev = @scissor_rect
       self.scissor = r
@@ -201,7 +272,8 @@ module Eagle
       self.scissor = prev
     end
 
-    # Use a camera for subsequent drawing (world space). `nil` returns to screen space.
+    # Draws in world space through *cam*, or back in screen space with `nil`. The engine already
+    # uses `Camera2D.current` for the scene tree, so you need this only for manual drawing.
     def camera=(cam : Camera2D?)
       flush
       @camera = cam
@@ -213,6 +285,7 @@ module Eagle
       end
     end
 
+    # Draws through a camera for the block, then restores the previous camera and transform.
     def with_camera(cam : Camera2D?, &) : Nil
       prev_cam = @camera
       prev_t = @transform
@@ -224,31 +297,54 @@ module Eagle
     end
 
     # --- transform stack -----------------------------------------------------
+    # Saves the current transform. Pair it with `pop`.
     def push : Nil; @stack << @transform; end
+    # Restores the transform saved by the last `push`.
     def pop : Nil; @transform = @stack.pop? || Transform2D::IDENTITY; end
+    # Saves the transform, runs the block, and restores it. Transforms inside the block stay local to it.
     def push(&) : Nil; push; yield; pop; end
+    # Moves the origin by *x*, *y*.
     def translate(x : Number, y : Number) : Nil; @transform = @transform * Transform2D.translation(Vec2.new(x, y)); end
+    # Moves the origin by *v*.
     def translate(v : Vec2) : Nil; translate(v.x, v.y); end
+    # Rotates subsequent drawing by *rad* radians around the current origin.
     def rotate(rad : Number) : Nil; @transform = @transform * Transform2D.rotation(rad); end
+    # Scales subsequent drawing uniformly.
     def scale(s : Number) : Nil; scale(s, s); end
+    # Scales subsequent drawing by *x* and *y*. A negative value mirrors.
     def scale(x : Number, y : Number) : Nil; @transform = @transform * Transform2D.scale(Vec2.new(x, y)); end
+    # Replaces the current transform.
     def transform=(t : Transform2D); @transform = t; end
+    # Multiplies the current transform by *t*.
     def apply(t : Transform2D) : Nil; @transform = @transform * t; end
+    # Resets the transform to the camera's view, or to identity without a camera.
     def origin : Nil; @transform = @camera.try(&.view) || Transform2D::IDENTITY; end
+    # Applies *t* for the block.
     def with_transform(t : Transform2D, &) : Nil; push; apply(t); yield; pop; end
 
     # --- sprites -------------------------------------------------------------
-    # Draw a texture/region at (x, y) with rotation (radians), scale and origin offset (in texture pixels).
+    # Draws a texture or region with its top-left at *x*, *y*. *rotation* is in radians,
+    # *sx*/*sy* scale it, and *ox*/*oy* set the pivot in texture pixels, which is the point
+    # that lands on *x*, *y* and that rotation turns around.
+    #
+    # ```
+    # tex = Texture.new(Image.circle(32, Color::WHITE))
+    # g.draw(tex, 100, 100)                                     # top-left at (100, 100)
+    # g.draw(tex, 200, 100, rotation: 0.5, ox: 16, oy: 16)       # rotate around its center
+    # g.draw(tex, 300, 100, sx: -1, ox: 32)                     # mirrored horizontally
+    # g.draw(tex, 400, 100, color: Color::RED.alpha(0.5))       # tinted and translucent
+    # ```
     def draw(d : Drawable, x : Number = 0, y : Number = 0, rotation : Number = 0, sx : Number = 1, sy : Number = sx, ox : Number = 0, oy : Number = 0, color : Color = @color) : Nil
       tex, u0, v0, u1, v1, w, h = unpack(d)
       quad(tex, x.to_f32, y.to_f32, w * sx, h * sy, rotation.to_f32, ox * sx, oy * sy, u0, v0, u1, v1, color)
     end
 
+    # Draws a texture or region using vectors for position, scale and pivot.
     def draw(d : Drawable, position : Vec2, rotation : Number = 0, scale : Vec2 = Vec2::ONE, origin : Vec2 = Vec2::ZERO, color : Color = @color) : Nil
       draw(d, position.x, position.y, rotation, scale.x, scale.y, origin.x, origin.y, color)
     end
 
-    # Draw stretched into `dest`.
+    # Draws a texture or region stretched to fill *dest*.
     def draw(d : Drawable, dest : Rect, color : Color = @color, rotation : Number = 0) : Nil
       tex, u0, v0, u1, v1, w, h = unpack(d)
       if rotation == 0
@@ -258,26 +354,34 @@ module Eagle
       end
     end
 
-    # Draw a texture centred at a point.
+    # Draws a texture or region centered on *x*, *y*.
     def draw_centered(d : Drawable, x : Number, y : Number, rotation : Number = 0, sx : Number = 1, sy : Number = sx, color : Color = @color) : Nil
       _, _, _, _, _, w, h = unpack(d)
       draw(d, x, y, rotation, sx, sy, w / 2, h / 2, color)
     end
 
+    # Draws a texture or region centered on *p*.
     def draw_centered(d : Drawable, p : Vec2, rotation : Number = 0, sx : Number = 1, sy : Number = sx, color : Color = @color) : Nil
       draw_centered(d, p.x, p.y, rotation, sx, sy, color)
     end
 
-    # Draw a canvas (its texture is stored top-row-first, so no flip needed).
+    # Draws a canvas like a texture.
     def draw(c : Canvas, x : Number = 0, y : Number = 0, rotation : Number = 0, sx : Number = 1, sy : Number = sx, ox : Number = 0, oy : Number = 0, color : Color = @color) : Nil
       draw(c.texture, x, y, rotation, sx, sy, ox, oy, color)
     end
 
+    # Draws a canvas stretched to fill *dest*.
     def draw(c : Canvas, dest : Rect, color : Color = @color) : Nil
       draw(c.texture, dest, color)
     end
 
-    # Tiled fill of a rectangle with a texture (requires Wrap::Repeat on the texture).
+    # Fills *dest* by repeating a texture, for backgrounds and floors. The texture must use
+    # `GPU::Wrap::Repeat`. *offset* scrolls the pattern, which is an easy parallax effect.
+    #
+    # ```
+    # floor = Texture.new(Image.checkerboard(32, 32), wrap: GPU::Wrap::Repeat)
+    # g.draw_tiled(floor, Window.rect, offset: v2(Clock.elapsed * 20, 0))
+    # ```
     def draw_tiled(tex : Texture, dest : Rect, offset : Vec2 = Vec2::ZERO, scale : Number = 1, color : Color = @color) : Nil
       u0 = offset.x / (tex.width * scale); v0 = offset.y / (tex.height * scale)
       u1 = u0 + dest.w / (tex.width * scale); v1 = v0 + dest.h / (tex.height * scale)
@@ -292,6 +396,7 @@ module Eagle
     end
 
     # --- shapes --------------------------------------------------------------
+    # Draws a rectangle, filled by default. Pass `DrawMode::Line` for an outline.
     def rect(x : Number, y : Number, w : Number, h : Number, mode : DrawMode = DrawMode::Fill, color : Color = @color) : Nil
       if mode.fill?
         quad(Texture.white, x.to_f32, y.to_f32, w.to_f32, h.to_f32, 0_f32, 0_f32, 0_f32, 0_f32, 0_f32, 1_f32, 1_f32, color)
@@ -300,16 +405,20 @@ module Eagle
       end
     end
 
+    # Draws a `Rect`, filled by default.
     def rect(r : Rect, mode : DrawMode = DrawMode::Fill, color : Color = @color) : Nil
       rect(r.x, r.y, r.w, r.h, mode, color)
     end
 
+    # Draws a rectangle outline.
     def rect_line(x : Number, y : Number, w : Number, h : Number, color : Color = @color) : Nil
       rect(x, y, w, h, DrawMode::Line, color)
     end
 
+    # Draws the outline of a `Rect`.
     def rect_line(r : Rect, color : Color = @color) : Nil; rect(r, DrawMode::Line, color); end
 
+    # Draws a rectangle with rounded corners of *radius*, handy for buttons and panels.
     def rounded_rect(x : Number, y : Number, w : Number, h : Number, radius : Number, mode : DrawMode = DrawMode::Fill, color : Color = @color) : Nil
       r = Math.min(radius.to_f32, Math.min(w, h) / 2).to_f32
       pts = [] of Vec2
@@ -329,6 +438,7 @@ module Eagle
       polygon(pts, mode, color)
     end
 
+    # Draws a circle, filled by default.
     def circle(x : Number, y : Number, radius : Number, mode : DrawMode = DrawMode::Fill, color : Color = @color, segments : Int32? = nil) : Nil
       n = segments || @circle_segments || Math.max(12, Math.min(96, (radius * 1.2).to_i))
       pts = Array(Vec2).new(n) { |i| a = Math::PI * 2 * i / n; Vec2.new(x + Math.cos(a) * radius, y + Math.sin(a) * radius) }
@@ -339,21 +449,30 @@ module Eagle
       end
     end
 
+    # Draws a circle at *center*.
     def circle(center : Vec2, radius : Number, mode : DrawMode = DrawMode::Fill, color : Color = @color) : Nil
       circle(center.x, center.y, radius, mode, color)
     end
 
+    # Draws a circle outline.
     def circle_line(x : Number, y : Number, radius : Number, color : Color = @color) : Nil
       circle(x, y, radius, DrawMode::Line, color)
     end
 
+    # Draws an ellipse with radii *rx* and *ry*.
     def ellipse(x : Number, y : Number, rx : Number, ry : Number, mode : DrawMode = DrawMode::Fill, color : Color = @color) : Nil
       n = Math.max(12, Math.min(96, (Math.max(rx, ry) * 1.2).to_i))
       pts = Array(Vec2).new(n) { |i| a = Math::PI * 2 * i / n; Vec2.new(x + Math.cos(a) * rx, y + Math.sin(a) * ry) }
       mode.fill? ? fan(Vec2.new(x, y), pts, color) : polyline(pts, color, closed: true)
     end
 
-    # Pie slice / arc from `a0` to `a1` radians.
+    # Draws a pie slice (filled) or an arc (line) from angle *a0* to *a1* in radians.
+    # Angle 0 points right and angles grow clockwise, which suits cooldown timers.
+    #
+    # ```
+    # cooldown = 0.25
+    # g.arc(50, 50, 20, -Math::PI / 2, -Math::PI / 2 + Mathf::TAU * cooldown, color: Color::WHITE.alpha(0.6))
+    # ```
     def arc(x : Number, y : Number, radius : Number, a0 : Number, a1 : Number, mode : DrawMode = DrawMode::Fill, color : Color = @color) : Nil
       span = (a1 - a0).to_f32
       n = Math.max(2, (span.abs * Math.max(6, radius / 4)).to_i)
@@ -365,6 +484,7 @@ module Eagle
       end
     end
 
+    # Draws a line of *width* points.
     def line(x1 : Number, y1 : Number, x2 : Number, y2 : Number, color : Color = @color, width : Number = @line_width) : Nil
       a = Vec2.new(x1, y1); b = Vec2.new(x2, y2)
       d = b - a
@@ -374,11 +494,12 @@ module Eagle
       tri_quad(Texture.white, a + n, b + n, b - n, a - n, color)
     end
 
+    # Draws a line between two points.
     def line(a : Vec2, b : Vec2, color : Color = @color, width : Number = @line_width) : Nil
       line(a.x, a.y, b.x, b.y, color, width)
     end
 
-    # Connected line segments with mitred joins.
+    # Draws connected line segments with mitred joins. Set *closed* to join the last point to the first.
     def polyline(points : Array(Vec2), color : Color = @color, width : Number = @line_width, closed : Bool = false) : Nil
       return if points.size < 2
       hw = width.to_f32 / 2
@@ -408,7 +529,7 @@ module Eagle
       end
     end
 
-    # Filled (convex or simple concave via ear clipping) or outlined polygon.
+    # Draws a polygon. Filled polygons may be concave, as long as the edges don't cross.
     def polygon(points : Array(Vec2), mode : DrawMode = DrawMode::Fill, color : Color = @color) : Nil
       return if points.size < 3
       if mode.line?
@@ -427,20 +548,29 @@ module Eagle
       end
     end
 
+    # Draws a triangle.
     def triangle(a : Vec2, b : Vec2, c : Vec2, mode : DrawMode = DrawMode::Fill, color : Color = @color) : Nil
       polygon([a, b, c], mode, color)
     end
 
+    # Draws a square dot of *size* points.
     def point(x : Number, y : Number, color : Color = @color, size : Number = 1) : Nil
       rect(x - size / 2, y - size / 2, size, size, DrawMode::Fill, color)
     end
 
+    # Draws many dots in one go, such as stars or particles.
     def points(pts : Array(Vec2), color : Color = @color, size : Number = 1) : Nil
       pts.each { |p| point(p.x, p.y, color, size) }
     end
 
     # --- text ----------------------------------------------------------------
-    # Draw text at (x, y) = top-left of the first line.
+    # Draws text with its top-left corner at *x*, *y*. Newlines start new lines.
+    # With `align: TextAlign::Center`, *x* is the center of each line instead.
+    #
+    # ```
+    # g.print("GAME OVER", Window.center.x, 200, Color::RED, scale: 3, align: TextAlign::Center)
+    # g.print("line one\nline two", 10, 10)
+    # ```
     def print(text : String, x : Number = 0, y : Number = 0, color : Color = @color, font : Font = @font, scale : Number = 1, align : TextAlign = TextAlign::Left) : Nil
       s = font.scale * scale
       line_h = font.line_height * s
@@ -466,11 +596,12 @@ module Eagle
       end
     end
 
+    # Draws text at *pos*.
     def print(text : String, pos : Vec2, color : Color = @color, font : Font = @font, scale : Number = 1, align : TextAlign = TextAlign::Left) : Nil
       print(text, pos.x, pos.y, color, font, scale, align)
     end
 
-    # Word-wrapped text inside `width`.
+    # Draws text word-wrapped to fit *width*, aligned inside that width.
     def printf(text : String, x : Number, y : Number, width : Number, align : TextAlign = TextAlign::Left, color : Color = @color, font : Font = @font, scale : Number = 1) : Nil
       lines = font.wrap(text, (width / scale).to_f32)
       ax = case align
@@ -481,12 +612,13 @@ module Eagle
       print(lines.join("\n"), ax, y, color, font, scale, align)
     end
 
+    # The width and height *text* would take up, for centering or sizing backgrounds.
     def text_size(text : String, font : Font = @font, scale : Number = 1) : Vec2
       font.measure(text) * scale
     end
 
     # --- low level -----------------------------------------------------------
-    # Push an arbitrary textured quad (corners in order, with UVs).
+    # Pushes a textured quad with explicit corners and UVs, for custom effects like skewed sprites.
     def quad_raw(tex : Texture, p0 : Vec2, p1 : Vec2, p2 : Vec2, p3 : Vec2, uv0 : Vec2, uv1 : Vec2, uv2 : Vec2, uv3 : Vec2, color : Color = @color) : Nil
       set_texture(tex)
       ensure_space(4, 6)
@@ -498,7 +630,8 @@ module Eagle
       push_quad_indices(base)
     end
 
-    # Push raw triangles (positions, uvs, colors, indices) for meshes, particles.
+    # Pushes arbitrary textured triangles with per-vertex colors. Use it for custom meshes,
+    # trails and deformable sprites.
     def triangles(tex : Texture, positions : Array(Vec2), uvs : Array(Vec2), colors : Array(Color), indices : Array(Int32)) : Nil
       set_texture(tex)
       ensure_space(positions.size, indices.size)
@@ -507,7 +640,8 @@ module Eagle
       indices.each { |i| push_index(base + i) }
     end
 
-    # Flush pending geometry to the GPU.
+    # Sends pending geometry to the GPU now. Eagle does this when needed; call it yourself
+    # only when mixing in raw GPU calls.
     def flush : Nil
       return if @icount == 0
       shader = @shader || @default_shader
@@ -525,6 +659,7 @@ module Eagle
       @icount = 0
     end
 
+    # Same as `stats_draw_calls`.
     def draw_calls : Int32; @stats_draw_calls; end
 
     private def quad(tex : Texture, x : Number, y : Number, w : Number, h : Number, rot : Number, ox : Number, oy : Number, u0 : Float32, v0 : Float32, u1 : Float32, v1 : Float32, color : Color)
@@ -624,8 +759,10 @@ module Eagle
     end
   end
 
+  # Polygon helpers used by the renderer and physics.
   module Geometry
-    # Ear-clipping triangulation of a simple polygon. Returns index triples.
+    # Splits a simple polygon, convex or concave, into triangles by ear clipping. Returns
+    # indices into *pts*, three per triangle.
     def self.triangulate(pts : Array(Vec2)) : Array(Int32)
       n = pts.size
       return [] of Int32 if n < 3
@@ -659,6 +796,7 @@ module Eagle
       out_tris
     end
 
+    # True when *p* lies inside the triangle *a*, *b*, *c*.
     def self.point_in_triangle?(p : Vec2, a : Vec2, b : Vec2, c : Vec2) : Bool
       d1 = (p - a).cross(b - a); d2 = (p - b).cross(c - b); d3 = (p - c).cross(a - c)
       has_neg = d1 < 0 || d2 < 0 || d3 < 0

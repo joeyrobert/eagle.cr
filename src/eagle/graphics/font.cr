@@ -1,10 +1,24 @@
 require "./default_font_data"
 
 module Eagle
-  # Text rendering. A Font is an atlas texture plus glyph metrics.
-  # `Font.default` is the embedded pixel font; `Font.load("x.ttf", 24)` uses
-  # the Crystal TrueType rasterizer.
+  # A font you can draw text with, through `Graphics#print` or a `Label`.
+  #
+  # Eagle ships a crisp built-in pixel font, `Font.default`, so text works with no files.
+  # For anything else, load a TrueType file at a pixel size. Glyphs are rasterized in
+  # Crystal on first use and packed into an atlas texture.
+  #
+  # ```
+  # title = Font.load("res://fonts/Inter.ttf", 48)
+  # g.print("Eagle", 20, 20, font: title)
+  #
+  # w = Font.default.width("Score: 100") # measure before drawing
+  # lines = Font.default.wrap("A long sentence that needs wrapping.", 120)
+  # ```
+  #
+  # Load each size you need separately. Scaling a TrueType font with `scale:` blurs it,
+  # while the pixel font scales cleanly by whole numbers.
   abstract class Font
+    # One character's image in the font atlas, with how far to advance afterwards.
     struct Glyph
       getter region : TextureRegion
       getter advance : Float32
@@ -12,18 +26,24 @@ module Eagle
       def initialize(@region, @advance, @offset = Vec2::ZERO); end
     end
 
+    # The glyph for *char*, or `nil` if the font doesn't have it.
     abstract def glyph(char : Char) : Glyph?
+    # Distance between baselines, in pixels, before `scale`.
     abstract def line_height : Float32
+    # The atlas texture holding the glyphs.
     abstract def texture : Texture
-    # Base scale used by `Graphics#print` (pixel fonts look better at 2x).
+    # Scale applied whenever this font is drawn. The pixel font defaults to 2 so it stays readable.
     property scale : Float32 = 1_f32
-    # Extra spacing between glyphs.
+    # Extra space between characters, in pixels.
     property letter_spacing : Float32 = 0_f32
 
+    # Extra horizontal adjustment between the pair *a*, *b*, such as pulling "AV" together.
     def kerning(a : Char, b : Char) : Float32; 0_f32; end
 
+    # Line height after `scale`.
     def height : Float32; line_height * scale; end
 
+    # Width of *text* in pixels, including kerning and scale. Uses the longest line for multi-line text.
     def width(text : String) : Float32
       w = 0_f32; best = 0_f32
       prev : Char? = nil
@@ -41,12 +61,13 @@ module Eagle
       Math.max(w, best)
     end
 
+    # Width and height of *text*, counting every line.
     def measure(text : String) : Vec2
       lines = text.count('\n') + 1
       Vec2.new(width(text), lines * height)
     end
 
-    # Word-wrap `text` into lines no wider than `max_width`.
+    # Splits *text* into lines that each fit within *max_width* pixels, breaking at spaces.
     def wrap(text : String, max_width : Number) : Array(String)
       out_lines = [] of String
       text.each_line do |para|
@@ -67,6 +88,7 @@ module Eagle
 
     @@default : Font? = nil
 
+    # The built-in pixel font. It needs no files, so it works everywhere, including the web.
     def self.default : Font
       @@default ||= BitmapFont.builtin
     end
@@ -75,25 +97,33 @@ module Eagle
     def self.reset_shared; @@default = nil; end
   end
 
-  # Fixed-cell bitmap font from an atlas.
+  # A font drawn from a grid of glyph images, as used by classic and pixel-art games.
+  #
+  # ```
+  # atlas = Texture.new(Image.new(96, 48))
+  # font = BitmapFont.grid(atlas, 6, 8) # glyphs from ' ' onward, row by row
+  # ```
   class BitmapFont < Font
     getter texture : Texture
     getter line_height : Float32
     @glyphs = {} of Char => Glyph
 
+    # Creates an empty bitmap font. Add glyphs with `add`, or use `grid` to build one from a sheet.
     def initialize(@texture : Texture, @line_height : Float32)
     end
 
+    # Adds a glyph for *char*. The advance defaults to the region width.
     def add(char : Char, region : TextureRegion, advance : Float32? = nil, offset : Vec2 = Vec2::ZERO) : self
       @glyphs[char] = Glyph.new(region, advance || region.width, offset)
       self
     end
 
+    # The glyph for *char*, or `nil`.
     def glyph(char : Char) : Glyph?
       @glyphs[char]? || @glyphs['?']?
     end
 
-    # Load a grid atlas where glyphs are laid out row-major starting at `first`.
+    # Builds a font from a sheet where glyphs sit in equal cells, row by row, starting at *first*.
     def self.grid(texture : Texture, cell_w : Int32, cell_h : Int32, first : Char = ' ', count : Int32 = 95, advance : Int32? = nil) : BitmapFont
       f = new(texture, cell_h.to_f32)
       cols = texture.width // cell_w
@@ -104,7 +134,7 @@ module Eagle
       f
     end
 
-    # Rasterise the embedded 5x7 font into a 6x8-cell atlas.
+    # Builds Eagle's embedded 5x7 pixel font. `Font.default` returns a shared copy.
     def self.builtin : BitmapFont
       glyphs = DEFAULT_FONT_GLYPHS.split(/\n\s*\n/).map { |g| g.lines.map(&.strip).reject(&.empty?) }
       raise Error.new("Built-in font is corrupt (#{glyphs.size} glyphs)") unless glyphs.size == 95

@@ -1,7 +1,20 @@
 module Eagle
-  # TrueType (.ttf, glyf outlines) parser and anti-aliased rasteriser, in Crystal.
-  # Supports cmap formats 4/6/12, composite glyphs, hmtx metrics, 'kern' format 0.
+  # A TrueType font file, parsed in pure Crystal: glyph lookup, metrics, kerning and outlines.
+  #
+  # Most games use `Font.load`, which wraps this in a `TrueTypeFont`. Use `TrueType`
+  # directly for tools, such as inspecting a font or rasterizing glyphs into your own atlas.
+  #
+  # ```
+  # ttf = TrueType.load("res://fonts/Inter.ttf")
+  # g_index = ttf.glyph_index('A')
+  # bitmap = ttf.rasterize(g_index, 32.0_f32 / ttf.units_per_em)
+  # image = bitmap.to_image
+  # ```
+  #
+  # Supports `glyf` outlines, cmap formats 4, 6 and 12, composite glyphs and `kern` table
+  # format 0. OpenType CFF fonts (.otf) aren't supported.
   class TrueType
+    # :nodoc:
     struct Point
       getter x : Float32
       getter y : Float32
@@ -9,17 +22,25 @@ module Eagle
       def initialize(@x, @y, @on_curve); end
     end
 
+    # A glyph's contours in font units, with its bounding box.
     record GlyphOutline, contours : Array(Array(Point)), xmin : Int32, ymin : Int32, xmax : Int32, ymax : Int32 do
       def empty? : Bool; contours.empty?; end
     end
 
+    # :nodoc:
     record HMetric, advance : Int32, lsb : Int32
 
+    # Font units per em. Multiply by `pixel_size / units_per_em` to convert to pixels.
     getter units_per_em : Int32
+    # Height above the baseline, in font units.
     getter ascent : Int32
+    # Depth below the baseline, in font units (negative).
     getter descent : Int32
+    # Extra gap between lines, in font units.
     getter line_gap : Int32
+    # Number of glyphs in the font.
     getter glyph_count : Int32
+    # The family name from the font's name table, such as "Inter".
     getter family_name : String = ""
 
     @data : Bytes
@@ -32,6 +53,7 @@ module Eagle
     @kern = {} of {Int32, Int32} => Int32
     @outline_cache = {} of Int32 => GlyphOutline
 
+    # Parses a font from raw bytes. Raises `AssetError` if it isn't a supported TrueType file.
     def initialize(@data : Bytes)
       parse_directory
       head = table!("head")
@@ -57,6 +79,7 @@ module Eagle
       parse_name
     end
 
+    # Reads and parses a font file.
     def self.load(path : String) : TrueType
       new(File.read(path).to_slice)
     end
@@ -195,31 +218,38 @@ module Eagle
     end
 
     # --- public metrics ---
+    # The glyph index for *char*, or 0 (the missing-glyph box) if the font lacks it.
     def glyph_index(char : Char) : Int32
       @cmap[char.ord]? || 0
     end
 
+    # True when the font has a glyph for *char*.
     def has_glyph?(char : Char) : Bool
       @cmap.has_key?(char.ord)
     end
 
+    # Horizontal advance of a glyph, in font units.
     def advance(glyph : Int32) : Int32
       return 0 if @hmtx.empty?
       (@hmtx[glyph]? || @hmtx.last).advance
     end
 
+    # Left side bearing of a glyph, in font units.
     def left_side_bearing(glyph : Int32) : Int32
       return 0 if @hmtx.empty?
       (@hmtx[glyph]? || @hmtx.last).lsb
     end
 
+    # Kerning between two glyph indices, in font units.
     def kerning(left : Int32, right : Int32) : Int32
       @kern[{left, right}]? || 0
     end
 
+    # Number of kerning pairs in the font.
     def kern_pairs : Int32; @kern.size; end
 
     # --- outlines ---
+    # The contours of a glyph.
     def outline(glyph : Int32) : GlyphOutline
       @outline_cache[glyph] ||= read_outline(glyph, 0)
     end
@@ -328,8 +358,9 @@ module Eagle
     end
 
     # --- rasterising ---
+    # A rasterized glyph: coverage values from 0 to 1, plus its offset from the pen position.
     record Bitmap, width : Int32, height : Int32, coverage : Slice(Float32), left : Int32, top : Int32 do
-      # Convert to an RGBA image (white with alpha = coverage).
+      # Converts to a white RGBA image whose alpha is the coverage.
       def to_image : Image
         img = Image.new(width, height)
         px = img.pixels
@@ -341,9 +372,7 @@ module Eagle
       end
     end
 
-    # Rasterise a glyph at `scale` (pixels per font unit). `left`/`top` are the
-    # bitmap's offset from the pen position (top is relative to the baseline,
-    # positive = above the baseline... i.e. y-down offset is -top).
+    # Rasterizes a glyph with anti-aliasing. *scale* is pixels per font unit.
     def rasterize(glyph : Int32, scale : Float32, pad : Int32 = 1) : Bitmap
       out_ = outline(glyph)
       if out_.empty?
@@ -407,7 +436,7 @@ module Eagle
       {p.x * scale - x0, y1 - p.y * scale}
     end
 
-    # Signed-area coverage accumulator (after font-rs by Raph Levien).
+    # :nodoc:
     class Accumulator
       @w : Int32
       @h : Int32
@@ -509,21 +538,30 @@ module Eagle
     end
   end
 
-  # A Font backed by a TrueType file, rasterised on demand into atlas textures.
+  # A `Font` backed by a TrueType file at one pixel size. Glyphs are rasterized on first use.
+  # Create one with `Font.load`, which also caches it.
   #
-  #   font = Font.load("res://Roboto.ttf", 24)
-  #   g.print("Hello", 10, 10, font: font)
+  # ```
+  # font = Font.load("res://fonts/Inter.ttf", 24)
+  # g.print("Hello", 10, 10, font: font)
+  # ```
   class TrueTypeFont < Font
+    # The parsed font file.
     getter ttf : TrueType
+    # Pixel size the font was loaded at.
     getter size : Float32
+    # Distance between baselines, in pixels.
     getter line_height : Float32
+    # Height above the baseline, in pixels.
     getter ascent : Float32
+    # Depth below the baseline, in pixels.
     getter descent : Float32
     @scale_factor : Float32
     @glyphs = {} of Char => Glyph?
     @atlases = [] of Atlas
     @filter : GPU::Filter
 
+    # :nodoc:
     ATLAS_SIZE = 1024
 
     private class Atlas
@@ -563,6 +601,7 @@ module Eagle
       end
     end
 
+    # Creates a font from raw TrueType bytes at *size* pixels.
     def initialize(data : Bytes, size : Number, filter : GPU::Filter = GPU::Filter::Linear)
       @ttf = TrueType.new(data)
       @size = size.to_f32
@@ -573,20 +612,25 @@ module Eagle
       @line_height = (@ttf.ascent - @ttf.descent + @ttf.line_gap) * @scale_factor
     end
 
+    # Loads a font file at *size* pixels, without caching. Prefer `Font.load`.
     def self.load(path : String, size : Number, filter : GPU::Filter = GPU::Filter::Linear) : TrueTypeFont
       new(Assets.read_bytes(path), size, filter)
     end
 
+    # The first atlas texture.
     def texture : Texture
       @atlases.first?.try(&.texture) || Texture.white
     end
 
+    # The font's family name.
     def family_name : String; @ttf.family_name; end
 
+    # Kerning between two characters, in pixels.
     def kerning(a : Char, b : Char) : Float32
       @ttf.kerning(@ttf.glyph_index(a), @ttf.glyph_index(b)) * @scale_factor
     end
 
+    # The glyph for *char*, rasterizing it on first use. Returns `nil` if the font lacks it.
     def glyph(char : Char) : Glyph?
       return @glyphs[char] if @glyphs.has_key?(char)
       g = build_glyph(char)
@@ -594,7 +638,7 @@ module Eagle
       g
     end
 
-    # Rasterise every ASCII glyph up front (avoids hitches on first use).
+    # Rasterizes glyphs up front so the first frame that uses them doesn't hitch. Covers printable ASCII by default.
     def preload(chars : Enumerable(Char) = (32..126).map(&.chr)) : self
       chars.each { |c| glyph(c) }
       self
@@ -634,7 +678,7 @@ module Eagle
   end
 
   class Font
-    # Load a TrueType font at a pixel size (cached by path+size).
+    # Loads a TrueType font at a pixel size. Cached by path and size, so calling it every frame is cheap.
     def self.load(path : String, size : Number, filter : GPU::Filter = GPU::Filter::Linear) : Font
       Assets.font(path, size)
     end
