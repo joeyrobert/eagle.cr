@@ -26,7 +26,9 @@ module Eagle
   struct Vec2
     # Returns `(0, 0)`. Exists so `Enumerable#sum` works on arrays of vectors.
     def self.zero : Vec2; Vec2.new(0, 0); end
+    # Horizontal component.
     property x : Float32
+    # Vertical component. Grows downward on screen.
     property y : Float32
 
     # `(0, 0)`.
@@ -69,15 +71,24 @@ module Eagle
       Vec2.new(Math.cos(radians) * length, Math.sin(radians) * length)
     end
 
+    # Component-wise sum.
     def +(o : Vec2) : Vec2; Vec2.new(@x + o.x, @y + o.y); end
+    # Component-wise difference.
     def -(o : Vec2) : Vec2; Vec2.new(@x - o.x, @y - o.y); end
+    # Component-wise product.
     def *(o : Vec2) : Vec2; Vec2.new(@x * o.x, @y * o.y); end
+    # Component-wise quotient.
     def /(o : Vec2) : Vec2; Vec2.new(@x / o.x, @y / o.y); end
+    # Scales both components.
     def *(s : Number) : Vec2; Vec2.new(@x * s, @y * s); end
+    # Divides both components.
     def /(s : Number) : Vec2; Vec2.new(@x / s, @y / s); end
+    # The vector pointing the opposite way.
     def - : Vec2; Vec2.new(-@x, -@y); end
+    # Returns self.
     def +; self; end
 
+    # Exact equality. Use `approx?` for computed values.
     def ==(o : Vec2) : Bool; @x == o.x && @y == o.y; end
 
     # Dot product. Positive when the vectors point the same way, zero when perpendicular,

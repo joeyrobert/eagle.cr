@@ -20,9 +20,13 @@ module Eagle
   abstract class Font
     # One character's image in the font atlas, with how far to advance afterwards.
     struct Glyph
+      # Where the glyph sits in the atlas.
       getter region : TextureRegion
+      # How far to move the pen after this glyph, in pixels.
       getter advance : Float32
+      # Offset from the pen position to the glyph's top-left corner.
       getter offset : Vec2
+      # Creates a glyph.
       def initialize(@region, @advance, @offset = Vec2::ZERO); end
     end
 

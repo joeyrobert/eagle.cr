@@ -24,6 +24,7 @@ module Eagle
     # The voice currently playing, if any.
     getter voice : Voice? = nil
 
+    # Emitted when a non-looping sound reaches its end. Connect with `on_finished { ... }`.
     signal finished
 
     # Plays *sound*, or the current `sound`. Stops what was playing first. Returns the voice.

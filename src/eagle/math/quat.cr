@@ -25,9 +25,13 @@ module Eagle
   # node.rotation = halfway
   # ```
   struct Quat
+    # Vector part x. Prefer the named constructors to setting components.
     property x : Float32
+    # Vector part y.
     property y : Float32
+    # Vector part z.
     property z : Float32
+    # Scalar part.
     property w : Float32
 
     # Creates a quaternion from raw components. Prefer the named constructors.
@@ -104,11 +108,13 @@ module Eagle
       v + t * @w + q.cross(t)
     end
 
+    # Exact equality. Use `approx?` for computed values.
     def ==(o : Quat) : Bool; @x == o.x && @y == o.y && @z == o.z && @w == o.w; end
     # The conjugate. For unit quaternions this equals the inverse rotation.
     def conjugate : Quat; Quat.new(-@x, -@y, -@z, @w); end
     # The rotation that undoes this one.
     def inverse : Quat; conjugate / length_squared; end
+    # Divides every component.
     def /(s : Number) : Quat; Quat.new(@x / s, @y / s, @z / s, @w / s); end
     # Dot product. Values near ±1 mean the rotations are almost the same.
     def dot(o : Quat) : Float32; @x * o.x + @y * o.y + @z * o.z + @w * o.w; end

@@ -45,7 +45,11 @@ module Eagle
     @time = 0_f32
     @frame_index = 0
 
+    # Emitted when a non-looping animation reaches its last frame, with the animation's name.
+    # Connect with `on_animation_finished { |name| ... }`.
     signal animation_finished(name : String)
+    # Emitted whenever the shown frame changes, with the frame index. Use it to sync footstep
+    # sounds or hitboxes to specific frames.
     signal frame_changed(frame : Int32)
 
     # Adds an animation and returns it. Replaces any animation with the same name.

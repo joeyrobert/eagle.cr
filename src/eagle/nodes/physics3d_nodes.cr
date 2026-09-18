@@ -19,7 +19,10 @@ module Eagle
     @begin_handler : Proc(Physics3D::Body, Physics3D::Body, Nil)? = nil
     @end_handler : Proc(Physics3D::Body, Physics3D::Body, Nil)? = nil
 
+    # Emitted when another collision object starts touching or overlapping this one.
+    # Connect with `on_body_entered { |other| ... }`.
     signal body_entered(other : CollisionObject3D)
+    # Emitted when another collision object stops touching or overlapping this one.
     signal body_exited(other : CollisionObject3D)
 
     # Creates the node and its body.

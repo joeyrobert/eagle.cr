@@ -1,15 +1,20 @@
 module Eagle
   # Whether a shape is filled or drawn as an outline.
   enum DrawMode
+    # Filled shapes.
     Fill
+    # Outlines, using `Graphics#line_width`.
     Line
   end
 
   # Horizontal alignment for `Graphics#print` and `Graphics#printf`. With `Center` and `Right`,
   # the x you pass is the center or right edge of the text.
   enum TextAlign
+    # Align the left edge to x.
     Left
+    # Center the text on x.
     Center
+    # Align the right edge to x.
     Right
   end
 
@@ -49,7 +54,9 @@ module Eagle
   # change it, and resets at the start of each frame. The `with_*` methods set something
   # for one block and restore it afterwards, which is the tidy way to make temporary changes.
   class Graphics
+    # Vertices per batch. A batch is flushed to the GPU when it fills up.
     MAX_VERTICES = 65532
+    # Floats per 2D vertex: position, UV and color.
     VERTEX_FLOATS = 8 # x y u v r g b a
 
     # Draw calls issued so far this frame. Show it in a debug overlay to check batching.

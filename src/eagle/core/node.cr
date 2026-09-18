@@ -71,9 +71,13 @@ module Eagle
     getter groups = Set(String).new
     @queued_free = false
 
+    # Emitted each time the node enters the tree. Connect with `on_tree_entered { ... }`.
     signal tree_entered
+    # Emitted each time the node leaves the tree.
     signal tree_exited
+    # Emitted after a child is added, with the child.
     signal child_added(child : Node)
+    # Emitted after a child is removed, with the child.
     signal child_removed(child : Node)
 
     # Creates a node. When *name* is empty, the class name is used.

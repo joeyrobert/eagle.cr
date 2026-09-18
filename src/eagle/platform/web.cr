@@ -5,6 +5,7 @@ module Eagle
     # Browser backend: a <canvas> with WebGL2, WebAudio and DOM input, driven by
     # requestAnimationFrame calling the exported `eagle_frame` each frame.
     {% if flag?(:wasm32) %}
+      # :nodoc:
       class Web < Base
         EV_KEY = 1; EV_TEXT = 2; EV_MOTION = 3; EV_BUTTON = 4; EV_WHEEL = 5; EV_RESIZE = 6; EV_FOCUS = 7
         EV_GP_CONNECT = 8; EV_GP_BUTTON = 9; EV_GP_AXIS = 10; EV_QUIT = 12
@@ -96,7 +97,7 @@ module Eagle
 end
 
 {% if flag?(:wasm32) %}
-  # Called by eagle.js once per animation frame.
+  # :nodoc:
   fun eagle_frame : Void
     Eagle.step if Eagle.running?
   end

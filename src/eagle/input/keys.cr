@@ -5,6 +5,10 @@ module Eagle
   # QWERTY, AZERTY or Dvorak, which is what you want for movement. For typed text, use
   # `TextEvent` or `TextInput` instead.
   #
+  # Naming: `Num1` to `Num0` are the digits above the letters, `Kp0` to `KpEnter` are
+  # the numeric keypad, `Grave` is the backtick key, and `LGui`/`RGui` are the Command
+  # or Windows keys. `Count` is not a key; it sizes internal tables.
+  #
   # ```
   # Input.pressed?(Key::Space)
   # Input.down?(Key::LShift)
@@ -36,23 +40,35 @@ module Eagle
   # Modifier keys held during a key event. It is a flags enum, so several can be set at once:
   # `event.mods.ctrl?`.
   enum KeyMod
+    # Either shift key.
     Shift
+    # Either control key.
     Ctrl
+    # Either alt/option key.
     Alt
+    # Either Command (macOS) or Windows key.
     Gui
   end
 
   # A mouse button.
   enum MouseButton
+    # The primary (usually left) button.
     Left   = 1
+    # The wheel button.
     Middle = 2
+    # The secondary (usually right) button.
     Right  = 3
+    # The "back" side button.
     X1     = 4
+    # The "forward" side button.
     X2     = 5
   end
 
   # A controller button, named after the Xbox layout. `A` is the bottom face button on every
-  # controller, including PlayStation's cross.
+  # controller, including PlayStation's cross, and `B`, `X` and `Y` follow clockwise from it.
+  # `Back`, `Guide` and `Start` are the middle buttons, `LeftStick` and `RightStick` are stick
+  # clicks, and `Misc1`, the paddles and `Touchpad` exist only on some controllers.
+  # `Count` is not a button.
   enum GamepadButton
     A = 0; B; X; Y
     Back; Guide; Start
@@ -64,6 +80,7 @@ module Eagle
   end
 
   # A controller stick or trigger axis. Sticks range from -1 to 1 and triggers from 0 to 1.
+  # `LeftY` and `RightY` are negative when pushed up. `Count` is not an axis.
   enum GamepadAxis
     LeftX = 0; LeftY; RightX; RightY; TriggerLeft; TriggerRight
     Count

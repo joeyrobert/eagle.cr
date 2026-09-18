@@ -146,6 +146,7 @@ module Eagle
       @id = 0_u32
     end
 
+    # :nodoc:
     def finalize
       # GPU objects must be freed from the main thread with a live context;
       # rely on explicit dispose / Assets.clear instead.
@@ -155,11 +156,17 @@ module Eagle
   # A rectangle inside a texture, drawable anywhere a texture is. Create one with
   # `Texture#region` or `Texture#frames`.
   struct TextureRegion
+    # The texture this region is cut from.
     getter texture : Texture
+    # The region in pixels.
     getter rect : Rect
+    # Left texture coordinate.
     getter u0 : Float32
+    # Top texture coordinate.
     getter v0 : Float32
+    # Right texture coordinate.
     getter u1 : Float32
+    # Bottom texture coordinate.
     getter v1 : Float32
 
     # Creates a region of *texture* covering *rect*, in pixels.

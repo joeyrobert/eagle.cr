@@ -35,6 +35,7 @@ module Eagle
 
     # Vertex attribute names, in order, for Eagle's 2D batches.
     ATTRIBS_2D = %w(a_position a_uv a_color)
+    # Vertex attribute names, in order, for 3D meshes.
     ATTRIBS_3D = %w(a_position a_normal a_uv a_color a_tangent)
 
     # Compiles and links a program from vertex and fragment sources. Raises `ShaderError` with
@@ -82,6 +83,7 @@ module Eagle
       new(DEFAULT_2D_VERTEX, EFFECT_PRELUDE + body + EFFECT_MAIN)
     end
 
+    # Source of the built-in 2D vertex shader. Pair your own fragment shader with it.
     DEFAULT_2D_VERTEX = <<-GLSL
       in vec2 a_position;
       in vec2 a_uv;
@@ -96,6 +98,7 @@ module Eagle
       }
       GLSL
 
+    # Source of the built-in 2D fragment shader.
     DEFAULT_2D_FRAGMENT = <<-GLSL
       precision mediump float;
       uniform sampler2D u_texture;

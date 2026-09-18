@@ -55,8 +55,11 @@ module Eagle
     # Where new particles appear: at the node's position, inside a circle of `emission_radius`,
     # or inside a rectangle of `emission_rect`.
     enum EmissionShape
+      # Spawn at the node's position.
       Point
+      # Spawn anywhere inside a circle of `emission_radius`.
       Circle
+      # Spawn anywhere inside a rectangle of `emission_rect`, centered on the node.
       Rect
     end
 
@@ -115,6 +118,8 @@ module Eagle
     @alive_count = 0
     @default_texture : Texture? = nil
 
+    # Emitted when emission has stopped and the last particle has died. Connect with
+    # `on_finished { ... }`, for example to remove a one-shot explosion.
     signal finished
 
     # Hard cap on live particles.

@@ -94,10 +94,15 @@ module Eagle
     # Waveforms for `Sound.tone`. `Square` and `Saw` sound retro, `Sine` is pure, and `Noise`
     # suits explosions and hi-hats.
     enum Wave
+      # A pure, soft tone.
       Sine
+      # A hollow, retro tone.
       Square
+      # A bright, buzzy tone.
       Saw
+      # A mellow tone between sine and square.
       Triangle
+      # Random static, for explosions, wind and percussion.
       Noise
     end
 
@@ -168,6 +173,7 @@ module Eagle
     @fade_to : Float32? = nil
     @fade_rate = 0_f32
 
+    # Emitted when the voice reaches the end of a non-looping sound.
     signal finished
 
     # True while the voice is producing sound. False when paused or finished.

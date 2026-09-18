@@ -9,16 +9,21 @@ module Eagle
       getter penetration : Float32
       # Contact points in world space.
       getter contacts : Array(Vec2)
+      # Creates a manifold.
       def initialize(@normal, @penetration, @contacts); end
     end
 
     # Where a ray hit: the point, surface normal, distance, body and shape.
     struct RayHit
+      # Where the ray hit, in world space.
       getter point : Vec2
       # Surface normal at the hit.
       getter normal : Vec2
+      # Distance from the ray's origin to the hit.
       getter distance : Float32
+      # The body that was hit.
       getter body : Body
+      # The shape on that body that was hit.
       getter shape : Shape
       def initialize(@point, @normal, @distance, @body, @shape); end
     end

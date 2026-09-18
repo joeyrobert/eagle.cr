@@ -17,8 +17,11 @@ module Eagle
   struct Vec3
     # Returns `(0, 0, 0)`. Exists so `Enumerable#sum` works on arrays of vectors.
     def self.zero : Vec3; Vec3.new(0, 0, 0); end
+    # X component: right.
     property x : Float32
+    # Y component: up.
     property y : Float32
+    # Z component: toward the viewer. Forward is -Z.
     property z : Float32
 
     # `(0, 0, 0)`.
@@ -53,13 +56,21 @@ module Eagle
       @x = @y = @z = 0_f32
     end
 
+    # Component-wise sum.
     def +(o : Vec3) : Vec3; Vec3.new(@x + o.x, @y + o.y, @z + o.z); end
+    # Component-wise difference.
     def -(o : Vec3) : Vec3; Vec3.new(@x - o.x, @y - o.y, @z - o.z); end
+    # Component-wise product.
     def *(o : Vec3) : Vec3; Vec3.new(@x * o.x, @y * o.y, @z * o.z); end
+    # Component-wise quotient.
     def /(o : Vec3) : Vec3; Vec3.new(@x / o.x, @y / o.y, @z / o.z); end
+    # Scales every component.
     def *(s : Number) : Vec3; Vec3.new(@x * s, @y * s, @z * s); end
+    # Divides every component.
     def /(s : Number) : Vec3; Vec3.new(@x / s, @y / s, @z / s); end
+    # The vector pointing the opposite way.
     def - : Vec3; Vec3.new(-@x, -@y, -@z); end
+    # Exact equality. Use `approx?` for computed values.
     def ==(o : Vec3) : Bool; @x == o.x && @y == o.y && @z == o.z; end
 
     # Dot product. For unit vectors it is the cosine of the angle between them,
@@ -128,9 +139,13 @@ module Eagle
   struct Vec4
     # Returns `(0, 0, 0, 0)`.
     def self.zero : Vec4; Vec4.new(0, 0, 0, 0); end
+    # First component.
     property x : Float32
+    # Second component.
     property y : Float32
+    # Third component.
     property z : Float32
+    # Fourth component: 1 for points, 0 for directions.
     property w : Float32
 
     # Creates a vector from four numbers. The shorthand is `v4(x, y, z, w)`.
@@ -143,10 +158,15 @@ module Eagle
       @x = @y = @z = @w = 0_f32
     end
 
+    # Component-wise sum.
     def +(o : Vec4) : Vec4; Vec4.new(@x + o.x, @y + o.y, @z + o.z, @w + o.w); end
+    # Component-wise difference.
     def -(o : Vec4) : Vec4; Vec4.new(@x - o.x, @y - o.y, @z - o.z, @w - o.w); end
+    # Scales every component.
     def *(s : Number) : Vec4; Vec4.new(@x * s, @y * s, @z * s, @w * s); end
+    # Divides every component.
     def /(s : Number) : Vec4; Vec4.new(@x / s, @y / s, @z / s, @w / s); end
+    # Exact equality.
     def ==(o : Vec4) : Bool; @x == o.x && @y == o.y && @z == o.z && @w == o.w; end
     # Dot product of all four components.
     def dot(o : Vec4) : Float32; @x * o.x + @y * o.y + @z * o.z + @w * o.w; end

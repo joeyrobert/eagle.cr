@@ -2,7 +2,7 @@ require "../lib/gl"
 
 module Eagle
   module GPU
-    # OpenGL 3.3 core backend. Uses the WebGL2-compatible subset only.
+    # :nodoc:
     class GL33 < Device
       private record Geom, vao : UInt32, vbo : UInt32, ebo : UInt32, layout : VertexLayout
       @geoms = {} of UInt32 => Geom

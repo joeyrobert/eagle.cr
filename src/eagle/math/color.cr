@@ -21,9 +21,13 @@ module Eagle
   struct Color
     # Fully transparent black. Exists so `Enumerable#sum` works on colors.
     def self.zero : Color; Color.new(0, 0, 0, 0); end
+    # Red, from 0 to 1.
     property r : Float32
+    # Green, from 0 to 1.
     property g : Float32
+    # Blue, from 0 to 1.
     property b : Float32
+    # Alpha (opacity), from 0 (invisible) to 1 (opaque).
     property a : Float32
 
     # Creates a color from components in 0..1. Alpha defaults to opaque.
@@ -114,6 +118,7 @@ module Eagle
     def *(s : Number) : Color; Color.new(@r * s, @g * s, @b * s, @a); end
     # Component-wise addition, including alpha.
     def +(o : Color) : Color; Color.new(@r + o.r, @g + o.g, @b + o.b, @a + o.a); end
+    # Exact equality.
     def ==(o : Color) : Bool; @r == o.r && @g == o.g && @b == o.b && @a == o.a; end
 
     # The same color with a different alpha.

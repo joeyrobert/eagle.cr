@@ -56,19 +56,32 @@ module Eagle
   struct LightData
     # Directional, point or spot.
     enum Kind
+      # Parallel rays from a direction, like the sun.
       Directional = 0
+      # Light in all directions from a point.
       Point = 1
+      # A cone of light from a point.
       Spot = 2
     end
+    # The kind of light.
     getter kind : Kind
+    # World position, for point and spot lights.
     getter position : Vec3
+    # Direction, for directional and spot lights.
     getter direction : Vec3
+    # Light color.
     getter color : Color
+    # Brightness multiplier.
     getter intensity : Float32
+    # Distance at which point and spot lights fade out.
     getter range : Float32
+    # Cosine of the angle where a spot light starts to fade.
     getter spot_inner : Float32
+    # Cosine of the angle where a spot light is fully dark.
     getter spot_outer : Float32
+    # Whether the light casts shadows.
     getter? shadows : Bool
+    # Creates light data. Prefer `directional`, `point` or `spot`.
     def initialize(@kind, @position, @direction, @color, @intensity, @range = 10_f32, @spot_inner = 0.5_f32, @spot_outer = 0.6_f32, @shadows = false); end
 
     # A directional light.
@@ -89,17 +102,25 @@ module Eagle
 
   # One thing to draw: a mesh, a material and a world transform.
   struct DrawItem
+    # The mesh to draw.
     getter mesh : Mesh
+    # Its material.
     getter material : Material
+    # Its world transform.
     getter transform : Mat4
+    # Creates a draw item.
     def initialize(@mesh, @material, @transform); end
   end
 
   # The camera parameters the renderer needs.
   struct CameraView
+    # The view matrix.
     getter view : Mat4
+    # The projection matrix.
     getter projection : Mat4
+    # The camera's world position.
     getter position : Vec3
+    # Creates a camera view.
     def initialize(@view, @projection, @position); end
   end
 

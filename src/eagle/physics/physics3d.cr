@@ -151,15 +151,19 @@ module Eagle
       getter penetration : Float32
       # Contact points in world space.
       getter contacts : Array(Vec3)
+      # Creates a manifold.
       def initialize(@normal, @penetration, @contacts); end
     end
 
     # Where a ray hit: point, normal, distance and body.
     struct RayHit
+      # Where the ray hit, in world space.
       getter point : Vec3
       # Surface normal at the hit.
       getter normal : Vec3
+      # Distance from the ray's origin to the hit.
       getter distance : Float32
+      # The body that was hit.
       getter body : Body
       def initialize(@point, @normal, @distance, @body); end
     end
@@ -338,8 +342,11 @@ module Eagle
 
     # How a body moves: `Static`, `Kinematic` (moved by code) or `Dynamic` (moved by the simulation).
     enum BodyType
+      # Never moves.
       Static
+      # Moved by your code.
       Kinematic
+      # Moved by the simulation.
       Dynamic
     end
 
@@ -530,7 +537,9 @@ module Eagle
       @pairs = Set({Int32, Int32}).new
       @grid = {} of {Int32, Int32, Int32} => Array(Body)
 
+      # Emitted during a step when two bodies start touching.
       signal contact_begin(a : Body, b : Body)
+      # Emitted during a step when two bodies stop touching.
       signal contact_end(a : Body, b : Body)
 
       # Adds an existing body and returns it.

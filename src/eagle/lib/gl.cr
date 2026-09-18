@@ -2,6 +2,7 @@
 # Functions are loaded through a proc-address getter (SDL_GL_GetProcAddress on
 # desktop) so no platform GL headers or loader libraries are needed.
 module Eagle
+  # :nodoc:
   module GL
     alias Enum = UInt32
     alias Bitfield = UInt32

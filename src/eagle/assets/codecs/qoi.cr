@@ -3,6 +3,7 @@ module Eagle
     # QOI ("Quite OK Image") decoding and encoding. Lossless like PNG, but much faster to
     # encode and decode, which makes it good for screenshots and caches.
     module QOI
+      # The four bytes every QOI file starts with.
       MAGIC = Bytes[0x71, 0x6f, 0x69, 0x66] # "qoif"
 
       # True when *data* starts with the QOI magic.

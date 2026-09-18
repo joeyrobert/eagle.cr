@@ -339,6 +339,7 @@ module Eagle
     property intensity : Float32 = 1_f32
     # Turns the light off without removing it.
     property? enabled = true
+    # What the renderer uses for this light.
     abstract def light_data : LightData
   end
 

@@ -2,7 +2,7 @@ require "../lib/sdl2"
 
 module Eagle
   module Platform
-    # Desktop backend: SDL2 for window/input/audio/gamepads, OpenGL 3.3 core.
+    # :nodoc:
     class SDL < Base
       @window : LibSDL::Window = Pointer(Void).null
       @context : LibSDL::GLContext = Pointer(Void).null

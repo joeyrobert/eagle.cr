@@ -114,7 +114,11 @@ module Eagle
     # Text scale.
     property font_scale : Float32 = 1_f32
 
+    # Emitted when the button is clicked or activated with Enter or Space.
+    # Connect with `on_pressed { ... }`.
     signal pressed
+    # Emitted when a toggle-mode button changes state, with the new state.
+    # Connect with `on_toggled { |on| ... }`.
     signal toggled(on : Bool)
 
     # Creates a button and connects the block to `pressed`.
@@ -217,6 +221,8 @@ module Eagle
     # True when ticked.
     getter? checked : Bool
 
+    # Emitted when the box is ticked or unticked, with the new state.
+    # Connect with `on_toggled { |checked| ... }`.
     signal toggled(checked : Bool)
 
     # Creates a check box.
@@ -306,6 +312,8 @@ module Eagle
     property? vertical = false
     @dragging = false
 
+    # Emitted when the value changes, by dragging, clicking, keys or code.
+    # Connect with `on_value_changed { |value| ... }`.
     signal value_changed(value : Float32)
 
     # Creates a slider.
@@ -470,7 +478,9 @@ module Eagle
     getter caret : Int32 = 0
     @blink = 0_f32
 
+    # Emitted after every edit, with the new text. Connect with `on_text_changed { |text| ... }`.
     signal text_changed(text : String)
+    # Emitted when the player presses Enter. Connect with `on_submitted { |text| ... }`.
     signal submitted(text : String)
 
     # Creates a text field.

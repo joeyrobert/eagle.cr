@@ -37,8 +37,11 @@ module Eagle
   @[Flags]
   # How a control grows inside a box container. `ExpandX` or `ExpandY` makes it take up the spare space.
   enum SizeFlags
+    # Take a share of spare width in an `HBox`.
     ExpandX
+    # Take a share of spare height in a `VBox`.
     ExpandY
+    # Expand in both directions.
     Expand = ExpandX | ExpandY
   end
 
@@ -107,10 +110,15 @@ module Eagle
     # True while a mouse button is held down on the control.
     getter? pressed = false
 
+    # Emitted when the mouse moves over the control. Connect with `on_mouse_entered { ... }`.
     signal mouse_entered
+    # Emitted when the mouse leaves the control.
     signal mouse_exited
+    # Emitted when the control gains keyboard focus.
     signal focus_entered
+    # Emitted when the control loses keyboard focus.
     signal focus_exited
+    # Emitted when the control's size changes, with the new size.
     signal resized(size : Vec2)
 
     # The control with keyboard focus, or `nil`.
@@ -362,6 +370,7 @@ module Eagle
       @children.compact_map { |c| c.as?(Control) }.select(&.visible?)
     end
 
+    # Positions the children. Subclasses implement it.
     abstract def arrange : Nil
     # True when the container positions its children. When false, children use their own anchors.
     def manages_children? : Bool; true; end

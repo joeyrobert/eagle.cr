@@ -46,6 +46,7 @@ module Eagle
     # The 16 floats as an array.
     def to_a : Array(Float32); @m.to_a; end
 
+    # Exact equality. Use `approx?` for computed values.
     def ==(o : Mat4) : Bool; @m == o.data; end
 
     # Composes matrices: `(a * b)` applies *b* first, then *a*.

@@ -24,7 +24,14 @@ module Eagle
       @pairs = Set({Int32, Int32}).new
       @grid = {} of {Int32, Int32} => Array(Body)
 
+      # Emitted during a step when two bodies start touching.
+      #
+      # ```
+      # world = Physics2D::World.new
+      # world.on_contact_begin { |a, b| puts "#{a.tag} hit #{b.tag}" }
+      # ```
       signal contact_begin(a : Body, b : Body)
+      # Emitted during a step when two bodies stop touching.
       signal contact_end(a : Body, b : Body)
 
       # Adds an existing body and returns it.

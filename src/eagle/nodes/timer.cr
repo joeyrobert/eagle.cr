@@ -32,6 +32,7 @@ module Eagle
     # Count down in fixed steps (`physics_process`) instead of per frame.
     property? physics = false
 
+    # Emitted when the countdown reaches zero. Connect with `on_timeout { ... }`.
     signal timeout
 
     # Creates a timer and connects the block to `timeout`.

@@ -25,13 +25,20 @@ module Eagle
   # g.with_transform(t) { g.rect(-5, -5, 10, 10) } # draw in the transformed space
   # ```
   struct Transform2D
+    # Matrix element: x-axis x component.
     property a : Float32
+    # Matrix element: x-axis y component.
     property b : Float32
+    # Matrix element: y-axis x component.
     property c : Float32
+    # Matrix element: y-axis y component.
     property d : Float32
+    # Translation x.
     property tx : Float32
+    # Translation y.
     property ty : Float32
 
+    # Creates a transform from raw matrix elements. The defaults give the identity.
     def initialize(@a : Float32 = 1_f32, @b : Float32 = 0_f32, @c : Float32 = 0_f32, @d : Float32 = 1_f32, @tx : Float32 = 0_f32, @ty : Float32 = 0_f32); end
 
     # The transform that changes nothing.
@@ -101,6 +108,7 @@ module Eagle
       m
     end
 
+    # Exact equality. Use `approx?` for computed values.
     def ==(o : Transform2D) : Bool
       @a == o.a && @b == o.b && @c == o.c && @d == o.d && @tx == o.tx && @ty == o.ty
     end

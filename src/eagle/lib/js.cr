@@ -1,6 +1,7 @@
 # JavaScript imports for the web backend (implemented in web/eagle.js).
 {% if flag?(:wasm32) %}
   @[Link(wasm_import_module: "eagle")]
+  # :nodoc:
   lib LibJS
     fun js_init(width : Int32, height : Int32, title : Pointer(UInt8), title_len : Int32)
     fun js_log(level : Int32, ptr : Pointer(UInt8), len : Int32)

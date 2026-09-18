@@ -17,9 +17,13 @@ module Eagle
   # g.rect(button, color: hovered ? Color::YELLOW : Color::GRAY)
   # ```
   struct Rect
+    # Left edge.
     property x : Float32
+    # Top edge.
     property y : Float32
+    # Width.
     property w : Float32
+    # Height.
     property h : Float32
 
     # Creates a rect from its top-left corner and size.
@@ -70,6 +74,7 @@ module Eagle
     # True when the width or height is zero or negative.
     def empty? : Bool; @w <= 0 || @h <= 0; end
 
+    # Exact equality.
     def ==(o : Rect) : Bool; @x == o.x && @y == o.y && @w == o.w && @h == o.h; end
 
     # True when the point is inside. Left and top edges count as inside; right and bottom don't.
@@ -129,7 +134,9 @@ module Eagle
   # end
   # ```
   struct AABB
+    # Corner with the smallest coordinates.
     property min : Vec3
+    # Corner with the largest coordinates.
     property max : Vec3
 
     # Creates a box from its *min* and *max* corners.
@@ -197,7 +204,9 @@ module Eagle
   # ray.intersect_sphere(v3(0, -5, 0), 1) # => 6.0
   # ```
   struct Ray
+    # Where the ray starts.
     property origin : Vec3
+    # Unit direction of the ray.
     property direction : Vec3
 
     # Creates a ray. *direction* is normalized for you.

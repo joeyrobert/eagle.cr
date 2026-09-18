@@ -3,8 +3,11 @@ module Eagle
     # How a body moves: `Static` never moves, `Kinematic` is moved by code, and `Dynamic`
     # is moved by the simulation.
     enum BodyType
+      # Never moves: floors and walls.
       Static
+      # Moved by your code, pushes dynamic bodies, ignores forces.
       Kinematic
+      # Moved by the simulation: gravity, collisions and forces.
       Dynamic
     end
 

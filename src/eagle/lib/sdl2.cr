@@ -6,6 +6,7 @@
 {% else %}
   @[Link("SDL2")]
 {% end %}
+# :nodoc:
 lib LibSDL
   alias Window = Void*
   alias GLContext = Void*

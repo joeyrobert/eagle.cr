@@ -13,6 +13,7 @@ module Eagle
     # PNG decoding and encoding. Decodes every standard color type and bit depth, palettes
     # and Adam7 interlacing. Encodes 8-bit RGBA.
     module PNG
+      # The eight bytes every PNG file starts with.
       SIGNATURE = Bytes[137, 80, 78, 71, 13, 10, 26, 10]
 
       # True when *data* starts with the PNG signature.
@@ -243,6 +244,7 @@ module Eagle
         buf_out.to_slice
       end
 
+      # :nodoc:
       CRC_TABLE = begin
         t = Slice(UInt32).new(256)
         256.times do |n|
