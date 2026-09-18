@@ -38,5 +38,5 @@
 <h2 id="log">Log</h2>
 <ul><li>2026-09-18: project started; Phase 0 and Phase 1 landed (99 specs green). Smoke and sandbox2d screenshots verified visually.</li><li>2026-09-18: decided <code>Eagle.run(AppClass)</code> constructs the app after init so GPU resources can live in ivars.</li><li>2026-09-18: Phase 5 landed: 6 2D games + 2 3D programs, CLI, docs (167 specs). Findings: sphere/cylinder-cap winding was inverted (spec now checks winding for every primitive); <code>eagle view</code> doubles as a regression tool.</li><li>2026-09-18: Phases 2–4 landed (152 specs). Findings: Crystal class vars are per-subclass (focus tracking moved to a module); <code>getter? x</code> + <code>signal x</code> clash in the parser (signal ivars are now <code>@_sig_*</code>); sequential contact impulses need manifold-level Jacobi to avoid drift; GL errors are sticky so the spec harness checks after every render; render targets are stored top-row-first by convention.</li></ul>
 </article></main>
-<footer>Eagle is MIT licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
 </body></html>

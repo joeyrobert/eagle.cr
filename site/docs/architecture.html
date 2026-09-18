@@ -74,5 +74,5 @@ docs/plans/               plans and progress logs (this folder)</code></pre>
 <ul><li>The renderer never calls <code>LibGL</code> directly; it calls <code>GPU::Device</code>.</li><li>Engine code never calls SDL directly; it calls <code>Platform</code>.</li><li>Audio is mixed in Crystal into Float32 frames; the device just consumes them.</li></ul>
 <p>Crystal&#39;s <code>wasm32-unknown-wasi</code> target is experimental; the web backend is a later phase and requires a JS shim for WebGL2/WebAudio/DOM input. The architecture above is what makes it possible without an engine rewrite.</p>
 </article></main>
-<footer>Eagle is MIT licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
 </body></html>

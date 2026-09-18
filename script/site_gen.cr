@@ -110,7 +110,7 @@ def page(title : String, body : String, depth : Int32 = 0, active : String = "")
   <link rel="icon" href="#{rel}assets/favicon.svg"></head>
   <body><header class="top"><a class="brand" href="#{rel}index.html"><img src="#{rel}assets/favicon.svg" alt=""> Eagle <span class="ver">v#{VERSION}</span></a><nav>#{links}</nav></header>
   <main>#{body}</main>
-  <footer>Eagle is MIT licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+  <footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
   </body></html>
   HTML
 end

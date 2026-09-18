@@ -108,4 +108,5 @@ EAGLE_NO_GPU=1 crystal spec  # skip GPU specs (CI without a display)
 
 ## License
 
-MIT
+Eagle is licensed under the GNU Lesser General Public License v3.0 or later.
+See `COPYING.LESSER` and `COPYING` for the full text.
