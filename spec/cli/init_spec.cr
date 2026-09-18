@@ -161,11 +161,16 @@ describe Eagle::CLI::Init do
     it "follows the options" do
       files = Init.files(Init.parse(["g", "--local", "/src/eagle", "--no-web", "--pixel-art", "--size", "320x200"]))
       files.has_key?(".github/workflows/ci.yml").should be_false
-      files["shard.yml"].as(String).should contain "path: /src/eagle"
+      files["shard.yml"].as(String).should contain "path: '/src/eagle'"
       main = files["src/main.cr"].as(String)
       main.should_not contain "embed_assets"
       main.should contain "Texture.default_filter = GPU::Filter::Nearest"
       main.should contain "width: 320, height: 200"
+    end
+
+    it "quotes local dependency paths safely for YAML" do
+      files = Init.files(Init.parse(["g", "--local", "/tmp/Eagle's builds: dev #1"]))
+      files["shard.yml"].as(String).should contain "path: '/tmp/Eagle''s builds: dev #1'"
     end
 
     it "gives every template its own game code and spec" do

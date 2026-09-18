@@ -37,7 +37,7 @@ module Eagle::CLI
       Usage: eagle build [FILE]
 
       Compiles FILE (default src/main.cr) with --release into bin/<project>.
-      Plain Crystal equivalent: crystal build src/main.cr --release -o bin/<project>
+      Plain Crystal equivalent: mkdir -p bin && crystal build src/main.cr --release -o bin/<project>
       (or shards build --release, which builds the targets in shard.yml).
       TXT
     "export" => <<-TXT,
@@ -129,25 +129,33 @@ module Eagle::CLI
     ENV["EAGLE_HOME"]? || File.join(Path.home, ".eagle")
   end
 
+  # Executable name for *file*: the project folder for src/main.cr, the folder for examples/x/main.cr, else the file's name.
+  def output_name(file : String) : String
+    return File.basename(file, ".cr") unless File.basename(file) == "main.cr"
+    dir = File.dirname(File.expand_path(file))
+    dir = File.dirname(dir) if File.basename(dir) == "src"
+    File.basename(dir)
+  end
+
   def run_project(file : String, release : Bool, build_only : Bool = false)
     abort "#{file} not found" unless File.exists?(file)
     if File.exists?("shard.yml") && !Dir.exists?("lib") && File.read("shard.yml").includes?("dependencies:")
       run_cmd(["shards", "install"])
     end
     Dir.mkdir_p("bin")
-    out_bin = "bin/#{File.basename(file, ".cr")}"
-    out_bin = "bin/#{File.basename(Dir.current)}" if File.basename(file) == "main.cr"
+    out_bin = "bin/#{output_name(file)}"
     {% if flag?(:win32) %} out_bin += ".exe" {% end %}
     cmd = ["crystal", "build", file, "-o", out_bin]
     cmd << "--release" if release
     run_cmd(cmd)
     return puts("built #{out_bin}") if build_only
-    Process.run(out_bin, output: STDOUT, error: STDERR, input: STDIN)
+    status = Process.run(out_bin, output: STDOUT, error: STDERR, input: STDIN)
+    abort "#{out_bin} exited with status #{status.exit_code}" unless status.success?
   end
 
   def export(mode : String, file : String)
     abort "#{file} not found" unless File.exists?(file)
-    name = File.basename(file) == "main.cr" ? File.basename(File.dirname(File.expand_path(file))) : File.basename(file, ".cr")
+    name = output_name(file)
     case mode
     when "exe"
       out_dir = "dist/#{name}"

@@ -1,5 +1,69 @@
 # Eagle guide
 
+## Setup
+
+Eagle needs Crystal 1.21 or newer and SDL2. Install the `eagle` CLI with one line; the
+installer checks the prerequisites and prints the command for anything missing
+(`--with-deps` runs it for you):
+
+```sh
+# macOS and Linux
+curl -fsSL https://raw.githubusercontent.com/joeyrobert/eagle.cr/main/install.sh | sh
+```
+
+```powershell
+# Windows (PowerShell); or run eagle-setup.exe from the releases page
+irm https://raw.githubusercontent.com/joeyrobert/eagle.cr/main/install.ps1 | iex
+```
+
+Then create a project and run it:
+
+```sh
+eagle init mygame   # pick a template (2d-game, 3d-game, ui-app, empty), window size, pixel art, web, git, CI
+cd mygame
+eagle run
+crystal spec        # the generated sample spec
+```
+
+In scripts, pass the answers as flags: `eagle init mygame --template 3d --size 1280x720 --no-ci --yes`.
+`eagle help init` lists them all. The game lives in `src/<name>.cr` and `src/main.cr` only
+starts it, so specs can `require "../src/<name>"` without opening a window.
+
+### Manual setup
+
+Adding Eagle to an existing Crystal project needs no CLI:
+
+1. Install SDL2: `brew install sdl2` (macOS), `sudo apt install libsdl2-dev` (Debian/Ubuntu),
+   `sudo dnf install SDL2-devel` (Fedora), `sudo pacman -S sdl2` (Arch). On Windows, download
+   `SDL2-devel-2.x.x-VC.zip` from the SDL releases on GitHub, build with
+   `--link-flags "/LIBPATH:C:\path\to\SDL2\lib\x64"`, and ship `SDL2.dll` next to the executable.
+2. Add Eagle to `shard.yml`, then run `shards install`:
+
+   ```yaml
+   dependencies:
+     eagle:
+       github: joeyrobert/eagle.cr
+   ```
+
+3. `require "eagle"` and hand an `App` to `Eagle.run`:
+
+   ```crystal
+   require "eagle"
+   include Eagle
+
+   class Game < App
+     def draw(g : Graphics)
+       g.print("Hello, Eagle!", 10, 10)
+     end
+   end
+
+   Eagle.run(Game, title: "My Game", width: 960, height: 540)
+   ```
+
+4. `crystal run src/main.cr` runs it; `mkdir -p bin && crystal build src/main.cr --release -o bin/game` builds a
+   release executable. `eagle run` and `eagle build` do the same, and work in any project
+   that has `src/main.cr`.
+
 ## The loop
 
 `Eagle.run(MyApp)` opens the window, creates the GPU device, constructs your
@@ -184,15 +248,42 @@ are abstract. `Platform::SDL` + `GPU::GL33` are the desktop implementations.
 through `web/eagle.js`. Shaders and formats stay within the WebGL2 subset so the
 same code renders identically on both.
 
-## Exporting
+## Building and exporting
+
+Run these in the project folder. FILE defaults to `src/main.cr`, and `<name>` is the
+project folder's name (or FILE's base name when it isn't `main.cr`).
 
 ```sh
-eagle export exe examples/snake/main.cr   # dist/snake/snake: release build; add Eagle.embed_assets("assets") for a true single file
-eagle export web examples/snake/main.cr   # dist/web/snake/: index.html + eagle.js + snake.wasm, serve over HTTP
-eagle export app examples/snake/main.cr   # dist/snake.app (macOS bundle)
+eagle run            # debug build into bin/<name>, then run it (runs shards install first if needed)
+eagle build          # release build: bin/<name>
+eagle export exe     # release build: dist/<name>/<name>
+eagle export web     # dist/web/<name>/: index.html + eagle.js + <name>.wasm; serve over HTTP
+eagle export app     # dist/<name>.app (macOS bundle)
 ```
 
-Web builds need `lld` (`brew install lld`); the script downloads Crystal's wasm libraries on first use. Everything the desktop build does works in the browser except file-system access (embed assets), threads, and clipboard.
+The same without the CLI:
+
+```sh
+crystal run src/main.cr
+mkdir -p bin && crystal build src/main.cr --release -o bin/mygame
+shards build --release                                        # every target in shard.yml, into bin/
+sh lib/eagle/script/build-web.sh src/main.cr dist/web/mygame  # the web build eagle export web runs
+```
+
+Assets load from `assets/` next to the executable or in the working directory. Add
+`Eagle.embed_assets("assets")` to `src/main.cr` to bake them into the executable instead
+(`eagle init` does this unless you pass `--no-web`); then `dist/<name>/<name>` is a single
+file you can move anywhere. The web build needs embedded assets, since the browser can't
+read your disk.
+
+Web builds need `lld` (`brew install lld`, `apt install lld`); Crystal's wasm libraries are
+downloaded on first use (`eagle export web` keeps them in `~/.eagle/wasm-toolchain` unless the
+engine checkout has its own `.wasm-toolchain/`). Everything the desktop build does works in the browser except file-system
+access (embed assets), threads, and clipboard. Preview with
+`cd dist/web/<name> && python3 -m http.server`.
+
+The same commands take a file, which is how the bundled examples are exported from an
+Eagle checkout: `eagle export web examples/snake/main.cr` writes `dist/web/snake/`.
 
 ## Site
 

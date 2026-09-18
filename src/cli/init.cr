@@ -219,7 +219,9 @@ module Eagle::CLI
     end
 
     def shard_yml(o : InitOptions) : String
-      dep = o.local ? "path: #{o.local}" : "github: joeyrobert/eagle.cr"
+      # YAML single-quoted scalars preserve Windows backslashes and paths containing
+      # spaces, colons or `#`. A literal quote is represented by two quotes.
+      dep = o.local ? "path: '#{o.local.not_nil!.gsub('\'', "''")}'" : "github: joeyrobert/eagle.cr"
       <<-YML
         name: #{o.shard_name}
         version: 0.1.0
@@ -493,9 +495,9 @@ module Eagle::CLI
         Without the eagle CLI, plain Crystal works too:
 
         ```sh
-        crystal run src/main.cr                         # run
-        crystal build src/main.cr --release -o bin/#{n}  # release build
-        shards build --release                          # same, via the shard.yml target
+        crystal run src/main.cr                                       # run
+        mkdir -p bin && crystal build src/main.cr --release -o bin/#{n}  # release build
+        shards build --release                                        # same, via the shard.yml target
         ```
 
         Automated runs (CI, screenshots): `EAGLE_FRAMES=60 EAGLE_SCREENSHOT=shot.png EAGLE_HEADLESS=1 bin/#{n}`.

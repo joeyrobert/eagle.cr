@@ -14,6 +14,12 @@ $Repo = 'joeyrobert/eagle.cr'
 $Releases = if ($env:EAGLE_RELEASES) { $env:EAGLE_RELEASES } else { "https://github.com/$Repo/releases" }
 $InstallDir = if ($env:EAGLE_HOME) { $env:EAGLE_HOME } else { Join-Path $env:LOCALAPPDATA 'eagle' }
 $Version = if ($env:EAGLE_VERSION) { $env:EAGLE_VERSION } else { 'latest' }
+$InstallDir = [IO.Path]::GetFullPath($InstallDir)
+$unsafeDirs = @([IO.Path]::GetPathRoot($InstallDir), $env:USERPROFILE, $env:LOCALAPPDATA) |
+  Where-Object { $_ } | ForEach-Object { [IO.Path]::GetFullPath($_).TrimEnd('\') }
+if ($unsafeDirs -contains $InstallDir.TrimEnd('\')) {
+  throw "EAGLE_HOME must be a dedicated install directory, not $InstallDir"
+}
 $BinDir = Join-Path $InstallDir 'bin'
 
 function Get-UserPath { [Environment]::GetEnvironmentVariable('Path', 'User') }
@@ -45,7 +51,9 @@ try {
   Invoke-WebRequest -Uri $url -OutFile (Join-Path $tmp $asset) -UseBasicParsing
   Expand-Archive -Path (Join-Path $tmp $asset) -DestinationPath (Join-Path $tmp 'release') -Force
   $release = Join-Path $tmp 'release'
-  if (-not (Test-Path (Join-Path $release 'bin\eagle.exe'))) { throw "$asset has an unexpected layout" }
+  foreach ($required in 'bin\eagle.exe', 'bin\SDL2.dll', 'lib\SDL2.lib', 'src\src\eagle.cr') {
+    if (-not (Test-Path (Join-Path $release $required))) { throw "$asset has an unexpected layout (missing $required)" }
+  }
 
   # Replace the previous install (idempotent), keeping anything else in the folder.
   New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
@@ -58,7 +66,9 @@ try {
 }
 
 $eagle = Join-Path $BinDir 'eagle.exe'
+if (-not (Test-Path $eagle)) { throw "installation did not produce $eagle" }
 $installed = & $eagle version
+if ($LASTEXITCODE -ne 0) { throw "$eagle failed its version smoke test" }
 Write-Host "==> Installed $installed to $eagle"
 
 if ((Split-PathList (Get-UserPath)) -notcontains $BinDir) {

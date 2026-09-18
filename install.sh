@@ -67,6 +67,12 @@ warn() { printf 'warning: %s\n' "$*" >&2; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 has() { command -v "$1" >/dev/null 2>&1; }
 
+# Updates and uninstall remove managed subdirectories. Refuse broad locations even
+# when a caller supplied them explicitly through the environment.
+case "$EAGLE_HOME" in
+  ""|/|.|..|"$HOME") die "EAGLE_HOME must be a dedicated install directory, not $EAGLE_HOME" ;;
+esac
+
 # Prompts read from /dev/tty so they work under `curl | sh`, where stdin is the script.
 can_prompt() { [ "$YES" -eq 0 ] && (true </dev/tty) 2>/dev/null && [ -t 2 ]; }
 
