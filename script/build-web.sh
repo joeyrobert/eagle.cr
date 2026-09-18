@@ -1,17 +1,20 @@
 #!/bin/sh
 # Build a Crystal game for the browser: script/build-web.sh path/to/main.cr out_dir
 set -e
-SRC="$1"; OUT="${2:-dist/web/$(basename $(dirname "$SRC"))}"
+SRC="$1"; OUT="${2:-dist/web/$(basename "$(dirname "$SRC")")}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-TOOL="$ROOT/.wasm-toolchain"
+TOOL="${EAGLE_WASM_TOOLCHAIN:-$ROOT/.wasm-toolchain}"
 if [ ! -d "$TOOL/libs" ]; then
   echo "downloading wasm libs..."
-  mkdir -p "$TOOL/libs"
-  curl -sL https://github.com/lbguilherme/wasm-libs/releases/download/0.0.3/wasm32-wasi-libs.tar.gz | tar xz -C "$TOOL/libs"
+  mkdir -p "$TOOL/libs.tmp"
+  curl -fsSL https://github.com/lbguilherme/wasm-libs/releases/download/0.0.3/wasm32-wasi-libs.tar.gz -o "$TOOL/libs.tar.gz"
+  tar xzf "$TOOL/libs.tar.gz" -C "$TOOL/libs.tmp"
+  mv "$TOOL/libs.tmp" "$TOOL/libs" # only after a complete download, so a failed one is retried
 fi
 export PATH="$ROOT/script/wasm-bin:$PATH"
 mkdir -p "$OUT"
 NAME="$(basename "$OUT")"
+# shellcheck disable=SC2086 # EAGLE_WASM_FLAGS is a list of extra flags
 EAGLE_WASM_LIBS="$TOOL/libs" crystal build "$SRC" --target wasm32-unknown-wasi --release \
   -o "$OUT/$NAME.wasm" ${EAGLE_WASM_FLAGS:-}
 cp "$ROOT/web/eagle.js" "$OUT/eagle.js"
