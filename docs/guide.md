@@ -150,6 +150,25 @@ Shaders use the GLSL 330 / 300 es common subset; `Material#shader` accepts a
 custom `Shader` using the standard uniforms (`u_model`, `u_view`,
 `u_projection`, lights…).
 
+## 3D audio
+
+```crystal
+hum = Sound.tone(55, 2, Sound::Wave::Saw, volume: 0.3)
+generator = AudioPlayer3D.new(hum, position: v3(4, 1, -6), loop: true, autoplay: true, max_distance: 30)
+generator.attenuation = Attenuation::Linear # or Inverse (default), Exponential
+SceneTree.root.add(generator)
+bang = Sound.tone(80, 0.4, Sound::Wave::Noise)
+Audio.play_at(bang, v3(10, 0, -20), pitch: 0.9 + rand * 0.2) # one-shot, no node
+Audio.listener                                               # the current AudioListener3D, else Camera3D
+```
+
+3D voices are heard from the current `Camera3D`, or from an `AudioListener3D` when
+one is current (third-person cameras, cutscenes). Each voice gets distance
+attenuation (`min_distance`, `max_distance`, `rolloff`), equal-power panning, a
+small interaural delay and a head-shadow low-pass so left/right and front/back
+read on headphones, and optional doppler (`doppler = true`). Parameters glide
+across each mixed buffer, so fast movers don't click.
+
 ## Automated runs
 
 `EAGLE_FRAMES=60 EAGLE_SCREENSHOT=shot.png ./game` runs 60 frames, saves the

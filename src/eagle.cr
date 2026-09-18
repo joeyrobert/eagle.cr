@@ -56,7 +56,7 @@ require "./eagle/core/engine"
 # * **3D:** `Node3D`, `MeshInstance3D`, `Camera3D`, `DirectionalLight3D`, `Mesh`, `Material`, `Scene3D`
 # * **Physics:** `RigidBody2D`, `KinematicBody2D`, `Area2D`, `Physics2D`, and their 3D versions
 # * **UI:** `Control`, `Button`, `Label`, `Slider`, `TextInput`, `VBox`, `Theme`
-# * **Audio:** `Sound`, `Voice`, `AudioPlayer`, `Audio`
+# * **Audio:** `Sound`, `Voice`, `AudioPlayer`, `AudioPlayer3D`, `AudioListener3D`, `Audio`
 # * **Assets:** `Assets`, `Texture`, `Image`, `Font`, `Shader`
 # * **Timing:** `Clock`, `Timer`, `Tween`
 # * **Math:** `Vec2`, `Vec3`, `Rect`, `Color`, `Mathf`, `Transform2D`, `Quat`

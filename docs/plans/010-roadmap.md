@@ -64,7 +64,7 @@ Requirements gathered from the project owner (2026-09-18):
 
 ## Known gaps / next steps
 - Physics3D: spheres + oriented boxes only (no capsules/meshes/joints); no sleeping.
-- Audio: WAV + Ogg Vorbis (Crystal decoder, bit-exact vs ffmpeg on libvorbis streams; ffmpeg's *experimental* built-in encoder's coupled stereo decodes with a wrong angle channel, likely an encoder quirk, unresolved); no MP3; no reverb/effects.
+- Audio: WAV + Ogg Vorbis (Crystal decoder, bit-exact vs ffmpeg on libvorbis streams; ffmpeg's *experimental* built-in encoder's coupled stereo decodes with a wrong angle channel, likely an encoder quirk, unresolved); no MP3; no reverb/effects; 3D audio is panning + ITD + head shadow (no HRTF or occlusion).
 - Fonts: TrueType `glyf` only (no CFF/OpenType, no GPOS kerning, no colour emoji).
 - 3D: no skeletal animation, no cubemaps/IBL/PBR, single directional shadow cascade, no post-processing stack.
 - UI: no scroll containers, drop-downs, or rich text.
@@ -86,6 +86,7 @@ Requirements gathered from the project owner (2026-09-18):
 - [x] Usage docs on every public type: overview, when to use it, and an example; 125 doc examples type-checked by `script/check_doc_examples.cr`
 
 ## Log
+- 2026-09-18: 3D spatial audio (`AudioPlayer3D`, `AudioListener3D`, `Audio.listener`, `Audio.play_at`, `Spatial3D`, `Attenuation`) and the `spatial_audio3d` example. Per voice: inverse/linear/exponential distance models with min/max/rolloff, equal-power pan in listener space (limited to `PAN_WIDTH` 0.8 so the far ear is never silent; a hard equal-power pan zeroed the far ear and hid the ITD entirely), up to 0.66 ms interaural delay through a 64-sample fractional delay line, one-pole head-shadow low-pass on the far ear and on sources behind, optional doppler. All parameters ramp linearly across each mixed buffer; the non-spatial path is untouched. Findings: `AudioPlayer3D` must seed its previous position in `enter_tree`, or the first frame reports zero velocity; `nodes.cr` had to require `audio_player` after `node3d`; stereo sources are downmixed to mono before spatializing. Not done: HRTF, occlusion/obstruction by geometry, reverb zones, cone (directional) sources.
 - 2026-09-18: API docs pass. Findings: `Voice`/`AudioPlayback` setters only took `Float32`, so `voice.pitch = 0.8 + x` didn't compile (added `Number` setters); `CanvasLayer#layer` is not used for ordering (documented; order is tree order + `z_index`); the guide's Sprite2D example assigned locals instead of `self.position`; the full spec suite crashes intermittently inside a GL call (seen at the pre-docs commit too, roughly 1 run in 8), unresolved.
 - 2026-09-18: project started; Phase 0 and Phase 1 landed (99 specs green). Smoke and sandbox2d screenshots verified visually.
 - 2026-09-18: decided `Eagle.run(AppClass)` constructs the app after init so GPU resources can live in ivars.
