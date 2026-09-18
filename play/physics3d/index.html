@@ -1,82 +1,87 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>3D physics · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>3D physics</h1><p class="lead">Spheres and boxes with SAT contacts, stacking pyramid, kinematic ramp.</p><canvas id="eagle"></canvas><p class="controls">Click fires spheres · Space throws a box · R resets</p>
-<details><summary>Source — examples/physics3d/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
-include Eagle
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>3D physics</h1><p class="lead">Spheres and boxes with SAT contacts, stacking pyramid, kinematic ramp.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Click fires spheres · Space throws a box · R resets</p>
+<details><summary>Source: <code>examples/physics3d/main.cr</code></summary><h3>examples/physics3d/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-# 3D physics playground: click to fire spheres, space to drop a box, R to reset.
-class Physics3DDemo &lt; App
-  @cam = Camera3D.new(position: v3(0, 6, 14))
-  @rng = Random.new(1)
-  @shot : Sound? = nil
+<span class="c"># 3D physics playground: click to fire spheres, space to drop a box, R to reset.</span>
+<span class="k">class</span> <span class="t">Physics3DDemo</span> <span class="o">&lt;</span> <span class="t">App</span>
+  @cam <span class="o">=</span> <span class="t">Camera3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">6</span>, <span class="n">14</span>))
+  @rng <span class="o">=</span> <span class="t">Random</span>.new(<span class="n">1</span>)
+  @shot : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
 
-  def load
-    @shot = Sound.tone(200, 0.1, Sound::Wave::Triangle, 0.3)
-    root = SceneTree.root
-    Scene3D.environment.fog(30, 80)
-    tex = Texture.new(Image.checkerboard(32, 32, 16, Color.hex(&quot;#cfd6dd&quot;), Color.hex(&quot;#8b96a3&quot;)), wrap: GPU::Wrap::Repeat)
-    floor = StaticBody3D.new(position: v3(0, -0.5, 0)).box(40, 1, 40)
-    floor.add(MeshInstance3D.new(Mesh.box(40, 1, 40), Material.new(texture: tex, specular: 0.05)))
+  <span class="k">def</span> <span class="m">load</span>
+    @shot <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">200</span>, <span class="n">0.1</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Triangle</span>, <span class="n">0.3</span>)
+    root <span class="o">=</span> <span class="t">SceneTree</span>.root
+    <span class="t">Scene3D</span>.environment.fog(<span class="n">30</span>, <span class="n">80</span>)
+    tex <span class="o">=</span> <span class="t">Texture</span>.new(<span class="t">Image</span>.checkerboard(<span class="n">32</span>, <span class="n">32</span>, <span class="n">16</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#cfd6dd&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#8b96a3&quot;</span>)), wrap: <span class="t">GPU</span><span class="t">::</span><span class="t">Wrap</span><span class="t">::</span><span class="t">Repeat</span>)
+    floor <span class="o">=</span> <span class="t">StaticBody3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">-0.5</span>, <span class="n">0</span>)).box(<span class="n">40</span>, <span class="n">1</span>, <span class="n">40</span>)
+    floor.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.box(<span class="n">40</span>, <span class="n">1</span>, <span class="n">40</span>), <span class="t">Material</span>.new(texture: tex, specular: <span class="n">0.05</span>)))
     root.add(floor)
-    ramp = StaticBody3D.new(position: v3(-6, 1, 0))
-    ramp.rotate_z(-0.4)
-    ramp.box(8, 0.4, 6)
-    ramp.add(MeshInstance3D.new(Mesh.box(8, 0.4, 6), Material.new(Color.hex(&quot;#6c7a89&quot;))))
+    ramp <span class="o">=</span> <span class="t">StaticBody3D</span>.new(position: v3(<span class="n">-6</span>, <span class="n">1</span>, <span class="n">0</span>))
+    ramp.rotate_z(<span class="n">-0.4</span>)
+    ramp.box(<span class="n">8</span>, <span class="n">0.4</span>, <span class="n">6</span>)
+    ramp.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.box(<span class="n">8</span>, <span class="n">0.4</span>, <span class="n">6</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#6c7a89&quot;</span>))))
     root.add(ramp)
-    # a pyramid of boxes
-    4.times do |layer|
-      (4 - layer).times do |i|
-        b = RigidBody3D.new(position: v3(3 + i * 1.05 + layer * 0.525, 0.5 + layer * 1.02, 0)).box(1, 1, 1)
-        b.add(MeshInstance3D.new(Mesh.cube(1), Material.new(Color.hsv(layer * 40 + i * 15, 0.6, 0.95))))
+    <span class="c"># a pyramid of boxes</span>
+    <span class="n">4</span>.times <span class="k">do</span> <span class="o">|</span>layer<span class="o">|</span>
+      (<span class="n">4</span> <span class="o">-</span> layer).times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+        b <span class="o">=</span> <span class="t">RigidBody3D</span>.new(position: v3(<span class="n">3</span> <span class="o">+</span> i <span class="o">*</span> <span class="n">1.05</span> <span class="o">+</span> layer <span class="o">*</span> <span class="n">0.525</span>, <span class="n">0.5</span> <span class="o">+</span> layer <span class="o">*</span> <span class="n">1.02</span>, <span class="n">0</span>)).box(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>)
+        b.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.cube(<span class="n">1</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hsv(layer <span class="o">*</span> <span class="n">40</span> <span class="o">+</span> i <span class="o">*</span> <span class="n">15</span>, <span class="n">0.6</span>, <span class="n">0.95</span>))))
         root.add(b)
-      end
-    end
-    6.times { |i| spawn_sphere(v3(-8 + i * 0.6, 4 + i, 0), Vec3::ZERO, 0.3 + @rng.rand * 0.3) }
-    root.add(DirectionalLight3D.new(v3(-0.5, -1, -0.4)), @cam)
-    @cam.look_at(v3(0, 1, 0))
-  end
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="n">6</span>.times { <span class="o">|</span>i<span class="o">|</span> spawn_sphere(v3(<span class="n">-8</span> <span class="o">+</span> i <span class="o">*</span> <span class="n">0.6</span>, <span class="n">4</span> <span class="o">+</span> i, <span class="n">0</span>), <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>, <span class="n">0.3</span> <span class="o">+</span> @rng.rand <span class="o">*</span> <span class="n">0.3</span>) }
+    root.add(<span class="t">DirectionalLight3D</span>.new(v3(<span class="n">-0.5</span>, <span class="n">-1</span>, <span class="n">-0.4</span>)), @cam)
+    @cam.look_at(v3(<span class="n">0</span>, <span class="n">1</span>, <span class="n">0</span>))
+  <span class="k">end</span>
 
-  def spawn_sphere(pos : Vec3, vel : Vec3, r : Float64)
-    s = RigidBody3D.new(position: pos).sphere(r)
-    s.velocity = vel
-    s.restitution = 0.4
-    s.add(MeshInstance3D.new(Mesh.sphere(r, 16, 12), Material.new(Color.hsv(@rng.rand * 360, 0.7, 1), shininess: 64, specular: 0.5)))
-    SceneTree.root.add(s)
-  end
+  <span class="k">def</span> <span class="m">spawn_sphere</span>(pos : <span class="t">Vec3</span>, vel : <span class="t">Vec3</span>, r : <span class="t">Float64</span>)
+    s <span class="o">=</span> <span class="t">RigidBody3D</span>.new(position: pos).sphere(r)
+    s.velocity <span class="o">=</span> vel
+    s.restitution <span class="o">=</span> <span class="n">0.4</span>
+    s.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.sphere(r, <span class="n">16</span>, <span class="n">12</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hsv(@rng.rand <span class="o">*</span> <span class="n">360</span>, <span class="n">0.7</span>, <span class="n">1</span>), shininess: <span class="n">64</span>, specular: <span class="n">0.5</span>)))
+    <span class="t">SceneTree</span>.root.add(s)
+  <span class="k">end</span>
 
-  def update(dt : Float32)
-    @cam.fly(dt, 8)
-    if Input.mouse_pressed?(MouseButton::Left)
-      ray = @cam.mouse_ray
-      spawn_sphere(ray.origin + ray.direction, ray.direction * 20, 0.35)
-      @shot.try(&amp;.play)
-    end
-    if Input.pressed?(Key::Space)
-      b = RigidBody3D.new(position: @cam.position + @cam.forward * 3).box(1, 1, 1)
-      b.rotation = Quat.from_euler(@rng.rand, @rng.rand, @rng.rand)
-      b.velocity = @cam.forward * 8
-      b.add(MeshInstance3D.new(Mesh.cube(1), Material.new(Color::ORANGE)))
-      SceneTree.root.add(b)
-    end
-    if Input.pressed?(Key::R)
-      SceneTree.reset
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    @cam.fly(dt, <span class="n">8</span>)
+    <span class="k">if</span> <span class="t">Input</span>.mouse_pressed?(<span class="t">MouseButton</span><span class="t">::</span><span class="t">Left</span>)
+      ray <span class="o">=</span> @cam.mouse_ray
+      spawn_sphere(ray.origin <span class="o">+</span> ray.direction, ray.direction <span class="o">*</span> <span class="n">20</span>, <span class="n">0.35</span>)
+      @shot.try(<span class="o">&amp;</span>.play)
+    <span class="k">end</span>
+    <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Space</span>)
+      b <span class="o">=</span> <span class="t">RigidBody3D</span>.new(position: @cam.position <span class="o">+</span> @cam.forward <span class="o">*</span> <span class="n">3</span>).box(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>)
+      b.rotation <span class="o">=</span> <span class="t">Quat</span>.from_euler(@rng.rand, @rng.rand, @rng.rand)
+      b.velocity <span class="o">=</span> @cam.forward <span class="o">*</span> <span class="n">8</span>
+      b.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.cube(<span class="n">1</span>), <span class="t">Material</span>.new(<span class="t">Color</span><span class="t">::</span><span class="t">ORANGE</span>)))
+      <span class="t">SceneTree</span>.root.add(b)
+    <span class="k">end</span>
+    <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">R</span>)
+      <span class="t">SceneTree</span>.reset
       load
-    end
-    Eagle.quit if Input.pressed?(Key::Escape)
-  end
+    <span class="k">end</span>
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+  <span class="k">end</span>
 
-  def draw(g : Graphics)
-    g.rect(0, 0, Window.width, 30, color: Color.new(0, 0, 0, 0.4))
-    g.print(&quot;3D physics  bodies #{Physics3D.world.bodies.size}  fps #{Clock.fps.round}   click: fire sphere  space: throw box  R reset  WASD/right-drag fly&quot;, 10, 8)
-  end
-end
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    g.rect(<span class="n">0</span>, <span class="n">0</span>, <span class="t">Window</span>.width, <span class="n">30</span>, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.4</span>))
+    g.print(<span class="s">&quot;3D physics  bodies </span><span class="i">#{</span><span class="t">Physics3D</span>.world.bodies.size<span class="i">}</span><span class="s">  fps </span><span class="i">#{</span><span class="t">Clock</span>.fps.round<span class="i">}</span><span class="s">   click: fire sphere  space: throw box  R reset  WASD/right-drag fly&quot;</span>, <span class="n">10</span>, <span class="n">8</span>)
+  <span class="k">end</span>
+<span class="k">end</span>
 
-Eagle.run(Physics3DDemo, title: &quot;Eagle physics 3D&quot;, width: 1024, height: 640, msaa: 4)
-</code></pre></details></div>
+<span class="t">Eagle</span>.run(<span class="t">Physics3DDemo</span>, title: <span class="s">&quot;Eagle physics 3D&quot;</span>, width: <span class="n">1024</span>, height: <span class="n">640</span>, msaa: <span class="n">4</span>)
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./physics3d.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

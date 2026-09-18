@@ -1,91 +1,96 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>2D sandbox · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>2D sandbox</h1><p class="lead">Scene tree, tile map, following camera with shake, tweens and a HUD layer.</p><canvas id="eagle"></canvas><p class="controls">WASD moves the player</p>
-<details><summary>Source — examples/sandbox2d/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
-include Eagle
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>2D sandbox</h1><p class="lead">Scene tree, tile map, following camera with shake, tweens and a HUD layer.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">WASD moves the player</p>
+<details><summary>Source: <code>examples/sandbox2d/main.cr</code></summary><h3>examples/sandbox2d/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-# Scene-tree sandbox: a player sprite you move with WASD/arrows/gamepad,
-# a following camera, a tile map, timers, tweens and a HUD on a CanvasLayer.
+<span class="c"># Scene-tree sandbox: a player sprite you move with WASD/arrows/gamepad,</span>
+<span class="c"># a following camera, a tile map, timers, tweens and a HUD on a CanvasLayer.</span>
 
-class Player &lt; Sprite2D
-  SPEED = 220
+<span class="k">class</span> <span class="t">Player</span> <span class="o">&lt;</span> <span class="t">Sprite2D</span>
+  <span class="t">SPEED</span> <span class="o">=</span> <span class="n">220</span>
 
-  def initialize
-    super(&quot;Player&quot;)
-    img = Image.new(24, 24, Color::TRANSPARENT)
-    img.blit(Image.circle(24, Color.hex(&quot;#ffcc00&quot;)), 0, 0)
-    img.fill_rect(15, 8, 4, 4, Color::BLACK)
-    self.texture = Texture.new(img)
-  end
+  <span class="k">def</span> <span class="m">initialize</span>
+    <span class="k">super</span>(<span class="s">&quot;Player&quot;</span>)
+    img <span class="o">=</span> <span class="t">Image</span>.new(<span class="n">24</span>, <span class="n">24</span>, <span class="t">Color</span><span class="t">::</span><span class="t">TRANSPARENT</span>)
+    img.blit(<span class="t">Image</span>.circle(<span class="n">24</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#ffcc00&quot;</span>)), <span class="n">0</span>, <span class="n">0</span>)
+    img.fill_rect(<span class="n">15</span>, <span class="n">8</span>, <span class="n">4</span>, <span class="n">4</span>, <span class="t">Color</span><span class="t">::</span><span class="t">BLACK</span>)
+    <span class="k">self</span>.texture <span class="o">=</span> <span class="t">Texture</span>.new(img)
+  <span class="k">end</span>
 
-  def ready
-    Input.map &quot;left&quot;, Key::A, Key::Left, Input.axis(GamepadAxis::LeftX, -1)
-    Input.map &quot;right&quot;, Key::D, Key::Right, Input.axis(GamepadAxis::LeftX, 1)
-    Input.map &quot;up&quot;, Key::W, Key::Up, Input.axis(GamepadAxis::LeftY, -1)
-    Input.map &quot;down&quot;, Key::S, Key::Down, Input.axis(GamepadAxis::LeftY, 1)
-  end
+  <span class="k">def</span> <span class="m">ready</span>
+    <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Right</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;up&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">W</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Up</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;down&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">S</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Down</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">1</span>)
+  <span class="k">end</span>
 
-  def process(dt : Float32)
-    v = Input.vector(&quot;left&quot;, &quot;right&quot;, &quot;up&quot;, &quot;down&quot;)
-    self.position += v * SPEED * dt
-    self.rotation = v.angle if !v.zero?
-  end
-end
+  <span class="k">def</span> <span class="m">process</span>(dt : <span class="t">Float32</span>)
+    v <span class="o">=</span> <span class="t">Input</span>.vector(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>, <span class="s">&quot;up&quot;</span>, <span class="s">&quot;down&quot;</span>)
+    <span class="k">self</span>.position <span class="o">+=</span> v <span class="o">*</span> <span class="t">SPEED</span> <span class="o">*</span> dt
+    <span class="k">self</span>.rotation <span class="o">=</span> v.angle <span class="k">if</span> <span class="o">!</span>v.zero?
+  <span class="k">end</span>
+<span class="k">end</span>
 
-class Sandbox &lt; App
-  @cam = Camera2D.new(zoom: 2)
-  @player = Player.new
-  @hud = Label.new(&quot;&quot;, v2(8, 8))
-  @spin = Polygon2D.regular(6, 20, Color.hex(&quot;#66ccff&quot;))
+<span class="k">class</span> <span class="t">Sandbox</span> <span class="o">&lt;</span> <span class="t">App</span>
+  @cam <span class="o">=</span> <span class="t">Camera2D</span>.new(zoom: <span class="n">2</span>)
+  @player <span class="o">=</span> <span class="t">Player</span>.new
+  @hud <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;&quot;</span>, v2(<span class="n">8</span>, <span class="n">8</span>))
+  @spin <span class="o">=</span> <span class="t">Polygon2D</span>.regular(<span class="n">6</span>, <span class="n">20</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#66ccff&quot;</span>))
 
-  def load
-    Texture.default_filter = GPU::Filter::Nearest
-    root = SceneTree.root
-    # Tileset: 2 tiles, 16px, grass and stone
-    ts = Image.new(32, 16)
-    ts.fill_rect(0, 0, 16, 16, Color.hex(&quot;#3a7d44&quot;))
-    ts.fill_rect(16, 0, 16, 16, Color.hex(&quot;#6b6b6b&quot;))
-    4.times { |i| ts[2 + i * 3, 3 + (i % 2) * 5] = Color.hex(&quot;#5cb85c&quot;) }
-    map = TileMap.new(Texture.new(ts), 16, 16)
-    24.times { |y| 32.times { |x| map[x, y] = (x == 0 || y == 0 || x == 31 || y == 23 || (x * y) % 17 == 0) ? 1 : 0 } }
-    map.position = v2(-256, -192)
+  <span class="k">def</span> <span class="m">load</span>
+    <span class="t">Texture</span>.default_filter <span class="o">=</span> <span class="t">GPU</span><span class="t">::</span><span class="t">Filter</span><span class="t">::</span><span class="t">Nearest</span>
+    root <span class="o">=</span> <span class="t">SceneTree</span>.root
+    <span class="c"># Tileset: 2 tiles, 16px, grass and stone</span>
+    ts <span class="o">=</span> <span class="t">Image</span>.new(<span class="n">32</span>, <span class="n">16</span>)
+    ts.fill_rect(<span class="n">0</span>, <span class="n">0</span>, <span class="n">16</span>, <span class="n">16</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#3a7d44&quot;</span>))
+    ts.fill_rect(<span class="n">16</span>, <span class="n">0</span>, <span class="n">16</span>, <span class="n">16</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#6b6b6b&quot;</span>))
+    <span class="n">4</span>.times { <span class="o">|</span>i<span class="o">|</span> ts[<span class="n">2</span> <span class="o">+</span> i <span class="o">*</span> <span class="n">3</span>, <span class="n">3</span> <span class="o">+</span> (i <span class="o">%</span> <span class="n">2</span>) <span class="o">*</span> <span class="n">5</span>] <span class="o">=</span> <span class="t">Color</span>.hex(<span class="s">&quot;#5cb85c&quot;</span>) }
+    map <span class="o">=</span> <span class="t">TileMap</span>.new(<span class="t">Texture</span>.new(ts), <span class="n">16</span>, <span class="n">16</span>)
+    <span class="n">24</span>.times { <span class="o">|</span>y<span class="o">|</span> <span class="n">32</span>.times { <span class="o">|</span>x<span class="o">|</span> map[x, y] <span class="o">=</span> (x <span class="o">==</span> <span class="n">0</span> <span class="o">||</span> y <span class="o">==</span> <span class="n">0</span> <span class="o">||</span> x <span class="o">==</span> <span class="n">31</span> <span class="o">||</span> y <span class="o">==</span> <span class="n">23</span> <span class="o">||</span> (x <span class="o">*</span> y) <span class="o">%</span> <span class="n">17</span> <span class="o">==</span> <span class="n">0</span>) ? <span class="n">1</span> : <span class="n">0</span> } }
+    map.position <span class="o">=</span> v2(<span class="n">-256</span>, <span class="n">-192</span>)
     root.add(map)
 
-    @spin.position = v2(80, -40)
+    @spin.position <span class="o">=</span> v2(<span class="n">80</span>, <span class="n">-40</span>)
     root.add(@spin)
-    Tween.to(2.0, ease: :sine_in_out) { |t| @spin.rotation = t * Math::PI * 2 }.loop = true
+    <span class="t">Tween</span>.to(<span class="n">2.0</span>, ease: <span class="n">:sine_in_out</span>) { <span class="o">|</span>t<span class="o">|</span> @spin.rotation <span class="o">=</span> t <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">PI</span> <span class="o">*</span> <span class="n">2</span> }.loop <span class="o">=</span> <span class="n">true</span>
 
-    @player.position = v2(0, 0)
+    @player.position <span class="o">=</span> v2(<span class="n">0</span>, <span class="n">0</span>)
     root.add(@player)
     root.add(@cam)
     @cam.follow(@player)
-    @cam.limits = Rect.new(-256, -192, 512, 384)
+    @cam.limits <span class="o">=</span> <span class="t">Rect</span>.new(<span class="n">-256</span>, <span class="n">-192</span>, <span class="n">512</span>, <span class="n">384</span>)
 
-    hud_layer = CanvasLayer.new
+    hud_layer <span class="o">=</span> <span class="t">CanvasLayer</span>.new
     hud_layer.add(@hud)
     root.add(hud_layer)
 
-    t = Timer.new(1.0) { @cam.shake(3, 0.2) }
+    t <span class="o">=</span> <span class="t">Timer</span>.new(<span class="n">1.0</span>) { @cam.shake(<span class="n">3</span>, <span class="n">0.2</span>) }
     t.start
     root.add(t)
-  end
+  <span class="k">end</span>
 
-  def update(dt : Float32)
-    @hud.text = &quot;WASD to move  fps #{Clock.fps.round}  pos #{@player.position.round}  nodes #{SceneTree.node_count}&quot;
-    Eagle.quit if Input.pressed?(Key::Escape)
-  end
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    @hud.text <span class="o">=</span> <span class="s">&quot;WASD to move  fps </span><span class="i">#{</span><span class="t">Clock</span>.fps.round<span class="i">}</span><span class="s">  pos </span><span class="i">#{</span>@player.position.round<span class="i">}</span><span class="s">  nodes </span><span class="i">#{</span><span class="t">SceneTree</span>.node_count<span class="i">}</span><span class="s">&quot;</span>
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+  <span class="k">end</span>
 
-  def draw(g : Graphics)
-    g.print(&quot;draw calls #{g.draw_calls}&quot;, 8, Window.height - 24, Color::GRAY)
-  end
-end
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    g.print(<span class="s">&quot;draw calls </span><span class="i">#{</span>g.draw_calls<span class="i">}</span><span class="s">&quot;</span>, <span class="n">8</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">24</span>, <span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>)
+  <span class="k">end</span>
+<span class="k">end</span>
 
-Eagle.run(Sandbox, title: &quot;Eagle sandbox 2D&quot;, width: 800, height: 600)
-</code></pre></details></div>
+<span class="t">Eagle</span>.run(<span class="t">Sandbox</span>, title: <span class="s">&quot;Eagle sandbox 2D&quot;</span>, width: <span class="n">800</span>, height: <span class="n">600</span>)
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./sandbox2d.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

@@ -1,203 +1,208 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Asteroids · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>Asteroids</h1><p class="lead">Vector ship, splitting rocks, wrap-around space and thruster particles.</p><canvas id="eagle"></canvas><p class="controls">A/D rotate · W thrust · Space fire</p>
-<details><summary>Source — examples/asteroids/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
-include Eagle
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>Asteroids</h1><p class="lead">Vector ship, splitting rocks, wrap-around space and thruster particles.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">A/D rotate · W thrust · Space fire</p>
+<details><summary>Source: <code>examples/asteroids/main.cr</code></summary><h3>examples/asteroids/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-# Asteroids: rotate with A/D or left stick, thrust with W, fire with space / A button.
-class Ship &lt; Node2D
-  property velocity = Vec2::ZERO
-  getter? alive = true
-  @respawn = 0_f32
-  @invuln = 2_f32
+<span class="c"># Asteroids: rotate with A/D or left stick, thrust with W, fire with space / A button.</span>
+<span class="k">class</span> <span class="t">Ship</span> <span class="o">&lt;</span> <span class="t">Node2D</span>
+  property velocity <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+  getter? alive <span class="o">=</span> <span class="n">true</span>
+  @respawn <span class="o">=</span> <span class="n">0_f32</span>
+  @invuln <span class="o">=</span> <span class="n">2_f32</span>
 
-  def process(dt : Float32)
-    unless @alive
-      @respawn -= dt
-      if @respawn &lt;= 0
-        @alive = true; @invuln = 2_f32
-        self.position = v2(Window.width / 2, Window.height / 2)
-        @velocity = Vec2::ZERO
-      end
-      return
-    end
-    @invuln -= dt
-    self.rotation += Input.axis(&quot;left&quot;, &quot;right&quot;) * 4 * dt
-    if Input.down?(&quot;thrust&quot;)
-      @velocity += Vec2.from_angle(rotation) * 380 * dt
-      thrust.emitting = true
-    else
-      thrust.emitting = false
-    end
-    @velocity *= (1 / (1 + dt * 0.4))
-    self.position += @velocity * dt
-    self.position = v2(position.x % Window.width, position.y % Window.height)
-    thrust.direction = rotation + Math::PI
-  end
+  <span class="k">def</span> <span class="m">process</span>(dt : <span class="t">Float32</span>)
+    <span class="k">unless</span> @alive
+      @respawn <span class="o">-=</span> dt
+      <span class="k">if</span> @respawn <span class="o">&lt;=</span> <span class="n">0</span>
+        @alive <span class="o">=</span> <span class="n">true</span>; @invuln <span class="o">=</span> <span class="n">2_f32</span>
+        <span class="k">self</span>.position <span class="o">=</span> v2(<span class="t">Window</span>.width <span class="o">/</span> <span class="n">2</span>, <span class="t">Window</span>.height <span class="o">/</span> <span class="n">2</span>)
+        @velocity <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+      <span class="k">end</span>
+      <span class="k">return</span>
+    <span class="k">end</span>
+    @invuln <span class="o">-=</span> dt
+    <span class="k">self</span>.rotation <span class="o">+=</span> <span class="t">Input</span>.axis(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>) <span class="o">*</span> <span class="n">4</span> <span class="o">*</span> dt
+    <span class="k">if</span> <span class="t">Input</span>.down?(<span class="s">&quot;thrust&quot;</span>)
+      @velocity <span class="o">+=</span> <span class="t">Vec2</span>.from_angle(rotation) <span class="o">*</span> <span class="n">380</span> <span class="o">*</span> dt
+      thrust.emitting <span class="o">=</span> <span class="n">true</span>
+    <span class="k">else</span>
+      thrust.emitting <span class="o">=</span> <span class="n">false</span>
+    <span class="k">end</span>
+    @velocity <span class="o">*=</span> (<span class="n">1</span> <span class="o">/</span> (<span class="n">1</span> <span class="o">+</span> dt <span class="o">*</span> <span class="n">0.4</span>))
+    <span class="k">self</span>.position <span class="o">+=</span> @velocity <span class="o">*</span> dt
+    <span class="k">self</span>.position <span class="o">=</span> v2(position.x <span class="o">%</span> <span class="t">Window</span>.width, position.y <span class="o">%</span> <span class="t">Window</span>.height)
+    thrust.direction <span class="o">=</span> rotation <span class="o">+</span> <span class="t">Math</span><span class="t">::</span><span class="t">PI</span>
+  <span class="k">end</span>
 
-  def thrust : Particles2D
-    (child?(&quot;thrust&quot;) || add(Particles2D.new(&quot;thrust&quot;, amount: 120, position: Vec2::ZERO).tap { |p|
-      p.world_space = true; p.lifetime = 0.35; p.speed = 80..160; p.spread = 0.3
-      p.scale_start = 0.4; p.scale_end = 0; p.color_over_life = [Color::ORANGE, Color::RED.with_alpha(0)]
-      p.blend = GPU::BlendMode::Additive; p.emitting = false
-    })).as(Particles2D)
-  end
+  <span class="k">def</span> <span class="m">thrust</span> : <span class="t">Particles2D</span>
+    (child?(<span class="s">&quot;thrust&quot;</span>) <span class="o">||</span> add(<span class="t">Particles2D</span>.new(<span class="s">&quot;thrust&quot;</span>, amount: <span class="n">120</span>, position: <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>).tap { <span class="o">|</span>p<span class="o">|</span>
+      p.world_space <span class="o">=</span> <span class="n">true</span>; p.lifetime <span class="o">=</span> <span class="n">0.35</span>; p.speed <span class="o">=</span> <span class="n">80</span>..<span class="n">160</span>; p.spread <span class="o">=</span> <span class="n">0.3</span>
+      p.scale_start <span class="o">=</span> <span class="n">0.4</span>; p.scale_end <span class="o">=</span> <span class="n">0</span>; p.color_over_life <span class="o">=</span> [<span class="t">Color</span><span class="t">::</span><span class="t">ORANGE</span>, <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>.with_alpha(<span class="n">0</span>)]
+      p.blend <span class="o">=</span> <span class="t">GPU</span><span class="t">::</span><span class="t">BlendMode</span><span class="t">::</span><span class="t">Additive</span>; p.emitting <span class="o">=</span> <span class="n">false</span>
+    })).<span class="k">as</span>(<span class="t">Particles2D</span>)
+  <span class="k">end</span>
 
-  def invulnerable? : Bool; @invuln &gt; 0; end
+  <span class="k">def</span> <span class="m">invulnerable?</span> : <span class="t">Bool</span>; @invuln <span class="o">&gt;</span> <span class="n">0</span>; <span class="k">end</span>
 
-  def die
-    @alive = false
-    @respawn = 2_f32
-    thrust.emitting = false
-  end
+  <span class="k">def</span> <span class="m">die</span>
+    @alive <span class="o">=</span> <span class="n">false</span>
+    @respawn <span class="o">=</span> <span class="n">2_f32</span>
+    thrust.emitting <span class="o">=</span> <span class="n">false</span>
+  <span class="k">end</span>
 
-  def draw(g : Graphics)
-    return unless @alive
-    return if invulnerable? &amp;&amp; (Clock.elapsed * 10).to_i.even?
-    g.polygon([v2(16, 0), v2(-12, 10), v2(-6, 0), v2(-12, -10)], DrawMode::Line, Color::WHITE)
-  end
-end
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    <span class="k">return</span> <span class="k">unless</span> @alive
+    <span class="k">return</span> <span class="k">if</span> invulnerable? <span class="o">&amp;&amp;</span> (<span class="t">Clock</span>.elapsed <span class="o">*</span> <span class="n">10</span>).to_i.even?
+    g.polygon([v2(<span class="n">16</span>, <span class="n">0</span>), v2(<span class="n">-12</span>, <span class="n">10</span>), v2(<span class="n">-6</span>, <span class="n">0</span>), v2(<span class="n">-12</span>, <span class="n">-10</span>)], <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+  <span class="k">end</span>
+<span class="k">end</span>
 
-class Rock &lt; Node2D
-  property velocity : Vec2
-  property size : Int32
-  getter radius : Float32
-  @points : Array(Vec2)
-  @spin : Float32
+<span class="k">class</span> <span class="t">Rock</span> <span class="o">&lt;</span> <span class="t">Node2D</span>
+  property velocity : <span class="t">Vec2</span>
+  property size : <span class="t">Int32</span>
+  getter radius : <span class="t">Float32</span>
+  @points : <span class="t">Array</span>(<span class="t">Vec2</span>)
+  @spin : <span class="t">Float32</span>
 
-  def initialize(position : Vec2, @size : Int32, rng : Random)
-    super(&quot;rock&quot;, position)
-    @radius = (@size * 14).to_f32
-    @velocity = Vec2.from_angle(rng.rand * Math::PI * 2, 40 + rng.rand * 60 + (3 - @size) * 30)
-    @spin = (rng.rand - 0.5).to_f32 * 2
-    n = 10
-    @points = Array(Vec2).new(n) { |i| Vec2.from_angle(Math::PI * 2 * i / n, @radius * (0.7 + rng.rand * 0.4)) }
-  end
+  <span class="k">def</span> <span class="m">initialize</span>(position : <span class="t">Vec2</span>, @size : <span class="t">Int32</span>, rng : <span class="t">Random</span>)
+    <span class="k">super</span>(<span class="s">&quot;rock&quot;</span>, position)
+    @radius <span class="o">=</span> (@size <span class="o">*</span> <span class="n">14</span>).to_f32
+    @velocity <span class="o">=</span> <span class="t">Vec2</span>.from_angle(rng.rand <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">PI</span> <span class="o">*</span> <span class="n">2</span>, <span class="n">40</span> <span class="o">+</span> rng.rand <span class="o">*</span> <span class="n">60</span> <span class="o">+</span> (<span class="n">3</span> <span class="o">-</span> @size) <span class="o">*</span> <span class="n">30</span>)
+    @spin <span class="o">=</span> (rng.rand <span class="o">-</span> <span class="n">0.5</span>).to_f32 <span class="o">*</span> <span class="n">2</span>
+    n <span class="o">=</span> <span class="n">10</span>
+    @points <span class="o">=</span> <span class="t">Array</span>(<span class="t">Vec2</span>).new(n) { <span class="o">|</span>i<span class="o">|</span> <span class="t">Vec2</span>.from_angle(<span class="t">Math</span><span class="t">::</span><span class="t">PI</span> <span class="o">*</span> <span class="n">2</span> <span class="o">*</span> i <span class="o">/</span> n, @radius <span class="o">*</span> (<span class="n">0.7</span> <span class="o">+</span> rng.rand <span class="o">*</span> <span class="n">0.4</span>)) }
+  <span class="k">end</span>
 
-  def process(dt : Float32)
-    self.position += @velocity * dt
-    self.rotation += @spin * dt
-    self.position = v2(position.x % Window.width, position.y % Window.height)
-  end
+  <span class="k">def</span> <span class="m">process</span>(dt : <span class="t">Float32</span>)
+    <span class="k">self</span>.position <span class="o">+=</span> @velocity <span class="o">*</span> dt
+    <span class="k">self</span>.rotation <span class="o">+=</span> @spin <span class="o">*</span> dt
+    <span class="k">self</span>.position <span class="o">=</span> v2(position.x <span class="o">%</span> <span class="t">Window</span>.width, position.y <span class="o">%</span> <span class="t">Window</span>.height)
+  <span class="k">end</span>
 
-  def draw(g : Graphics)
-    g.polygon(@points, DrawMode::Line, Color.gray(0.8))
-  end
-end
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    g.polygon(@points, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, <span class="t">Color</span>.gray(<span class="n">0.8</span>))
+  <span class="k">end</span>
+<span class="k">end</span>
 
-class Bullet &lt; Node2D
-  property velocity : Vec2
-  @life = 1.1_f32
-  def initialize(position : Vec2, @velocity : Vec2)
-    super(&quot;bullet&quot;, position)
-  end
-  def process(dt : Float32)
-    self.position += @velocity * dt
-    self.position = v2(position.x % Window.width, position.y % Window.height)
-    @life -= dt
-    queue_free if @life &lt;= 0
-  end
-  def draw(g : Graphics)
-    g.circle(0, 0, 2, color: Color::YELLOW)
-  end
-end
+<span class="k">class</span> <span class="t">Bullet</span> <span class="o">&lt;</span> <span class="t">Node2D</span>
+  property velocity : <span class="t">Vec2</span>
+  @life <span class="o">=</span> <span class="n">1.1_f32</span>
+  <span class="k">def</span> <span class="m">initialize</span>(position : <span class="t">Vec2</span>, @velocity : <span class="t">Vec2</span>)
+    <span class="k">super</span>(<span class="s">&quot;bullet&quot;</span>, position)
+  <span class="k">end</span>
+  <span class="k">def</span> <span class="m">process</span>(dt : <span class="t">Float32</span>)
+    <span class="k">self</span>.position <span class="o">+=</span> @velocity <span class="o">*</span> dt
+    <span class="k">self</span>.position <span class="o">=</span> v2(position.x <span class="o">%</span> <span class="t">Window</span>.width, position.y <span class="o">%</span> <span class="t">Window</span>.height)
+    @life <span class="o">-=</span> dt
+    queue_free <span class="k">if</span> @life <span class="o">&lt;=</span> <span class="n">0</span>
+  <span class="k">end</span>
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    g.circle(<span class="n">0</span>, <span class="n">0</span>, <span class="n">2</span>, color: <span class="t">Color</span><span class="t">::</span><span class="t">YELLOW</span>)
+  <span class="k">end</span>
+<span class="k">end</span>
 
-class AsteroidsGame &lt; App
-  @ship = Ship.new(&quot;ship&quot;, v2(400, 300))
-  @score = 0
-  @lives = 3
-  @wave = 0
-  @rng = Random.new(7)
-  @fx = Particles2D.new(amount: 0)
-  @snd_shoot : Sound? = nil
-  @snd_boom : Sound? = nil
-  @cooldown = 0_f32
-  @over = false
+<span class="k">class</span> <span class="t">AsteroidsGame</span> <span class="o">&lt;</span> <span class="t">App</span>
+  @ship <span class="o">=</span> <span class="t">Ship</span>.new(<span class="s">&quot;ship&quot;</span>, v2(<span class="n">400</span>, <span class="n">300</span>))
+  @score <span class="o">=</span> <span class="n">0</span>
+  @lives <span class="o">=</span> <span class="n">3</span>
+  @wave <span class="o">=</span> <span class="n">0</span>
+  @rng <span class="o">=</span> <span class="t">Random</span>.new(<span class="n">7</span>)
+  @fx <span class="o">=</span> <span class="t">Particles2D</span>.new(amount: <span class="n">0</span>)
+  @snd_shoot : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @snd_boom : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @cooldown <span class="o">=</span> <span class="n">0_f32</span>
+  @over <span class="o">=</span> <span class="n">false</span>
 
-  def load
-    Input.map &quot;left&quot;, Key::A, Key::Left, Input.axis(GamepadAxis::LeftX, -1)
-    Input.map &quot;right&quot;, Key::D, Key::Right, Input.axis(GamepadAxis::LeftX, 1)
-    Input.map &quot;thrust&quot;, Key::W, Key::Up, GamepadButton::B, Input.axis(GamepadAxis::TriggerRight, 1)
-    Input.map &quot;fire&quot;, Key::Space, GamepadButton::A
-    @snd_shoot = Sound.tone(880, 0.05, Sound::Wave::Square, 0.15)
-    @snd_boom = Sound.tone(90, 0.3, Sound::Wave::Noise, 0.35)
-    @fx.lifetime = 0.6; @fx.speed = 40..180; @fx.spread = Math::PI; @fx.scale_start = 0.3; @fx.scale_end = 0
-    @fx.color_over_life = [Color::WHITE, Color.gray(0.5).with_alpha(0)]
-    SceneTree.root.add(@ship, @fx)
+  <span class="k">def</span> <span class="m">load</span>
+    <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Right</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;thrust&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">W</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Up</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">B</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">TriggerRight</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;fire&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Space</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">A</span>
+    @snd_shoot <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">880</span>, <span class="n">0.05</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Square</span>, <span class="n">0.15</span>)
+    @snd_boom <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">90</span>, <span class="n">0.3</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Noise</span>, <span class="n">0.35</span>)
+    @fx.lifetime <span class="o">=</span> <span class="n">0.6</span>; @fx.speed <span class="o">=</span> <span class="n">40</span>..<span class="n">180</span>; @fx.spread <span class="o">=</span> <span class="t">Math</span><span class="t">::</span><span class="t">PI</span>; @fx.scale_start <span class="o">=</span> <span class="n">0.3</span>; @fx.scale_end <span class="o">=</span> <span class="n">0</span>
+    @fx.color_over_life <span class="o">=</span> [<span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, <span class="t">Color</span>.gray(<span class="n">0.5</span>).with_alpha(<span class="n">0</span>)]
+    <span class="t">SceneTree</span>.root.add(@ship, @fx)
     spawn_wave
-  end
+  <span class="k">end</span>
 
-  def spawn_wave
-    @wave += 1
-    (3 + @wave).times do
-      pos = v2(@rng.rand * Window.width, @rng.rand * Window.height)
-      pos = v2(pos.x + 200, pos.y) if pos.distance(@ship.position) &lt; 150
-      SceneTree.root.add(Rock.new(pos, 3, @rng))
-    end
-  end
+  <span class="k">def</span> <span class="m">spawn_wave</span>
+    @wave <span class="o">+=</span> <span class="n">1</span>
+    (<span class="n">3</span> <span class="o">+</span> @wave).times <span class="k">do</span>
+      pos <span class="o">=</span> v2(@rng.rand <span class="o">*</span> <span class="t">Window</span>.width, @rng.rand <span class="o">*</span> <span class="t">Window</span>.height)
+      pos <span class="o">=</span> v2(pos.x <span class="o">+</span> <span class="n">200</span>, pos.y) <span class="k">if</span> pos.distance(@ship.position) <span class="o">&lt;</span> <span class="n">150</span>
+      <span class="t">SceneTree</span>.root.add(<span class="t">Rock</span>.new(pos, <span class="n">3</span>, @rng))
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  def update(dt : Float32)
-    @cooldown -= dt
-    if @ship.alive? &amp;&amp; Input.down?(&quot;fire&quot;) &amp;&amp; @cooldown &lt;= 0 &amp;&amp; !@over
-      @cooldown = 0.18_f32
-      SceneTree.root.add(Bullet.new(@ship.position + Vec2.from_angle(@ship.rotation, 16), @ship.velocity + Vec2.from_angle(@ship.rotation, 500)))
-      @snd_shoot.try(&amp;.play(pitch: 0.9 + rand * 0.2))
-    end
-    rocks = SceneTree.root.children_of(Rock)
-    bullets = SceneTree.root.children_of(Bullet)
-    rocks.each do |r|
-      bullets.each do |b|
-        next if b.queued_free?
-        if b.position.distance(r.position) &lt; r.radius
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    @cooldown <span class="o">-=</span> dt
+    <span class="k">if</span> @ship.alive? <span class="o">&amp;&amp;</span> <span class="t">Input</span>.down?(<span class="s">&quot;fire&quot;</span>) <span class="o">&amp;&amp;</span> @cooldown <span class="o">&lt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="o">!</span>@over
+      @cooldown <span class="o">=</span> <span class="n">0.18_f32</span>
+      <span class="t">SceneTree</span>.root.add(<span class="t">Bullet</span>.new(@ship.position <span class="o">+</span> <span class="t">Vec2</span>.from_angle(@ship.rotation, <span class="n">16</span>), @ship.velocity <span class="o">+</span> <span class="t">Vec2</span>.from_angle(@ship.rotation, <span class="n">500</span>)))
+      @snd_shoot.try(<span class="o">&amp;</span>.play(pitch: <span class="n">0.9</span> <span class="o">+</span> rand <span class="o">*</span> <span class="n">0.2</span>))
+    <span class="k">end</span>
+    rocks <span class="o">=</span> <span class="t">SceneTree</span>.root.children_of(<span class="t">Rock</span>)
+    bullets <span class="o">=</span> <span class="t">SceneTree</span>.root.children_of(<span class="t">Bullet</span>)
+    rocks.each <span class="k">do</span> <span class="o">|</span>r<span class="o">|</span>
+      bullets.each <span class="k">do</span> <span class="o">|</span>b<span class="o">|</span>
+        <span class="k">next</span> <span class="k">if</span> b.queued_free?
+        <span class="k">if</span> b.position.distance(r.position) <span class="o">&lt;</span> r.radius
           b.queue_free
           split(r)
-          break
-        end
-      end
-      if @ship.alive? &amp;&amp; !@ship.invulnerable? &amp;&amp; !r.queued_free? &amp;&amp; r.position.distance(@ship.position) &lt; r.radius + 10
-        @lives -= 1
-        explode(@ship.position, 40)
+          <span class="k">break</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="k">if</span> @ship.alive? <span class="o">&amp;&amp;</span> <span class="o">!</span>@ship.invulnerable? <span class="o">&amp;&amp;</span> <span class="o">!</span>r.queued_free? <span class="o">&amp;&amp;</span> r.position.distance(@ship.position) <span class="o">&lt;</span> r.radius <span class="o">+</span> <span class="n">10</span>
+        @lives <span class="o">-=</span> <span class="n">1</span>
+        explode(@ship.position, <span class="n">40</span>)
         @ship.die
-        @over = true if @lives &lt;= 0
-      end
-    end
-    spawn_wave if rocks.empty?
-    if @over &amp;&amp; Input.pressed?(Key::R)
-      SceneTree.root.children_of(Rock).each(&amp;.queue_free)
-      @score = 0; @lives = 3; @wave = 0; @over = false
-      SceneTree.flush_deferred
+        @over <span class="o">=</span> <span class="n">true</span> <span class="k">if</span> @lives <span class="o">&lt;=</span> <span class="n">0</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    spawn_wave <span class="k">if</span> rocks.empty?
+    <span class="k">if</span> @over <span class="o">&amp;&amp;</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">R</span>)
+      <span class="t">SceneTree</span>.root.children_of(<span class="t">Rock</span>).each(<span class="o">&amp;</span>.queue_free)
+      @score <span class="o">=</span> <span class="n">0</span>; @lives <span class="o">=</span> <span class="n">3</span>; @wave <span class="o">=</span> <span class="n">0</span>; @over <span class="o">=</span> <span class="n">false</span>
+      <span class="t">SceneTree</span>.flush_deferred
       spawn_wave
-    end
-    Eagle.quit if Input.pressed?(Key::Escape)
-  end
+    <span class="k">end</span>
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+  <span class="k">end</span>
 
-  def split(r : Rock)
+  <span class="k">def</span> <span class="m">split</span>(r : <span class="t">Rock</span>)
     r.queue_free
-    @score += {3 =&gt; 20, 2 =&gt; 50, 1 =&gt; 100}[r.size]
-    explode(r.position, 12 * r.size)
-    @snd_boom.try(&amp;.play(pitch: 0.7 + r.size * 0.2))
-    if r.size &gt; 1
-      2.times { SceneTree.root.add(Rock.new(r.position, r.size - 1, @rng)) }
-    end
-  end
+    @score <span class="o">+=</span> {<span class="n">3</span> <span class="o">=&gt;</span> <span class="n">20</span>, <span class="n">2</span> <span class="o">=&gt;</span> <span class="n">50</span>, <span class="n">1</span> <span class="o">=&gt;</span> <span class="n">100</span>}[r.size]
+    explode(r.position, <span class="n">12</span> <span class="o">*</span> r.size)
+    @snd_boom.try(<span class="o">&amp;</span>.play(pitch: <span class="n">0.7</span> <span class="o">+</span> r.size <span class="o">*</span> <span class="n">0.2</span>))
+    <span class="k">if</span> r.size <span class="o">&gt;</span> <span class="n">1</span>
+      <span class="n">2</span>.times { <span class="t">SceneTree</span>.root.add(<span class="t">Rock</span>.new(r.position, r.size <span class="o">-</span> <span class="n">1</span>, @rng)) }
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  def explode(at : Vec2, n : Int32)
-    @fx.position = at
+  <span class="k">def</span> <span class="m">explode</span>(at : <span class="t">Vec2</span>, n : <span class="t">Int32</span>)
+    @fx.position <span class="o">=</span> at
     @fx.emit(n)
-  end
+  <span class="k">end</span>
 
-  def draw(g : Graphics)
-    g.print(&quot;score #{@score}   lives #{@lives}   wave #{@wave}&quot;, 12, 10, Color::WHITE)
-    g.print(&quot;GAME OVER — R to restart&quot;, Window.width / 2, Window.height / 2, Color::RED, align: TextAlign::Center) if @over
-  end
-end
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    g.print(<span class="s">&quot;score </span><span class="i">#{</span>@score<span class="i">}</span><span class="s">   lives </span><span class="i">#{</span>@lives<span class="i">}</span><span class="s">   wave </span><span class="i">#{</span>@wave<span class="i">}</span><span class="s">&quot;</span>, <span class="n">12</span>, <span class="n">10</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.print(<span class="s">&quot;GAME OVER. R to restart&quot;</span>, <span class="t">Window</span>.width <span class="o">/</span> <span class="n">2</span>, <span class="t">Window</span>.height <span class="o">/</span> <span class="n">2</span>, <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>) <span class="k">if</span> @over
+  <span class="k">end</span>
+<span class="k">end</span>
 
-Eagle.run(AsteroidsGame, title: &quot;Eagle Asteroids&quot;, width: 800, height: 600)
-</code></pre></details></div>
+<span class="t">Eagle</span>.run(<span class="t">AsteroidsGame</span>, title: <span class="s">&quot;Eagle Asteroids&quot;</span>, width: <span class="n">800</span>, height: <span class="n">600</span>)
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./asteroids.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

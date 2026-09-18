@@ -1,83 +1,88 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UI toolkit · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>UI toolkit</h1><p class="lead">Panels, buttons, sliders, checkboxes, text input, grids and themes.</p><canvas id="eagle"></canvas><p class="controls">Click around; Tab cycles focus</p>
-<details><summary>Source — examples/ui/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
-include Eagle
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>UI toolkit</h1><p class="lead">Panels, buttons, sliders, checkboxes, text input, grids and themes.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Click around; Tab cycles focus</p>
+<details><summary>Source: <code>examples/ui/main.cr</code></summary><h3>examples/ui/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-# UI showcase: containers, buttons, sliders, text input, themes, TrueType font.
-class UIDemo &lt; App
-  @status = Label.new(&quot;Ready.&quot;)
-  @ttf : Font? = nil
+<span class="c"># UI showcase: containers, buttons, sliders, text input, themes, TrueType font.</span>
+<span class="k">class</span> <span class="t">UIDemo</span> <span class="o">&lt;</span> <span class="t">App</span>
+  @status <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;Ready.&quot;</span>)
+  @ttf : <span class="t">Font</span>? <span class="o">=</span> <span class="n">nil</span>
 
-  def load
-    ttf_path = [&quot;/System/Library/Fonts/Supplemental/Arial.ttf&quot;, &quot;/System/Library/Fonts/Geneva.ttf&quot;, &quot;/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf&quot;].find { |p| File.exists?(p) }
-    if ttf_path
-      @ttf = Font.load(ttf_path, 18)
-      Theme.default.font = @ttf
-    end
-    layer = CanvasLayer.new
-    SceneTree.root.add(layer)
+  <span class="k">def</span> <span class="m">load</span>
+    ttf_path <span class="o">=</span> [<span class="s">&quot;/System/Library/Fonts/Supplemental/Arial.ttf&quot;</span>, <span class="s">&quot;/System/Library/Fonts/Geneva.ttf&quot;</span>, <span class="s">&quot;/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf&quot;</span>].find { <span class="o">|</span>p<span class="o">|</span> <span class="t">File</span>.exists?(p) }
+    <span class="k">if</span> ttf_path
+      @ttf <span class="o">=</span> <span class="t">Font</span>.load(ttf_path, <span class="n">18</span>)
+      <span class="t">Theme</span>.default.font <span class="o">=</span> @ttf
+    <span class="k">end</span>
+    layer <span class="o">=</span> <span class="t">CanvasLayer</span>.new
+    <span class="t">SceneTree</span>.root.add(layer)
 
-    panel = Panel.new(size: v2(440, 0))
-    panel.anchor = Anchor::Center
-    panel.fit_content = true
-    vbox = VBox.new(size: v2(420, 0))
-    vbox.position = v2(10, 10)
-    vbox.fit_content = true
+    panel <span class="o">=</span> <span class="t">Panel</span>.new(size: v2(<span class="n">440</span>, <span class="n">0</span>))
+    panel.anchor <span class="o">=</span> <span class="t">Anchor</span><span class="t">::</span><span class="t">Center</span>
+    panel.fit_content <span class="o">=</span> <span class="n">true</span>
+    vbox <span class="o">=</span> <span class="t">VBox</span>.new(size: v2(<span class="n">420</span>, <span class="n">0</span>))
+    vbox.position <span class="o">=</span> v2(<span class="n">10</span>, <span class="n">10</span>)
+    vbox.fit_content <span class="o">=</span> <span class="n">true</span>
     panel.add(vbox)
     layer.add(panel)
 
-    title = Label.new(&quot;Eagle UI&quot;, align: TextAlign::Center)
-    title.font_scale = 1.4
+    title <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;Eagle UI&quot;</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+    title.font_scale <span class="o">=</span> <span class="n">1.4</span>
     vbox.add(title)
-    vbox.add(Label.new(&quot;Widgets laid out by a VBox inside a centred Panel.&quot;, color: Color.gray(0.7)))
+    vbox.add(<span class="t">Label</span>.new(<span class="s">&quot;Widgets laid out by a VBox inside a centred Panel.&quot;</span>, color: <span class="t">Color</span>.gray(<span class="n">0.7</span>)))
 
-    row = HBox.new
-    row.add(Button.new(&quot;Primary&quot;) { @status.text = &quot;Primary pressed&quot; })
-    row.add(Button.new(&quot;Toggle&quot;).tap { |b| b.toggle_mode = true; b.on_toggled { |on| @status.text = &quot;Toggle #{on ? &quot;on&quot; : &quot;off&quot;}&quot; } })
-    d = Button.new(&quot;Disabled&quot;); d.disabled = true
+    row <span class="o">=</span> <span class="t">HBox</span>.new
+    row.add(<span class="t">Button</span>.new(<span class="s">&quot;Primary&quot;</span>) { @status.text <span class="o">=</span> <span class="s">&quot;Primary pressed&quot;</span> })
+    row.add(<span class="t">Button</span>.new(<span class="s">&quot;Toggle&quot;</span>).tap { <span class="o">|</span>b<span class="o">|</span> b.toggle_mode <span class="o">=</span> <span class="n">true</span>; b.on_toggled { <span class="o">|</span>on<span class="o">|</span> @status.text <span class="o">=</span> <span class="s">&quot;Toggle </span><span class="i">#{</span>on ? <span class="s">&quot;on&quot;</span> : <span class="s">&quot;off&quot;</span><span class="i">}</span><span class="s">&quot;</span> } })
+    d <span class="o">=</span> <span class="t">Button</span>.new(<span class="s">&quot;Disabled&quot;</span>); d.disabled <span class="o">=</span> <span class="n">true</span>
     row.add(d)
     vbox.add(row)
 
-    vbox.add(CheckBox.new(&quot;Enable shadows&quot;, true).tap { |c| c.on_toggled { |v| @status.text = &quot;Shadows #{v}&quot; } })
-    slider_row = HBox.new
-    slabel = Label.new(&quot;Volume 50%&quot;)
-    slider = Slider.new(0, 100, 50, step: 1)
-    slider.size_flags = SizeFlags::ExpandX
-    slider.on_value_changed { |v| slabel.text = &quot;Volume #{v.to_i}%&quot;; @status.text = &quot;Volume #{v.to_i}&quot; }
+    vbox.add(<span class="t">CheckBox</span>.new(<span class="s">&quot;Enable shadows&quot;</span>, <span class="n">true</span>).tap { <span class="o">|</span>c<span class="o">|</span> c.on_toggled { <span class="o">|</span>v<span class="o">|</span> @status.text <span class="o">=</span> <span class="s">&quot;Shadows </span><span class="i">#{</span>v<span class="i">}</span><span class="s">&quot;</span> } })
+    slider_row <span class="o">=</span> <span class="t">HBox</span>.new
+    slabel <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;Volume 50%&quot;</span>)
+    slider <span class="o">=</span> <span class="t">Slider</span>.new(<span class="n">0</span>, <span class="n">100</span>, <span class="n">50</span>, step: <span class="n">1</span>)
+    slider.size_flags <span class="o">=</span> <span class="t">SizeFlags</span><span class="t">::</span><span class="t">ExpandX</span>
+    slider.on_value_changed { <span class="o">|</span>v<span class="o">|</span> slabel.text <span class="o">=</span> <span class="s">&quot;Volume </span><span class="i">#{</span>v.to_i<span class="i">}</span><span class="s">%&quot;</span>; @status.text <span class="o">=</span> <span class="s">&quot;Volume </span><span class="i">#{</span>v.to_i<span class="i">}</span><span class="s">&quot;</span> }
     slider_row.add(slider, slabel)
     vbox.add(slider_row)
 
-    bar = ProgressBar.new(0.0)
+    bar <span class="o">=</span> <span class="t">ProgressBar</span>.new(<span class="n">0.0</span>)
     vbox.add(bar)
-    Tween.value(0, 1, 3.0, ease: :quad_in_out) { |v| bar.value = v }.loop = true
+    <span class="t">Tween</span>.value(<span class="n">0</span>, <span class="n">1</span>, <span class="n">3.0</span>, ease: <span class="n">:quad_in_out</span>) { <span class="o">|</span>v<span class="o">|</span> bar.value <span class="o">=</span> v }.loop <span class="o">=</span> <span class="n">true</span>
 
-    input = TextInput.new(&quot;&quot;, &quot;Type your name and press Enter&quot;)
-    input.on_submitted { |t| @status.text = &quot;Hello, #{t}!&quot; }
+    input <span class="o">=</span> <span class="t">TextInput</span>.new(<span class="s">&quot;&quot;</span>, <span class="s">&quot;Type your name and press Enter&quot;</span>)
+    input.on_submitted { <span class="o">|</span>t<span class="o">|</span> @status.text <span class="o">=</span> <span class="s">&quot;Hello, </span><span class="i">#{</span>t<span class="i">}</span><span class="s">!&quot;</span> }
     vbox.add(input)
 
-    grid = GridContainer.new(3)
-    9.times { |i| grid.add(Button.new(&quot;#{i + 1}&quot;) { @status.text = &quot;Grid #{i + 1}&quot; }) }
+    grid <span class="o">=</span> <span class="t">GridContainer</span>.new(<span class="n">3</span>)
+    <span class="n">9</span>.times { <span class="o">|</span>i<span class="o">|</span> grid.add(<span class="t">Button</span>.new(<span class="s">&quot;</span><span class="i">#{</span>i <span class="o">+</span> <span class="n">1</span><span class="i">}</span><span class="s">&quot;</span>) { @status.text <span class="o">=</span> <span class="s">&quot;Grid </span><span class="i">#{</span>i <span class="o">+</span> <span class="n">1</span><span class="i">}</span><span class="s">&quot;</span> }) }
     vbox.add(grid)
 
-    theme_row = HBox.new
-    theme_row.add(Button.new(&quot;Dark&quot;) { panel.theme = nil; @status.text = &quot;Dark theme&quot; })
-    theme_row.add(Button.new(&quot;Light&quot;) { panel.theme = Theme.default.light; @status.text = &quot;Light theme&quot; })
+    theme_row <span class="o">=</span> <span class="t">HBox</span>.new
+    theme_row.add(<span class="t">Button</span>.new(<span class="s">&quot;Dark&quot;</span>) { panel.theme <span class="o">=</span> <span class="n">nil</span>; @status.text <span class="o">=</span> <span class="s">&quot;Dark theme&quot;</span> })
+    theme_row.add(<span class="t">Button</span>.new(<span class="s">&quot;Light&quot;</span>) { panel.theme <span class="o">=</span> <span class="t">Theme</span>.default.light; @status.text <span class="o">=</span> <span class="s">&quot;Light theme&quot;</span> })
     vbox.add(theme_row)
     vbox.add(@status)
-  end
+  <span class="k">end</span>
 
-  def draw(g : Graphics)
-    g.print(&quot;fps #{Clock.fps.round}  draw calls #{g.draw_calls}  focused: #{Control.focused.try(&amp;.class.name) || &quot;-&quot;}&quot;, 10, Window.height - 24, Color::GRAY)
-  end
-end
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    g.print(<span class="s">&quot;fps </span><span class="i">#{</span><span class="t">Clock</span>.fps.round<span class="i">}</span><span class="s">  draw calls </span><span class="i">#{</span>g.draw_calls<span class="i">}</span><span class="s">  focused: </span><span class="i">#{</span><span class="t">Control</span>.focused.try(<span class="o">&amp;</span>.<span class="k">class</span>.name) <span class="o">||</span> <span class="s">&quot;-&quot;</span><span class="i">}</span><span class="s">&quot;</span>, <span class="n">10</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">24</span>, <span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>)
+  <span class="k">end</span>
+<span class="k">end</span>
 
-Eagle.run(UIDemo, title: &quot;Eagle UI&quot;, width: 900, height: 640)
-</code></pre></details></div>
+<span class="t">Eagle</span>.run(<span class="t">UIDemo</span>, title: <span class="s">&quot;Eagle UI&quot;</span>, width: <span class="n">900</span>, height: <span class="n">640</span>)
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./ui.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

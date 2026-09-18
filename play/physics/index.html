@@ -1,69 +1,74 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>2D physics · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>2D physics</h1><p class="lead">Rigid bodies, stacking, ramps, sensors and additive particle bursts.</p><canvas id="eagle"></canvas><p class="controls">Click to spawn bodies</p>
-<details><summary>Source — examples/physics/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
-include Eagle
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>2D physics</h1><p class="lead">Rigid bodies, stacking, ramps, sensors and additive particle bursts.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Click to spawn bodies</p>
+<details><summary>Source: <code>examples/physics/main.cr</code></summary><h3>examples/physics/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-# Physics + particles playground. Click to spawn boxes/balls; watch them pile up.
-class Playground &lt; App
-  @spawned = 0
-  @fx = Particles2D.new(amount: 0, position: v2(400, 300))
+<span class="c"># Physics + particles playground. Click to spawn boxes/balls; watch them pile up.</span>
+<span class="k">class</span> <span class="t">Playground</span> <span class="o">&lt;</span> <span class="t">App</span>
+  @spawned <span class="o">=</span> <span class="n">0</span>
+  @fx <span class="o">=</span> <span class="t">Particles2D</span>.new(amount: <span class="n">0</span>, position: v2(<span class="n">400</span>, <span class="n">300</span>))
 
-  def load
-    root = SceneTree.root
-    root.add(StaticBody2D.new(position: v2(400, 580)).box(760, 40).tap(&amp;.debug = true))
-    root.add(StaticBody2D.new(position: v2(20, 300)).box(40, 600).tap(&amp;.debug = true))
-    root.add(StaticBody2D.new(position: v2(780, 300)).box(40, 600).tap(&amp;.debug = true))
-    ramp = StaticBody2D.new(position: v2(250, 420))
-    ramp.rotation = 0.3
-    ramp.box(300, 20)
-    ramp.debug = true
+  <span class="k">def</span> <span class="m">load</span>
+    root <span class="o">=</span> <span class="t">SceneTree</span>.root
+    root.add(<span class="t">StaticBody2D</span>.new(position: v2(<span class="n">400</span>, <span class="n">580</span>)).box(<span class="n">760</span>, <span class="n">40</span>).tap(<span class="o">&amp;</span>.debug <span class="o">=</span> <span class="n">true</span>))
+    root.add(<span class="t">StaticBody2D</span>.new(position: v2(<span class="n">20</span>, <span class="n">300</span>)).box(<span class="n">40</span>, <span class="n">600</span>).tap(<span class="o">&amp;</span>.debug <span class="o">=</span> <span class="n">true</span>))
+    root.add(<span class="t">StaticBody2D</span>.new(position: v2(<span class="n">780</span>, <span class="n">300</span>)).box(<span class="n">40</span>, <span class="n">600</span>).tap(<span class="o">&amp;</span>.debug <span class="o">=</span> <span class="n">true</span>))
+    ramp <span class="o">=</span> <span class="t">StaticBody2D</span>.new(position: v2(<span class="n">250</span>, <span class="n">420</span>))
+    ramp.rotation <span class="o">=</span> <span class="n">0.3</span>
+    ramp.box(<span class="n">300</span>, <span class="n">20</span>)
+    ramp.debug <span class="o">=</span> <span class="n">true</span>
     root.add(ramp)
-    30.times { |i| spawn(v2(150 + (i % 10) * 50, 50 + (i // 10) * 60)) }
-    @fx.lifetime = 0.8
-    @fx.speed = 100..250
-    @fx.spread = Math::PI
-    @fx.gravity = v2(0, 400)
-    @fx.scale_start = 1.5
-    @fx.scale_end = 0.2
-    @fx.color_over_life = [Color::YELLOW, Color::ORANGE, Color::RED.with_alpha(0)]
-    @fx.blend = GPU::BlendMode::Additive
+    <span class="n">30</span>.times { <span class="o">|</span>i<span class="o">|</span> spawn(v2(<span class="n">150</span> <span class="o">+</span> (i <span class="o">%</span> <span class="n">10</span>) <span class="o">*</span> <span class="n">50</span>, <span class="n">50</span> <span class="o">+</span> (i <span class="o">//</span> <span class="n">10</span>) <span class="o">*</span> <span class="n">60</span>)) }
+    @fx.lifetime <span class="o">=</span> <span class="n">0.8</span>
+    @fx.speed <span class="o">=</span> <span class="n">100</span>..<span class="n">250</span>
+    @fx.spread <span class="o">=</span> <span class="t">Math</span><span class="t">::</span><span class="t">PI</span>
+    @fx.gravity <span class="o">=</span> v2(<span class="n">0</span>, <span class="n">400</span>)
+    @fx.scale_start <span class="o">=</span> <span class="n">1.5</span>
+    @fx.scale_end <span class="o">=</span> <span class="n">0.2</span>
+    @fx.color_over_life <span class="o">=</span> [<span class="t">Color</span><span class="t">::</span><span class="t">YELLOW</span>, <span class="t">Color</span><span class="t">::</span><span class="t">ORANGE</span>, <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>.with_alpha(<span class="n">0</span>)]
+    @fx.blend <span class="o">=</span> <span class="t">GPU</span><span class="t">::</span><span class="t">BlendMode</span><span class="t">::</span><span class="t">Additive</span>
     root.add(@fx)
-    Timer.new(0.7) { @fx.position = v2(rand(200..600), rand(100..300)); @fx.emit(60) }.start.tap { |t| root.add(t) }
-  end
+    <span class="t">Timer</span>.new(<span class="n">0.7</span>) { @fx.position <span class="o">=</span> v2(rand(<span class="n">200</span>..<span class="n">600</span>), rand(<span class="n">100</span>..<span class="n">300</span>)); @fx.emit(<span class="n">60</span>) }.start.tap { <span class="o">|</span>t<span class="o">|</span> root.add(t) }
+  <span class="k">end</span>
 
-  def spawn(at : Vec2)
-    b = RigidBody2D.new(position: at)
-    if (@spawned += 1).odd?
-      b.circle(rand(10..20))
-    else
-      s = rand(18..36)
+  <span class="k">def</span> <span class="m">spawn</span>(at : <span class="t">Vec2</span>)
+    b <span class="o">=</span> <span class="t">RigidBody2D</span>.new(position: at)
+    <span class="k">if</span> (@spawned <span class="o">+=</span> <span class="n">1</span>).odd?
+      b.circle(rand(<span class="n">10</span>..<span class="n">20</span>))
+    <span class="k">else</span>
+      s <span class="o">=</span> rand(<span class="n">18</span>..<span class="n">36</span>)
       b.box(s, s)
-    end
-    b.restitution = 0.3
-    b.rotation = (rand * 3).to_f32
-    b.debug = true
-    b.modulate = Color.hsv(@spawned * 25, 0.7, 1)
-    SceneTree.root.add(b)
-  end
+    <span class="k">end</span>
+    b.restitution <span class="o">=</span> <span class="n">0.3</span>
+    b.rotation <span class="o">=</span> (rand <span class="o">*</span> <span class="n">3</span>).to_f32
+    b.debug <span class="o">=</span> <span class="n">true</span>
+    b.modulate <span class="o">=</span> <span class="t">Color</span>.hsv(@spawned <span class="o">*</span> <span class="n">25</span>, <span class="n">0.7</span>, <span class="n">1</span>)
+    <span class="t">SceneTree</span>.root.add(b)
+  <span class="k">end</span>
 
-  def input(e : Event)
-    if e.is_a?(MouseButtonEvent) &amp;&amp; e.pressed?
+  <span class="k">def</span> <span class="m">input</span>(e : <span class="t">Event</span>)
+    <span class="k">if</span> e.<span class="k">is_a?</span>(<span class="t">MouseButtonEvent</span>) <span class="o">&amp;&amp;</span> e.pressed?
       spawn(e.position)
-    end
-  end
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  def draw(g : Graphics)
-    g.print(&quot;click to spawn  bodies #{Physics2D.world.bodies.size}  fps #{Clock.fps.round}  particles #{@fx.alive_count}&quot;, 10, 10, Color::WHITE)
-  end
-end
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    g.print(<span class="s">&quot;click to spawn  bodies </span><span class="i">#{</span><span class="t">Physics2D</span>.world.bodies.size<span class="i">}</span><span class="s">  fps </span><span class="i">#{</span><span class="t">Clock</span>.fps.round<span class="i">}</span><span class="s">  particles </span><span class="i">#{</span>@fx.alive_count<span class="i">}</span><span class="s">&quot;</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+  <span class="k">end</span>
+<span class="k">end</span>
 
-Eagle.run(Playground, title: &quot;Eagle physics&quot;, width: 800, height: 600)
-</code></pre></details></div>
+<span class="t">Eagle</span>.run(<span class="t">Playground</span>, title: <span class="s">&quot;Eagle physics&quot;</span>, width: <span class="n">800</span>, height: <span class="n">600</span>)
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./physics.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

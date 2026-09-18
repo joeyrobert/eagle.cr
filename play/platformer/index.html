@@ -1,17 +1,21 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Platformer · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>Platformer</h1><p class="lead">ASCII level to TileMap + colliders, coyote time, jump buffering, enemies you can stomp, coins and a goal.</p><canvas id="eagle"></canvas><p class="controls">Arrows/WASD move · Space jump · R restart</p>
-<details><summary>Source — examples/platformer/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
-include Eagle
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>Platformer</h1><p class="lead">ASCII level to TileMap + colliders, coyote time, jump buffering, enemies you can stomp, coins and a goal.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Arrows/WASD move · Space jump · R restart</p>
+<details><summary>Source: <code>examples/platformer/main.cr</code></summary><h3>examples/platformer/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-# Platformer: tile map from ASCII, KinematicBody2D player with coyote time and
-# jump buffering, patrolling enemies, coins (Area2D), a goal, camera with limits.
-LEVEL = &lt;&lt;-MAP
-  ####################################################################
+<span class="c"># Platformer: tile map from ASCII, KinematicBody2D player with coyote time and</span>
+<span class="c"># jump buffering, patrolling enemies, coins (Area2D), a goal, camera with limits.</span>
+<span class="t">LEVEL</span> <span class="o">=</span> <span class="s">&lt;&lt;-MAP</span>
+<span class="s">  ####################################################################
   #                                                                  #
   #                                     c c c                        #
   #            c                       #######                       #
@@ -21,202 +25,203 @@ LEVEL = &lt;&lt;-MAP
   #        c c                  e             c   e         ####  ###
   #       #####        ^^^    ######    ^^^  ####### ^^^^ ^^        #
   ####################################################################
-  MAP
+  MAP</span>
 
-class Player &lt; KinematicBody2D
-  SPEED = 220
-  JUMP = 520
-  GRAVITY = 1400
-  @coyote = 0_f32
-  @buffer = 0_f32
-  @sprite = Polygon2D.rect(22, 30, Color.hex(&quot;#ffd166&quot;))
-  @face = 1
+<span class="k">class</span> <span class="t">Player</span> <span class="o">&lt;</span> <span class="t">KinematicBody2D</span>
+  <span class="t">SPEED</span> <span class="o">=</span> <span class="n">220</span>
+  <span class="t">JUMP</span> <span class="o">=</span> <span class="n">520</span>
+  <span class="t">GRAVITY</span> <span class="o">=</span> <span class="n">1400</span>
+  @coyote <span class="o">=</span> <span class="n">0_f32</span>
+  @buffer <span class="o">=</span> <span class="n">0_f32</span>
+  @sprite <span class="o">=</span> <span class="t">Polygon2D</span>.rect(<span class="n">22</span>, <span class="n">30</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#ffd166&quot;</span>))
+  @face <span class="o">=</span> <span class="n">1</span>
 
   signal died
 
-  def initialize(position : Vec2)
-    super(&quot;Player&quot;, position)
-    box(22, 30)
+  <span class="k">def</span> <span class="m">initialize</span>(position : <span class="t">Vec2</span>)
+    <span class="k">super</span>(<span class="s">&quot;Player&quot;</span>, position)
+    box(<span class="n">22</span>, <span class="n">30</span>)
     add(@sprite)
-    eye = Polygon2D.rect(4, 4, Color::BLACK)
-    eye.position = v2(5, -8)
+    eye <span class="o">=</span> <span class="t">Polygon2D</span>.rect(<span class="n">4</span>, <span class="n">4</span>, <span class="t">Color</span><span class="t">::</span><span class="t">BLACK</span>)
+    eye.position <span class="o">=</span> v2(<span class="n">5</span>, <span class="n">-8</span>)
     add(eye)
-  end
+  <span class="k">end</span>
 
-  def physics_process(dt : Float32)
-    @coyote = on_floor? ? 0.1_f32 : @coyote - dt
-    @buffer = Input.pressed?(&quot;jump&quot;) ? 0.12_f32 : @buffer - dt
-    x = Input.axis(&quot;left&quot;, &quot;right&quot;)
-    @face = x &gt; 0 ? 1 : (x &lt; 0 ? -1 : @face)
-    vx = Mathf.damp(velocity.x, x * SPEED, 12, dt)
-    vy = velocity.y + GRAVITY * dt
-    if @buffer &gt; 0 &amp;&amp; @coyote &gt; 0
-      vy = -JUMP
-      @buffer = 0_f32; @coyote = 0_f32
-      Sounds.jump
-    end
-    vy = Math.max(vy, -JUMP * 0.5) if Input.released?(&quot;jump&quot;) &amp;&amp; vy &lt; 0
-    self.velocity = v2(vx, vy)
+  <span class="k">def</span> <span class="m">physics_process</span>(dt : <span class="t">Float32</span>)
+    @coyote <span class="o">=</span> on_floor? ? <span class="n">0.1_f32</span> : @coyote <span class="o">-</span> dt
+    @buffer <span class="o">=</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;jump&quot;</span>) ? <span class="n">0.12_f32</span> : @buffer <span class="o">-</span> dt
+    x <span class="o">=</span> <span class="t">Input</span>.axis(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>)
+    @face <span class="o">=</span> x <span class="o">&gt;</span> <span class="n">0</span> ? <span class="n">1</span> : (x <span class="o">&lt;</span> <span class="n">0</span> ? <span class="n">-1</span> : @face)
+    vx <span class="o">=</span> <span class="t">Mathf</span>.damp(velocity.x, x <span class="o">*</span> <span class="t">SPEED</span>, <span class="n">12</span>, dt)
+    vy <span class="o">=</span> velocity.y <span class="o">+</span> <span class="t">GRAVITY</span> <span class="o">*</span> dt
+    <span class="k">if</span> @buffer <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> @coyote <span class="o">&gt;</span> <span class="n">0</span>
+      vy <span class="o">=</span> <span class="o">-</span><span class="t">JUMP</span>
+      @buffer <span class="o">=</span> <span class="n">0_f32</span>; @coyote <span class="o">=</span> <span class="n">0_f32</span>
+      <span class="t">Sounds</span>.jump
+    <span class="k">end</span>
+    vy <span class="o">=</span> <span class="t">Math</span>.max(vy, <span class="o">-</span><span class="t">JUMP</span> <span class="o">*</span> <span class="n">0.5</span>) <span class="k">if</span> <span class="t">Input</span>.released?(<span class="s">&quot;jump&quot;</span>) <span class="o">&amp;&amp;</span> vy <span class="o">&lt;</span> <span class="n">0</span>
+    <span class="k">self</span>.velocity <span class="o">=</span> v2(vx, vy)
     move_and_slide(dt)
-    self.velocity = v2(velocity.x, 0) if on_ceiling? &amp;&amp; velocity.y &lt; 0
-    @sprite.scale = v2(@face, 1)
-    emit_died if position.y &gt; 800
-  end
-end
+    <span class="k">self</span>.velocity <span class="o">=</span> v2(velocity.x, <span class="n">0</span>) <span class="k">if</span> on_ceiling? <span class="o">&amp;&amp;</span> velocity.y <span class="o">&lt;</span> <span class="n">0</span>
+    @sprite.scale <span class="o">=</span> v2(@face, <span class="n">1</span>)
+    emit_died <span class="k">if</span> position.y <span class="o">&gt;</span> <span class="n">800</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 
-class Enemy &lt; KinematicBody2D
-  @dir = 1
-  def initialize(position : Vec2)
-    super(&quot;Enemy&quot;, position)
-    box(24, 20)
-    add(Polygon2D.rect(24, 20, Color.hex(&quot;#ef476f&quot;)))
-    add_to_group(&quot;enemies&quot;)
-  end
+<span class="k">class</span> <span class="t">Enemy</span> <span class="o">&lt;</span> <span class="t">KinematicBody2D</span>
+  @dir <span class="o">=</span> <span class="n">1</span>
+  <span class="k">def</span> <span class="m">initialize</span>(position : <span class="t">Vec2</span>)
+    <span class="k">super</span>(<span class="s">&quot;Enemy&quot;</span>, position)
+    box(<span class="n">24</span>, <span class="n">20</span>)
+    add(<span class="t">Polygon2D</span>.rect(<span class="n">24</span>, <span class="n">20</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#ef476f&quot;</span>)))
+    add_to_group(<span class="s">&quot;enemies&quot;</span>)
+  <span class="k">end</span>
 
-  def physics_process(dt : Float32)
-    # turn at walls or ledges
-    ahead = global_position + v2(@dir * 16, 14)
-    floor_ahead = Physics2D.world.raycast(ahead, v2(0, 1), 12, exclude: body)
-    self.velocity = v2(@dir * 60, 300)
+  <span class="k">def</span> <span class="m">physics_process</span>(dt : <span class="t">Float32</span>)
+    <span class="c"># turn at walls or ledges</span>
+    ahead <span class="o">=</span> global_position <span class="o">+</span> v2(@dir <span class="o">*</span> <span class="n">16</span>, <span class="n">14</span>)
+    floor_ahead <span class="o">=</span> <span class="t">Physics2D</span>.world.raycast(ahead, v2(<span class="n">0</span>, <span class="n">1</span>), <span class="n">12</span>, exclude: body)
+    <span class="k">self</span>.velocity <span class="o">=</span> v2(@dir <span class="o">*</span> <span class="n">60</span>, <span class="n">300</span>)
     move_and_slide(dt)
-    @dir = -@dir if on_wall? || floor_ahead.nil?
-  end
-end
+    @dir <span class="o">=</span> <span class="o">-</span>@dir <span class="k">if</span> on_wall? <span class="o">||</span> floor_ahead.<span class="k">nil?</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 
-module Sounds
-  @@jump : Sound? = nil
-  @@coin : Sound? = nil
-  @@hurt : Sound? = nil
-  def self.init
-    @@jump = Sound.tone(500, 0.1, Sound::Wave::Square, 0.2)
-    @@coin = Sound.tone(1200, 0.08, Sound::Wave::Sine, 0.3)
-    @@hurt = Sound.tone(150, 0.3, Sound::Wave::Saw, 0.3)
-  end
-  def self.jump; @@jump.try(&amp;.play(pitch: 0.9 + rand * 0.2)); end
-  def self.coin; @@coin.try(&amp;.play(pitch: 1 + rand * 0.3)); end
-  def self.hurt; @@hurt.try(&amp;.play); end
-end
+<span class="k">module</span> <span class="t">Sounds</span>
+  @@jump : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @@coin : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @@hurt : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  <span class="k">def</span> <span class="m">self</span>.init
+    @@jump <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">500</span>, <span class="n">0.1</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Square</span>, <span class="n">0.2</span>)
+    @@coin <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">1200</span>, <span class="n">0.08</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Sine</span>, <span class="n">0.3</span>)
+    @@hurt <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">150</span>, <span class="n">0.3</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Saw</span>, <span class="n">0.3</span>)
+  <span class="k">end</span>
+  <span class="k">def</span> <span class="m">self</span>.jump; @@jump.try(<span class="o">&amp;</span>.play(pitch: <span class="n">0.9</span> <span class="o">+</span> rand <span class="o">*</span> <span class="n">0.2</span>)); <span class="k">end</span>
+  <span class="k">def</span> <span class="m">self</span>.coin; @@coin.try(<span class="o">&amp;</span>.play(pitch: <span class="n">1</span> <span class="o">+</span> rand <span class="o">*</span> <span class="n">0.3</span>)); <span class="k">end</span>
+  <span class="k">def</span> <span class="m">self</span>.hurt; @@hurt.try(<span class="o">&amp;</span>.play); <span class="k">end</span>
+<span class="k">end</span>
 
-class Platformer &lt; App
-  TILE = 32
-  @player : Player? = nil
-  @cam = Camera2D.new(zoom: 1.5)
-  @coins = 0
-  @total = 0
-  @deaths = 0
-  @won = false
-  @world = Node2D.new(&quot;World&quot;)
-  @hud = Label.new(&quot;&quot;)
+<span class="k">class</span> <span class="t">Platformer</span> <span class="o">&lt;</span> <span class="t">App</span>
+  <span class="t">TILE</span> <span class="o">=</span> <span class="n">32</span>
+  @player : <span class="t">Player</span>? <span class="o">=</span> <span class="n">nil</span>
+  @cam <span class="o">=</span> <span class="t">Camera2D</span>.new(zoom: <span class="n">1.5</span>)
+  @coins <span class="o">=</span> <span class="n">0</span>
+  @total <span class="o">=</span> <span class="n">0</span>
+  @deaths <span class="o">=</span> <span class="n">0</span>
+  @won <span class="o">=</span> <span class="n">false</span>
+  @world <span class="o">=</span> <span class="t">Node2D</span>.new(<span class="s">&quot;World&quot;</span>)
+  @hud <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;&quot;</span>)
 
-  def load
-    Sounds.init
-    Input.map &quot;left&quot;, Key::A, Key::Left, Input.axis(GamepadAxis::LeftX, -1)
-    Input.map &quot;right&quot;, Key::D, Key::Right, Input.axis(GamepadAxis::LeftX, 1)
-    Input.map &quot;jump&quot;, Key::Space, Key::W, Key::Up, GamepadButton::A
-    root = SceneTree.root
+  <span class="k">def</span> <span class="m">load</span>
+    <span class="t">Sounds</span>.init
+    <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Right</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;jump&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Space</span>, <span class="t">Key</span><span class="t">::</span><span class="t">W</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Up</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">A</span>
+    root <span class="o">=</span> <span class="t">SceneTree</span>.root
     root.add(@world)
     build
-    hud = CanvasLayer.new
-    @hud.position = v2(10, 10)
+    hud <span class="o">=</span> <span class="t">CanvasLayer</span>.new
+    @hud.position <span class="o">=</span> v2(<span class="n">10</span>, <span class="n">10</span>)
     hud.add(@hud)
     root.add(hud)
     root.add(@cam)
-  end
+  <span class="k">end</span>
 
-  def build
+  <span class="k">def</span> <span class="m">build</span>
     @world.clear_children
-    @coins = 0; @total = 0; @won = false
-    lines = LEVEL.lines.map(&amp;.rstrip)
-    ts = Image.new(TILE * 2, TILE)
-    ts.fill_rect(0, 0, TILE, TILE, Color.hex(&quot;#3d5a80&quot;))
-    ts.fill_rect(0, 0, TILE, 4, Color.hex(&quot;#98c1d9&quot;))
-    ts.fill_rect(TILE, 0, TILE, TILE, Color::TRANSPARENT)
-    TILE.times { |x| (0..(x % 8 == 0 ? 6 : 2)).each { |y| ts[TILE + x, TILE - 1 - y] = Color.hex(&quot;#ee6c4d&quot;) } } # spikes
-    map = TileMap.new(Texture.new(ts, GPU::Filter::Nearest), TILE, TILE)
+    @coins <span class="o">=</span> <span class="n">0</span>; @total <span class="o">=</span> <span class="n">0</span>; @won <span class="o">=</span> <span class="n">false</span>
+    lines <span class="o">=</span> <span class="t">LEVEL</span>.lines.map(<span class="o">&amp;</span>.rstrip)
+    ts <span class="o">=</span> <span class="t">Image</span>.new(<span class="t">TILE</span> <span class="o">*</span> <span class="n">2</span>, <span class="t">TILE</span>)
+    ts.fill_rect(<span class="n">0</span>, <span class="n">0</span>, <span class="t">TILE</span>, <span class="t">TILE</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#3d5a80&quot;</span>))
+    ts.fill_rect(<span class="n">0</span>, <span class="n">0</span>, <span class="t">TILE</span>, <span class="n">4</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#98c1d9&quot;</span>))
+    ts.fill_rect(<span class="t">TILE</span>, <span class="n">0</span>, <span class="t">TILE</span>, <span class="t">TILE</span>, <span class="t">Color</span><span class="t">::</span><span class="t">TRANSPARENT</span>)
+    <span class="t">TILE</span>.times { <span class="o">|</span>x<span class="o">|</span> (<span class="n">0</span>..(x <span class="o">%</span> <span class="n">8</span> <span class="o">==</span> <span class="n">0</span> ? <span class="n">6</span> : <span class="n">2</span>)).each { <span class="o">|</span>y<span class="o">|</span> ts[<span class="t">TILE</span> <span class="o">+</span> x, <span class="t">TILE</span> <span class="o">-</span> <span class="n">1</span> <span class="o">-</span> y] <span class="o">=</span> <span class="t">Color</span>.hex(<span class="s">&quot;#ee6c4d&quot;</span>) } } <span class="c"># spikes</span>
+    map <span class="o">=</span> <span class="t">TileMap</span>.new(<span class="t">Texture</span>.new(ts, <span class="t">GPU</span><span class="t">::</span><span class="t">Filter</span><span class="t">::</span><span class="t">Nearest</span>), <span class="t">TILE</span>, <span class="t">TILE</span>)
     @world.add(map)
-    solids = StaticBody2D.new(&quot;Solids&quot;)
-    hazards = Area2D.new(&quot;Hazards&quot;)
-    lines.each_with_index do |line, y|
-      x = 0
-      while x &lt; line.size
-        c = line[x]
-        case c
-        when &#39;#&#39;
-          # merge horizontal runs into one collider
-          x2 = x
-          while x2 &lt; line.size &amp;&amp; line[x2] == &#39;#&#39;
-            x2 += 1
-          end
-          (x...x2).each { |xx| map[xx, y] = 0 }
-          w = (x2 - x) * TILE
-          solids.add_shape(Physics2D::Polygon.box(w, TILE, v2(x * TILE + w / 2, y * TILE + TILE / 2)))
-          x = x2
-          next
-        when &#39;^&#39;
-          map[x, y] = 1
-          hazards.add_shape(Physics2D::Polygon.box(TILE - 8, 10, v2(x * TILE + TILE / 2, y * TILE + TILE - 5)))
-        when &#39;c&#39;
-          coin = Area2D.new(&quot;Coin&quot;, v2(x * TILE + TILE / 2, y * TILE + TILE / 2)).circle(8)
-          coin.add(Polygon2D.circle(8, Color.hex(&quot;#ffd60a&quot;)))
-          coin.add_to_group(&quot;coins&quot;)
+    solids <span class="o">=</span> <span class="t">StaticBody2D</span>.new(<span class="s">&quot;Solids&quot;</span>)
+    hazards <span class="o">=</span> <span class="t">Area2D</span>.new(<span class="s">&quot;Hazards&quot;</span>)
+    lines.each_with_index <span class="k">do</span> <span class="o">|</span>line, y<span class="o">|</span>
+      x <span class="o">=</span> <span class="n">0</span>
+      <span class="k">while</span> x <span class="o">&lt;</span> line.size
+        c <span class="o">=</span> line[x]
+        <span class="k">case</span> c
+        <span class="k">when</span> <span class="s">&#39;#&#39;</span>
+          <span class="c"># merge horizontal runs into one collider</span>
+          x2 <span class="o">=</span> x
+          <span class="k">while</span> x2 <span class="o">&lt;</span> line.size <span class="o">&amp;&amp;</span> line[x2] <span class="o">==</span> <span class="s">&#39;#&#39;</span>
+            x2 <span class="o">+=</span> <span class="n">1</span>
+          <span class="k">end</span>
+          (x...x2).each { <span class="o">|</span>xx<span class="o">|</span> map[xx, y] <span class="o">=</span> <span class="n">0</span> }
+          w <span class="o">=</span> (x2 <span class="o">-</span> x) <span class="o">*</span> <span class="t">TILE</span>
+          solids.add_shape(<span class="t">Physics2D</span><span class="t">::</span><span class="t">Polygon</span>.box(w, <span class="t">TILE</span>, v2(x <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> w <span class="o">/</span> <span class="n">2</span>, y <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> <span class="t">TILE</span> <span class="o">/</span> <span class="n">2</span>)))
+          x <span class="o">=</span> x2
+          <span class="k">next</span>
+        <span class="k">when</span> <span class="s">&#39;^&#39;</span>
+          map[x, y] <span class="o">=</span> <span class="n">1</span>
+          hazards.add_shape(<span class="t">Physics2D</span><span class="t">::</span><span class="t">Polygon</span>.box(<span class="t">TILE</span> <span class="o">-</span> <span class="n">8</span>, <span class="n">10</span>, v2(x <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> <span class="t">TILE</span> <span class="o">/</span> <span class="n">2</span>, y <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> <span class="t">TILE</span> <span class="o">-</span> <span class="n">5</span>)))
+        <span class="k">when</span> <span class="s">&#39;c&#39;</span>
+          coin <span class="o">=</span> <span class="t">Area2D</span>.new(<span class="s">&quot;Coin&quot;</span>, v2(x <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> <span class="t">TILE</span> <span class="o">/</span> <span class="n">2</span>, y <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> <span class="t">TILE</span> <span class="o">/</span> <span class="n">2</span>)).circle(<span class="n">8</span>)
+          coin.add(<span class="t">Polygon2D</span>.circle(<span class="n">8</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#ffd60a&quot;</span>)))
+          coin.add_to_group(<span class="s">&quot;coins&quot;</span>)
           @world.add(coin)
-          @total += 1
-        when &#39;e&#39; then @world.add(Enemy.new(v2(x * TILE + TILE / 2, y * TILE + TILE / 2)))
-        when &#39;G&#39;
-          goal = Area2D.new(&quot;Goal&quot;, v2(x * TILE + TILE / 2, y * TILE + TILE / 2)).box(24, 40)
-          goal.add(Polygon2D.rect(24, 40, Color.hex(&quot;#06d6a0&quot;)))
+          @total <span class="o">+=</span> <span class="n">1</span>
+        <span class="k">when</span> <span class="s">&#39;e&#39;</span> <span class="k">then</span> @world.add(<span class="t">Enemy</span>.new(v2(x <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> <span class="t">TILE</span> <span class="o">/</span> <span class="n">2</span>, y <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> <span class="t">TILE</span> <span class="o">/</span> <span class="n">2</span>)))
+        <span class="k">when</span> <span class="s">&#39;G&#39;</span>
+          goal <span class="o">=</span> <span class="t">Area2D</span>.new(<span class="s">&quot;Goal&quot;</span>, v2(x <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> <span class="t">TILE</span> <span class="o">/</span> <span class="n">2</span>, y <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> <span class="t">TILE</span> <span class="o">/</span> <span class="n">2</span>)).box(<span class="n">24</span>, <span class="n">40</span>)
+          goal.add(<span class="t">Polygon2D</span>.rect(<span class="n">24</span>, <span class="n">40</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#06d6a0&quot;</span>)))
           @world.add(goal)
-        when &#39;P&#39; then spawn(v2(x * TILE + TILE / 2, y * TILE + TILE / 2))
-        end
-        x += 1
-      end
-    end
+        <span class="k">when</span> <span class="s">&#39;P&#39;</span> <span class="k">then</span> spawn(v2(x <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> <span class="t">TILE</span> <span class="o">/</span> <span class="n">2</span>, y <span class="o">*</span> <span class="t">TILE</span> <span class="o">+</span> <span class="t">TILE</span> <span class="o">/</span> <span class="n">2</span>))
+        <span class="k">end</span>
+        x <span class="o">+=</span> <span class="n">1</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
     @world.add(solids, hazards)
-    hazards.on_body_entered { |b| hurt if b.is_a?(Player) }
-    @cam.limits = Rect.new(0, 0, lines.map(&amp;.size).max * TILE, lines.size * TILE)
-  end
+    hazards.on_body_entered { <span class="o">|</span>b<span class="o">|</span> hurt <span class="k">if</span> b.<span class="k">is_a?</span>(<span class="t">Player</span>) }
+    @cam.limits <span class="o">=</span> <span class="t">Rect</span>.new(<span class="n">0</span>, <span class="n">0</span>, lines.map(<span class="o">&amp;</span>.size).max <span class="o">*</span> <span class="t">TILE</span>, lines.size <span class="o">*</span> <span class="t">TILE</span>)
+  <span class="k">end</span>
 
-  def spawn(at : Vec2)
-    p = Player.new(at)
+  <span class="k">def</span> <span class="m">spawn</span>(at : <span class="t">Vec2</span>)
+    p <span class="o">=</span> <span class="t">Player</span>.new(at)
     p.on_died { hurt }
-    p.on_body_entered do |o|
-      if o.name == &quot;Coin&quot; &amp;&amp; !o.queued_free?
-        o.queue_free; @coins += 1; Sounds.coin
-      elsif o.name == &quot;Goal&quot;
-        @won = true
-      elsif o.is_a?(Enemy)
-        if p.velocity.y &gt; 0 &amp;&amp; p.position.y &lt; o.position.y - 10
-          o.queue_free; p.velocity = v2(p.velocity.x, -300); Sounds.coin
-        else
+    p.on_body_entered <span class="k">do</span> <span class="o">|</span>o<span class="o">|</span>
+      <span class="k">if</span> o.name <span class="o">==</span> <span class="s">&quot;Coin&quot;</span> <span class="o">&amp;&amp;</span> <span class="o">!</span>o.queued_free?
+        o.queue_free; @coins <span class="o">+=</span> <span class="n">1</span>; <span class="t">Sounds</span>.coin
+      <span class="k">elsif</span> o.name <span class="o">==</span> <span class="s">&quot;Goal&quot;</span>
+        @won <span class="o">=</span> <span class="n">true</span>
+      <span class="k">elsif</span> o.<span class="k">is_a?</span>(<span class="t">Enemy</span>)
+        <span class="k">if</span> p.velocity.y <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> p.position.y <span class="o">&lt;</span> o.position.y <span class="o">-</span> <span class="n">10</span>
+          o.queue_free; p.velocity <span class="o">=</span> v2(p.velocity.x, <span class="n">-300</span>); <span class="t">Sounds</span>.coin
+        <span class="k">else</span>
           hurt
-        end
-      end
-    end
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
     @world.add(p)
-    @player = p
-    @cam.follow(p, v2(0, -40))
-    @cam.smoothing = 6
-  end
+    @player <span class="o">=</span> p
+    @cam.follow(p, v2(<span class="n">0</span>, <span class="n">-40</span>))
+    @cam.smoothing <span class="o">=</span> <span class="n">6</span>
+  <span class="k">end</span>
 
-  def hurt
-    return unless (p = @player) &amp;&amp; p.in_tree?
-    @deaths += 1
-    Sounds.hurt
-    @cam.shake(6, 0.3)
-    start = p.position
+  <span class="k">def</span> <span class="m">hurt</span>
+    <span class="k">return</span> <span class="k">unless</span> (p <span class="o">=</span> @player) <span class="o">&amp;&amp;</span> p.in_tree?
+    @deaths <span class="o">+=</span> <span class="n">1</span>
+    <span class="t">Sounds</span>.hurt
+    @cam.shake(<span class="n">6</span>, <span class="n">0.3</span>)
+    start <span class="o">=</span> p.position
     p.queue_free
-    SceneTree.defer { spawn(v2(2.5 * TILE, 4.5 * TILE)) }
-  end
+    <span class="t">SceneTree</span>.defer { spawn(v2(<span class="n">2.5</span> <span class="o">*</span> <span class="t">TILE</span>, <span class="n">4.5</span> <span class="o">*</span> <span class="t">TILE</span>)) }
+  <span class="k">end</span>
 
-  def update(dt : Float32)
-    @hud.text = &quot;coins #{@coins}/#{@total}   deaths #{@deaths}   #{@won ? &quot;YOU WIN! R to restart&quot; : &quot;arrows/WASD move, space jump&quot;}&quot;
-    build if Input.pressed?(Key::R)
-    Eagle.quit if Input.pressed?(Key::Escape)
-  end
-end
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    @hud.text <span class="o">=</span> <span class="s">&quot;coins </span><span class="i">#{</span>@coins<span class="i">}</span><span class="s">/</span><span class="i">#{</span>@total<span class="i">}</span><span class="s">   deaths </span><span class="i">#{</span>@deaths<span class="i">}</span><span class="s">   </span><span class="i">#{</span>@won ? <span class="s">&quot;YOU WIN! R to restart&quot;</span> : <span class="s">&quot;arrows/WASD move, space jump&quot;</span><span class="i">}</span><span class="s">&quot;</span>
+    build <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">R</span>)
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+  <span class="k">end</span>
+<span class="k">end</span>
 
-Eagle.run(Platformer, title: &quot;Eagle Platformer&quot;, width: 960, height: 540, clear_color: Color.hex(&quot;#1b1f2a&quot;))
-</code></pre></details></div>
+<span class="t">Eagle</span>.run(<span class="t">Platformer</span>, title: <span class="s">&quot;Eagle Platformer&quot;</span>, width: <span class="n">960</span>, height: <span class="n">540</span>, clear_color: <span class="t">Color</span>.hex(<span class="s">&quot;#1b1f2a&quot;</span>))
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./platformer.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

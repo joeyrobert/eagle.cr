@@ -1,90 +1,92 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Guide · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../assets/site.css">
 <link rel="icon" href="../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../index.html">Home</a><a href="../play/index.html">Play</a><a href="../docs/guide.html" class="active">Guide</a><a href="../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><article class="doc"><h1 id="eagle-guide">Eagle guide</h1>
+<body><header class="top"><div class="wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../play/index.html">Play</a><a href="../docs/guide.html" class="active">Guide</a><a href="../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><article class="doc"><h1 id="eagle-guide">Eagle guide</h1>
 <h2 id="the-loop">The loop</h2>
 <p><code>Eagle.run(MyApp)</code> opens the window, creates the GPU device, constructs your <code>App</code>, calls <code>load</code>, then every frame:</p>
 <ol><li>polls events → <code>Input</code> state, <code>App#input</code>, <code>Node#input</code> (children first)</li><li>runs zero or more <strong>fixed</strong> steps (<code>Config#fixed_fps</code>, default 60): physics world step → <code>Node#physics_process</code> → <code>App#fixed_update</code></li><li><code>Node#process</code> → tweens → <code>App#update(dt)</code></li><li>mixes audio</li><li>clears, renders 3D (if a <code>Camera3D</code> is current), draws the 2D scene tree (with the current <code>Camera2D</code>), then <code>App#draw(g)</code></li></ol>
 <p><code>Clock.delta</code>, <code>Clock.elapsed</code>, <code>Clock.fps</code>, <code>Clock.scale</code> (slow motion) are available anywhere.</p>
 <h2 id="two-styles-one-engine">Two styles, one engine</h2>
-<p><strong>Immediate (LÖVE-style)</strong> — draw everything yourself in <code>draw</code>:</p>
-<pre><code class="lang-crystal">def draw(g : Graphics)
-  g.circle(400, 300, 40, color: Color::RED)
-  g.draw(texture, 100, 100, rotation: Clock.elapsed, ox: 16, oy: 16)
-  g.print(&quot;score #{@score}&quot;, 10, 10)
-end</code></pre>
-<p><strong>Scene tree (Godot-style)</strong> — build nodes and let them run:</p>
-<pre><code class="lang-crystal">class Player &lt; Sprite2D
+<p><strong>Immediate (LÖVE-style):</strong> draw everything yourself in <code>draw</code>:</p>
+<pre class="code"><code class="lang-crystal"><span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+  g.circle(<span class="n">400</span>, <span class="n">300</span>, <span class="n">40</span>, color: <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>)
+  g.draw(texture, <span class="n">100</span>, <span class="n">100</span>, rotation: <span class="t">Clock</span>.elapsed, ox: <span class="n">16</span>, oy: <span class="n">16</span>)
+  g.print(<span class="s">&quot;score </span><span class="i">#{</span>@score<span class="i">}</span><span class="s">&quot;</span>, <span class="n">10</span>, <span class="n">10</span>)
+<span class="k">end</span></code></pre>
+<p><strong>Scene tree (Godot-style):</strong> build nodes and let them run:</p>
+<pre class="code"><code class="lang-crystal"><span class="k">class</span> <span class="t">Player</span> <span class="o">&lt;</span> <span class="t">Sprite2D</span>
   signal died
-  def ready; texture = Texture.load(&quot;res://player.png&quot;); end
-  def process(dt : Float32)
-    position += Input.vector(&quot;left&quot;, &quot;right&quot;, &quot;up&quot;, &quot;down&quot;) * 200 * dt
-  end
-end
-SceneTree.root.add(Player.new)</code></pre>
+  <span class="k">def</span> <span class="m">ready</span>; texture <span class="o">=</span> <span class="t">Texture</span>.load(<span class="s">&quot;res://player.png&quot;</span>); <span class="k">end</span>
+  <span class="k">def</span> <span class="m">process</span>(dt : <span class="t">Float32</span>)
+    position <span class="o">+=</span> <span class="t">Input</span>.vector(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>, <span class="s">&quot;up&quot;</span>, <span class="s">&quot;down&quot;</span>) <span class="o">*</span> <span class="n">200</span> <span class="o">*</span> dt
+  <span class="k">end</span>
+<span class="k">end</span>
+<span class="t">SceneTree</span>.root.add(<span class="t">Player</span>.new)</code></pre>
 <p>Mix freely: nodes draw first, then <code>App#draw</code> on top (HUD).</p>
 <h2 id="assets">Assets</h2>
 <p><code>Texture.load(&quot;res://x.png&quot;)</code>, <code>Sound.load</code>, <code>Font.load(path, size)</code>, <code>Mesh.load(&quot;x.obj&quot;)</code>, <code>Shader.load(&quot;fx.glsl&quot;)</code>. <code>res://</code> resolves to <code>EAGLE_ASSETS</code>, <code>Config#assets_dir</code>, <code>assets/</code> next to the executable, or <code>assets/</code> in the working directory. Loaded assets are cached.</p>
-<p>Images: PNG (all bit depths, palettes, interlace), QOI, BMP — decode <em>and</em> encode (<code>Image#save</code>). Audio: WAV (PCM 8/16/24/32, float). Models: OBJ.</p>
+<p>Images: PNG (all bit depths, palettes, interlace), QOI, BMP. Decode <em>and</em> encode (<code>Image#save</code>). Audio: WAV (PCM 8/16/24/32, float). Models: OBJ.</p>
 <h2 id="input">Input</h2>
-<pre><code class="lang-crystal">Input.map &quot;jump&quot;, Key::Space, GamepadButton::A
-Input.map &quot;left&quot;, Key::A, Key::Left, Input.axis(GamepadAxis::LeftX, -1)
-Input.pressed?(&quot;jump&quot;)          # this frame
-Input.down?(Key::LShift)        # held
-Input.axis(&quot;left&quot;, &quot;right&quot;)     # -1..1 (analog on sticks)
-Input.vector(&quot;left&quot;, &quot;right&quot;, &quot;up&quot;, &quot;down&quot;)
-Input.mouse, Input.mouse_delta, Input.wheel, Input.gamepad.try(&amp;.rumble)</code></pre>
+<pre class="code"><code class="lang-crystal"><span class="t">Input</span>.map <span class="s">&quot;jump&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Space</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">A</span>
+<span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">-1</span>)
+<span class="t">Input</span>.pressed?(<span class="s">&quot;jump&quot;</span>)          <span class="c"># this frame</span>
+<span class="t">Input</span>.down?(<span class="t">Key</span><span class="t">::</span><span class="t">LShift</span>)        <span class="c"># held</span>
+<span class="t">Input</span>.axis(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>)     <span class="c"># -1..1 (analog on sticks)</span>
+<span class="t">Input</span>.vector(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>, <span class="s">&quot;up&quot;</span>, <span class="s">&quot;down&quot;</span>)
+<span class="t">Input</span>.mouse, <span class="t">Input</span>.mouse_delta, <span class="t">Input</span>.wheel, <span class="t">Input</span>.gamepad.try(<span class="o">&amp;</span>.rumble)</code></pre>
 <p>Raw events (<code>KeyEvent</code>, <code>MouseButtonEvent</code>, <code>TextEvent</code>, <code>GamepadAxisEvent</code>, …) arrive in <code>App#input</code> and <code>Node#input</code>; set <code>event.handled = true</code> to stop propagation.</p>
 <h2 id="signals">Signals</h2>
-<pre><code class="lang-crystal">class Enemy &lt; Node2D
-  signal hit(damage : Int32)
+<pre class="code"><code class="lang-crystal"><span class="k">class</span> <span class="t">Enemy</span> <span class="o">&lt;</span> <span class="t">Node2D</span>
+  signal hit(damage : <span class="t">Int32</span>)
   signal died
-end
-enemy.on_hit { |d| ... }        # or enemy.hit.connect { }
-enemy.emit_hit(3)               # or enemy.hit.emit(3)
+<span class="k">end</span>
+enemy.on_hit { <span class="o">|</span>d<span class="o">|</span> ... }        <span class="c"># or enemy.hit.connect { }</span>
+enemy.emit_hit(<span class="n">3</span>)               <span class="c"># or enemy.hit.emit(3)</span>
 enemy.died.once { ... }</code></pre>
 <h2 id="physics-2d">Physics 2D</h2>
-<pre><code class="lang-crystal">ground = StaticBody2D.new(position: v2(400, 580)).box(800, 40)
-ball = RigidBody2D.new(position: v2(400, 0)).circle(16)
-ball.restitution = 0.6
-ball.on_body_entered { |other| ... }
-player = KinematicBody2D.new(position: v2(100, 100)).box(24, 40)
-# each physics_process:
-player.velocity += v2(0, 1400 * dt)
+<pre class="code"><code class="lang-crystal">ground <span class="o">=</span> <span class="t">StaticBody2D</span>.new(position: v2(<span class="n">400</span>, <span class="n">580</span>)).box(<span class="n">800</span>, <span class="n">40</span>)
+ball <span class="o">=</span> <span class="t">RigidBody2D</span>.new(position: v2(<span class="n">400</span>, <span class="n">0</span>)).circle(<span class="n">16</span>)
+ball.restitution <span class="o">=</span> <span class="n">0.6</span>
+ball.on_body_entered { <span class="o">|</span>other<span class="o">|</span> ... }
+player <span class="o">=</span> <span class="t">KinematicBody2D</span>.new(position: v2(<span class="n">100</span>, <span class="n">100</span>)).box(<span class="n">24</span>, <span class="n">40</span>)
+<span class="c"># each physics_process:</span>
+player.velocity <span class="o">+=</span> v2(<span class="n">0</span>, <span class="n">1400</span> <span class="o">*</span> dt)
 player.move_and_slide(dt)
 player.on_floor?
-Physics2D.world.raycast(from, dir, 100)</code></pre>
+<span class="t">Physics2D</span>.world.raycast(from, dir, <span class="n">100</span>)</code></pre>
 <p>Units are pixels and seconds; default gravity 980 px/s². Layers/masks are bit sets on <code>body.layer</code> / <code>body.mask</code>. <code>Area2D</code> is a sensor. <code>debug = true</code> on any body draws its shapes.</p>
 <h2 id="ui">UI</h2>
-<pre><code class="lang-crystal">hud = CanvasLayer.new
-panel = Panel.new(size: v2(300, 0)).tap(&amp;.anchor = Anchor::Center).tap(&amp;.fit_content = true)
-box = VBox.new(size: v2(280, 0)).tap(&amp;.position = v2(10, 10)).tap(&amp;.fit_content = true)
-box.add(Label.new(&quot;Settings&quot;), Slider.new(0, 100, 50), CheckBox.new(&quot;Music&quot;, true), Button.new(&quot;OK&quot;) { close })
-panel.add(box); hud.add(panel); SceneTree.root.add(hud)
-Theme.default.font = Font.load(&quot;res://Inter.ttf&quot;, 18)</code></pre>
+<pre class="code"><code class="lang-crystal">hud <span class="o">=</span> <span class="t">CanvasLayer</span>.new
+panel <span class="o">=</span> <span class="t">Panel</span>.new(size: v2(<span class="n">300</span>, <span class="n">0</span>)).tap(<span class="o">&amp;</span>.anchor <span class="o">=</span> <span class="t">Anchor</span><span class="t">::</span><span class="t">Center</span>).tap(<span class="o">&amp;</span>.fit_content <span class="o">=</span> <span class="n">true</span>)
+box <span class="o">=</span> <span class="t">VBox</span>.new(size: v2(<span class="n">280</span>, <span class="n">0</span>)).tap(<span class="o">&amp;</span>.position <span class="o">=</span> v2(<span class="n">10</span>, <span class="n">10</span>)).tap(<span class="o">&amp;</span>.fit_content <span class="o">=</span> <span class="n">true</span>)
+box.add(<span class="t">Label</span>.new(<span class="s">&quot;Settings&quot;</span>), <span class="t">Slider</span>.new(<span class="n">0</span>, <span class="n">100</span>, <span class="n">50</span>), <span class="t">CheckBox</span>.new(<span class="s">&quot;Music&quot;</span>, <span class="n">true</span>), <span class="t">Button</span>.new(<span class="s">&quot;OK&quot;</span>) { close })
+panel.add(box); hud.add(panel); <span class="t">SceneTree</span>.root.add(hud)
+<span class="t">Theme</span>.default.font <span class="o">=</span> <span class="t">Font</span>.load(<span class="s">&quot;res://Inter.ttf&quot;</span>, <span class="n">18</span>)</code></pre>
 <p>Controls receive mouse/keyboard events, manage focus (<code>Control.focused</code>), and inherit <code>Theme</code> from ancestors. Containers (<code>VBox</code>, <code>HBox</code>, <code>GridContainer</code>) size children by <code>effective_min_size</code> and <code>size_flags</code>.</p>
 <h2 id="3d">3D</h2>
-<pre><code class="lang-crystal">root.add(Camera3D.new(position: v3(0, 3, 8)).tap(&amp;.look_at(Vec3::ZERO)))
-root.add(DirectionalLight3D.new(v3(-0.5, -1, -0.3)))
-root.add(MeshInstance3D.new(Mesh.cube, Material.new(Color::RED), position: v3(0, 0.5, 0)))
-Scene3D.environment.fog(20, 80)
-Scene3D.environment.shadows = true
-cam.screen_to_ray(Input.mouse).intersect_aabb(mesh_instance.global_bounds)</code></pre>
+<pre class="code"><code class="lang-crystal">root.add(<span class="t">Camera3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">3</span>, <span class="n">8</span>)).tap(<span class="o">&amp;</span>.look_at(<span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>)))
+root.add(<span class="t">DirectionalLight3D</span>.new(v3(<span class="n">-0.5</span>, <span class="n">-1</span>, <span class="n">-0.3</span>)))
+root.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.cube, <span class="t">Material</span>.new(<span class="t">Color</span><span class="t">::</span><span class="t">RED</span>), position: v3(<span class="n">0</span>, <span class="n">0.5</span>, <span class="n">0</span>)))
+<span class="t">Scene3D</span>.environment.fog(<span class="n">20</span>, <span class="n">80</span>)
+<span class="t">Scene3D</span>.environment.shadows <span class="o">=</span> <span class="n">true</span>
+cam.screen_to_ray(<span class="t">Input</span>.mouse).intersect_aabb(mesh_instance.global_bounds)</code></pre>
 <p>Shaders use the GLSL 330 / 300 es common subset; <code>Material#shader</code> accepts a custom <code>Shader</code> using the standard uniforms (<code>u_model</code>, <code>u_view</code>, <code>u_projection</code>, lights…).</p>
 <h2 id="automated-runs">Automated runs</h2>
 <p><code>EAGLE_FRAMES=60 EAGLE_SCREENSHOT=shot.png ./game</code> runs 60 frames, saves the frame and exits. <code>EAGLE_HEADLESS=1</code> hides the window. <code>Eagle.init</code>/<code>Eagle.step</code>/ <code>Eagle.shutdown</code> drive the loop manually in tests. <code>EAGLE_GL_DEBUG=1</code> checks for GL errors after every 3D stage.</p>
 <h2 id="backends">Backends</h2>
-<p><code>Platform::Base</code> (window/input/audio/gamepads) and <code>GPU::Device</code> (rendering) are abstract; <code>Platform::SDL</code> + <code>GPU::GL33</code> are the desktop implementations. A WebGL2/WebAudio backend for <code>wasm32</code> is designed for but not yet implemented — shaders and formats are already restricted to the WebGL2 subset.</p>
+<p><code>Platform::Base</code> (window/input/audio/gamepads) and <code>GPU::Device</code> (rendering) are abstract. <code>Platform::SDL</code> + <code>GPU::GL33</code> are the desktop implementations. <code>Platform::Web</code> targets <code>wasm32-wasi</code> and drives WebGL2, WebAudio and DOM input through <code>web/eagle.js</code>. Shaders and formats stay within the WebGL2 subset so the same code renders identically on both.</p>
 <h2 id="exporting">Exporting</h2>
-<pre><code class="lang-sh">eagle export exe examples/snake/main.cr   # dist/snake/snake — release build; add Eagle.embed_assets(&quot;assets&quot;) for a true single file
-eagle export web examples/snake/main.cr   # dist/web/snake/ — index.html + eagle.js + snake.wasm, serve over HTTP
-eagle export app examples/snake/main.cr   # dist/snake.app (macOS bundle)</code></pre>
+<pre class="code"><code class="lang-sh">eagle export exe examples/snake/main.cr<span class="c">   # dist/snake/snake: release build; add Eagle.embed_assets(&quot;assets&quot;) for a true single file</span>
+eagle export web examples/snake/main.cr<span class="c">   # dist/web/snake/: index.html + eagle.js + snake.wasm, serve over HTTP</span>
+eagle export app examples/snake/main.cr<span class="c">   # dist/snake.app (macOS bundle)</span></code></pre>
 <p>Web builds need <code>lld</code> (<code>brew install lld</code>); the script downloads Crystal&#39;s wasm libraries on first use. Everything the desktop build does works in the browser except file-system access (embed assets), threads, and clipboard.</p>
 <h2 id="site">Site</h2>
-<p><code>script/build-site.sh</code> compiles every example to WebAssembly, generates the API reference with <code>crystal docs</code>, and writes the marketing + docs site to <code>site/</code>.</p>
+<p><code>script/build-site.sh</code> compiles every example to WebAssembly, generates the API reference with <code>crystal docs</code>, and writes the marketing + docs site to <code>site/</code>. Screenshots shown on the site come from <code>docs/screenshots/</code>. <code>script/publish-site.sh</code> pushes the built <code>site/</code> to the <code>gh-pages</code> branch, which GitHub Pages serves at https://joeyrobert.github.io/eagle.cr/.</p>
 </article></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

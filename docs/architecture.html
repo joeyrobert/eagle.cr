@@ -1,10 +1,12 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Architecture · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../assets/site.css">
 <link rel="icon" href="../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../index.html">Home</a><a href="../play/index.html">Play</a><a href="../docs/guide.html">Guide</a><a href="../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><article class="doc"><h1 id="eagle-vision-architecture">Eagle — Vision &amp; Architecture</h1>
+<body><header class="top"><div class="wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../play/index.html">Play</a><a href="../docs/guide.html">Guide</a><a href="../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><article class="doc"><h1 id="eagle-vision-architecture">Eagle: Vision &amp; Architecture</h1>
 <p>Eagle is a Crystal-native game engine. Goals, in priority order:</p>
 <ol><li><strong>Easy things are easy, hard things are possible.</strong> A working game is a few</li></ol>
 <p>dozen lines. Everything is still reachable (raw GL, shaders, custom nodes).</p>
@@ -15,25 +17,25 @@
 <ol><li><strong>Fast feedback loop.</strong> Deterministic frame stepping, screenshots to PNG,</li></ol>
 <p>headless-ish runs (<code>EAGLE_FRAMES=60 EAGLE_SCREENSHOT=out.png</code>) so tests and agents can verify rendering without a human.</p>
 <h2 id="inspirations">Inspirations</h2>
-<ul><li><strong>LÖVE</strong> — immediate-mode <code>love.graphics</code> style API, callbacks <code>load/update/draw</code>.</li><li><strong>Godot</strong> — node/scene tree, signals, <code>_ready/_process/_physics_process</code>,</li></ul>
+<ul><li><strong>LÖVE</strong>: immediate-mode <code>love.graphics</code> style API, callbacks <code>load/update/draw</code>.</li><li><strong>Godot</strong>: node/scene tree, signals, <code>_ready/_process/_physics_process</code>,</li></ul>
 <p>Node2D/Node3D families, input action map, <code>res://</code> asset paths, one-file shaders.</p>
 <h2 id="layers">Layers</h2>
-<pre><code class="lang-"> ┌──────────────────────────────────────────────────────────────┐
- │ Games / Examples / CLI viewer                                │
+<pre class="code"><code class="lang-"> ┌──────────────────────────────────────────────────────────────┐
+ │ <span class="t">Games</span> <span class="o">/</span> <span class="t">Examples</span> <span class="o">/</span> <span class="t">CLI</span> viewer                                │
  ├──────────────────────────────────────────────────────────────┤
- │ Nodes: Node2D Sprite2D Camera2D Label Area2D RigidBody2D …    │
- │        Node3D MeshInstance3D Camera3D Light3D Particles …     │
+ │ <span class="t">Nodes</span>: <span class="t">Node2D</span> <span class="t">Sprite2D</span> <span class="t">Camera2D</span> <span class="t">Label</span> <span class="t">Area2D</span> <span class="t">RigidBody2D</span> …    │
+ │        <span class="t">Node3D</span> <span class="t">MeshInstance3D</span> <span class="t">Camera3D</span> <span class="t">Light3D</span> <span class="t">Particles</span> …     │
  ├──────────────────────────────────────────────────────────────┤
- │ Systems: SceneTree · Signals · Input (actions, gamepad)      │
- │          Assets (cache, res://) · Audio mixer · Physics2D/3D  │
- │          Particles · Fonts (bitmap + TTF) · Tween · Timer     │
+ │ <span class="t">Systems</span>: <span class="t">SceneTree</span> · <span class="t">Signals</span> · <span class="t">Input</span> (actions, gamepad)      │
+ │          <span class="t">Assets</span> (cache, res<span class="n">://</span>) · <span class="t">Audio</span> mixer · <span class="t">Physics2D</span><span class="o">/</span><span class="n">3</span><span class="t">D</span>  │
+ │          <span class="t">Particles</span> · <span class="t">Fonts</span> (bitmap <span class="o">+</span> <span class="t">TTF</span>) · <span class="t">Tween</span> · <span class="t">Timer</span>     │
  ├──────────────────────────────────────────────────────────────┤
- │ Graphics: Graphics2D (batched) · Renderer3D · Shader ·        │
- │           Texture · Mesh · Material · RenderTarget · Camera   │
+ │ <span class="t">Graphics</span>: <span class="t">Graphics2D</span> (batched) · <span class="t">Renderer3D</span> · <span class="t">Shader</span> ·        │
+ │           <span class="t">Texture</span> · <span class="t">Mesh</span> · <span class="t">Material</span> · <span class="t">RenderTarget</span> · <span class="t">Camera</span>   │
  ├──────────────────────────────────────────────────────────────┤
- │ Platform: Window · Time · Events  (SDL2)   GL 3.3 core loader │
+ │ <span class="t">Platform</span>: <span class="t">Window</span> · <span class="t">Time</span> · <span class="t">Events</span>  (<span class="t">SDL2</span>)   <span class="t">GL</span> <span class="n">3.3</span> core loader │
  ├──────────────────────────────────────────────────────────────┤
- │ Math: Vec2/3/4 Mat3/4 Quat Rect Color Transform2D             │
+ │ <span class="t">Math</span>: <span class="t">Vec2</span><span class="o">/</span><span class="n">3</span><span class="o">/</span><span class="n">4</span> <span class="t">Mat3</span><span class="o">/</span><span class="n">4</span> <span class="t">Quat</span> <span class="t">Rect</span> <span class="t">Color</span> <span class="t">Transform2D</span>             │
  └──────────────────────────────────────────────────────────────┘</code></pre>
 <h2 id="key-decisions">Key decisions</h2>
 <ul><li><strong>GL 3.3 core via function-pointer loader</strong> (<code>SDL_GL_GetProcAddress</code>). Works</li></ul>
@@ -47,22 +49,22 @@
 <ul><li><strong>Determinism</strong>: fixed-timestep <code>physics_process</code>, variable <code>process</code>.</li><li><strong>Assets</strong>: <code>res://</code> root resolved from the executable dir, the project dir, or</li></ul>
 <p><code>EAGLE_ASSETS</code>. Cached by path; hot reload later.</p>
 <h2 id="directory-layout">Directory layout</h2>
-<pre><code class="lang-">src/eagle.cr              library entry
-src/eagle/lib/            C bindings (sdl2, gl)
-src/eagle/math/
-src/eagle/core/           engine loop, window, time, events, log, signals, node tree
-src/eagle/graphics/       gl objects, 2D batcher, 3D renderer, fonts
-src/eagle/assets/         loader/cache and codecs (png, wav, obj, ttf)
-src/eagle/audio/
-src/eagle/physics/
-src/eagle/particles/
-src/eagle/nodes/          Godot-style nodes
-src/cli.cr                `eagle` CLI (new/run/view)
-examples/                 runnable examples &amp; games
-spec/                     unit specs (no window needed)
-docs/plans/               plans and progress logs (this folder)</code></pre>
+<pre class="code"><code class="lang-">src<span class="o">/</span>eagle.cr              library entry
+src<span class="o">/</span>eagle<span class="o">/</span><span class="k">lib</span><span class="o">/</span>            <span class="t">C</span> bindings (sdl2, gl)
+src<span class="o">/</span>eagle<span class="o">/</span>math<span class="o">/</span>
+src<span class="o">/</span>eagle<span class="o">/</span>core<span class="o">/</span>           engine loop, window, time, events, log, signals, node tree
+src<span class="o">/</span>eagle<span class="o">/</span>graphics<span class="o">/</span>       gl objects, <span class="n">2</span><span class="t">D</span> batcher, <span class="n">3</span><span class="t">D</span> renderer, fonts
+src<span class="o">/</span>eagle<span class="o">/</span>assets<span class="o">/</span>         loader<span class="o">/</span>cache and codecs (png, wav, obj, ttf)
+src<span class="o">/</span>eagle<span class="o">/</span>audio<span class="o">/</span>
+src<span class="o">/</span>eagle<span class="o">/</span>physics<span class="o">/</span>
+src<span class="o">/</span>eagle<span class="o">/</span>particles<span class="o">/</span>
+src<span class="o">/</span>eagle<span class="o">/</span>nodes<span class="o">/</span>          <span class="t">Godot</span><span class="o">-</span>style nodes
+src<span class="o">/</span>cli.cr                <span class="s">`eagle`</span> <span class="t">CLI</span> (new<span class="o">/</span>run<span class="o">/</span>view)
+examples<span class="o">/</span>                 runnable examples <span class="o">&amp;</span> games
+spec<span class="o">/</span>                     unit specs (no window needed)
+docs<span class="o">/</span>plans<span class="o">/</span>               plans and progress logs (this folder)</code></pre>
 <h2 id="roadmap-phases">Roadmap (phases)</h2>
-<p>See <code>010-roadmap.md</code> — updated as work lands.</p>
+<p>See <code>010-roadmap.md</code>, updated as work lands.</p>
 <h2 id="modular-backends-added-2026-09-18-after-user-request-for-wasm-webgl">Modular backends (added 2026-09-18 after user request for WASM/WebGL)</h2>
 <p>Everything platform-specific sits behind small abstract classes so backends are plug-and-play:</p>
 <table><tr><th>Abstraction</th><th>Default impl (desktop)</th><th>Planned</th></tr><tr><td><code>Eagle::Platform::Base</code></td><td><code>Platform::SDL</code></td><td><code>Platform::Web</code> (JS glue)</td></tr><tr><td><code>Eagle::GPU::Device</code></td><td><code>GPU::GL33</code></td><td><code>GPU::WebGL2</code></td></tr><tr><td><code>Eagle::Audio::Device</code></td><td><code>Audio::SDLDevice</code></td><td><code>Audio::WebAudioDevice</code></td></tr><tr><td><code>Eagle::Input::Source</code></td><td>SDL events</td><td>DOM events</td></tr></table>
@@ -74,5 +76,5 @@ docs/plans/               plans and progress logs (this folder)</code></pre>
 <ul><li>The renderer never calls <code>LibGL</code> directly; it calls <code>GPU::Device</code>.</li><li>Engine code never calls SDL directly; it calls <code>Platform</code>.</li><li>Audio is mixed in Crystal into Float32 frames; the device just consumes them.</li></ul>
 <p>Crystal&#39;s <code>wasm32-unknown-wasi</code> target is experimental; the web backend is a later phase and requires a JS shim for WebGL2/WebAudio/DOM input. The architecture above is what makes it possible without an engine rewrite.</p>
 </article></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

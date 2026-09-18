@@ -1,560 +1,566 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Roguelike · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>Roguelike</h1><p class="lead">Procedural dungeons, shadowcasting field of view, monsters that chase, items, five levels.</p><canvas id="eagle"></canvas><p class="controls">Arrows/WASD/hjkl move · Space wait · Enter descends on > · R restart</p>
-<details><summary>Source — examples/roguelike/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
-require &quot;./dungeon&quot;
-include Eagle
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>Roguelike</h1><p class="lead">Procedural dungeons, shadowcasting field of view, monsters that chase, items, five levels.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Arrows/WASD/hjkl move · Space wait · Enter descends on > · R restart</p>
+<details><summary>Source: <code>examples/roguelike/main.cr</code></summary><h3>examples/roguelike/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./dungeon&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-# Dungeon explorer: arrows / WASD / hjkl move &amp; attack, space waits, &gt; descends,
-# R restarts. Fog of war, shadowcasting FOV, monsters, items, 5 levels.
-class RoguelikeApp &lt; App
-  CELL = 20
-  @game = Rogue::Game.new((Random.rand * 10000).to_i)
-  @font : Font? = nil
-  @flash = 0_f32
-  @snd_hit : Sound? = nil
-  @snd_pick : Sound? = nil
+<span class="c"># Dungeon explorer: arrows / WASD / hjkl move &amp; attack, space waits, &gt; descends,</span>
+<span class="c"># R restarts. Fog of war, shadowcasting FOV, monsters, items, 5 levels.</span>
+<span class="k">class</span> <span class="t">RoguelikeApp</span> <span class="o">&lt;</span> <span class="t">App</span>
+  <span class="t">CELL</span> <span class="o">=</span> <span class="n">20</span>
+  @game <span class="o">=</span> <span class="t">Rogue</span><span class="t">::</span><span class="t">Game</span>.new((<span class="t">Random</span>.rand <span class="o">*</span> <span class="n">10000</span>).to_i)
+  @font : <span class="t">Font</span>? <span class="o">=</span> <span class="n">nil</span>
+  @flash <span class="o">=</span> <span class="n">0_f32</span>
+  @snd_hit : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @snd_pick : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
 
-  def load
-    ttf = [&quot;/System/Library/Fonts/Menlo.ttc&quot;, &quot;/System/Library/Fonts/Monaco.ttf&quot;, &quot;/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf&quot;].find { |p| File.exists?(p) }
-    @font = Font.load(ttf, 18) if ttf &amp;&amp; !ttf.ends_with?(&quot;.ttc&quot;)
-    @snd_hit = Sound.tone(150, 0.08, Sound::Wave::Saw, 0.25)
-    @snd_pick = Sound.tone(900, 0.06, Sound::Wave::Sine, 0.25)
-    Input.map &quot;left&quot;, Key::Left, Key::A, Key::H, Input.axis(GamepadAxis::LeftX, -1)
-    Input.map &quot;right&quot;, Key::Right, Key::D, Key::L, Input.axis(GamepadAxis::LeftX, 1)
-    Input.map &quot;up&quot;, Key::Up, Key::W, Key::K, Input.axis(GamepadAxis::LeftY, -1)
-    Input.map &quot;down&quot;, Key::Down, Key::S, Key::J, Input.axis(GamepadAxis::LeftY, 1)
-    Input.map &quot;wait&quot;, Key::Space, Key::Period, GamepadButton::B
-    Input.map &quot;descend&quot;, Key::Period, Key::Enter, GamepadButton::A
-    if ENV[&quot;EAGLE_DEMO&quot;]? == &quot;1&quot;
-      # explore a bit for screenshots: walk in the direction with most open floor
-      @game = Rogue::Game.new(4)
-      40.times { |i| Script.at(0.05 * i) { auto_step } }
-    end
-  end
+  <span class="k">def</span> <span class="m">load</span>
+    ttf <span class="o">=</span> [<span class="s">&quot;/System/Library/Fonts/Menlo.ttc&quot;</span>, <span class="s">&quot;/System/Library/Fonts/Monaco.ttf&quot;</span>, <span class="s">&quot;/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf&quot;</span>].find { <span class="o">|</span>p<span class="o">|</span> <span class="t">File</span>.exists?(p) }
+    @font <span class="o">=</span> <span class="t">Font</span>.load(ttf, <span class="n">18</span>) <span class="k">if</span> ttf <span class="o">&amp;&amp;</span> <span class="o">!</span>ttf.ends_with?(<span class="s">&quot;.ttc&quot;</span>)
+    @snd_hit <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">150</span>, <span class="n">0.08</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Saw</span>, <span class="n">0.25</span>)
+    @snd_pick <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">900</span>, <span class="n">0.06</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Sine</span>, <span class="n">0.25</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Key</span><span class="t">::</span><span class="t">H</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Right</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Key</span><span class="t">::</span><span class="t">L</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;up&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Up</span>, <span class="t">Key</span><span class="t">::</span><span class="t">W</span>, <span class="t">Key</span><span class="t">::</span><span class="t">K</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;down&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Down</span>, <span class="t">Key</span><span class="t">::</span><span class="t">S</span>, <span class="t">Key</span><span class="t">::</span><span class="t">J</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;wait&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Space</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Period</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">B</span>
+    <span class="t">Input</span>.map <span class="s">&quot;descend&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Period</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Enter</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">A</span>
+    <span class="k">if</span> <span class="t">ENV</span>[<span class="s">&quot;EAGLE_DEMO&quot;</span>]? <span class="o">==</span> <span class="s">&quot;1&quot;</span>
+      <span class="c"># explore a bit for screenshots: walk in the direction with most open floor</span>
+      @game <span class="o">=</span> <span class="t">Rogue</span><span class="t">::</span><span class="t">Game</span>.new(<span class="n">4</span>)
+      <span class="n">40</span>.times { <span class="o">|</span>i<span class="o">|</span> <span class="t">Script</span>.at(<span class="n">0.05</span> <span class="o">*</span> i) { auto_step } }
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  private def auto_step
-    d = @game.dungeon; p = @game.player
-    best = {1, 0}; best_score = -1
-    [{1, 0}, {-1, 0}, {0, 1}, {0, -1}].each do |(dx, dy)|
-      score = 0
-      (1..6).each { |k| break unless d.walkable?(p.x + dx * k, p.y + dy * k); score += d.explored?(p.x + dx * k, p.y + dy * k) ? 1 : 3 }
-      if score &gt; best_score
-        best_score = score; best = {dx, dy}
-      end
-    end
-    @game.move_player(best[0], best[1]) || @game.wait_turn
-  end
+  <span class="k">private</span> <span class="k">def</span> <span class="m">auto_step</span>
+    d <span class="o">=</span> @game.dungeon; p <span class="o">=</span> @game.player
+    best <span class="o">=</span> {<span class="n">1</span>, <span class="n">0</span>}; best_score <span class="o">=</span> <span class="n">-1</span>
+    [{<span class="n">1</span>, <span class="n">0</span>}, {<span class="n">-1</span>, <span class="n">0</span>}, {<span class="n">0</span>, <span class="n">1</span>}, {<span class="n">0</span>, <span class="n">-1</span>}].each <span class="k">do</span> <span class="o">|</span>(dx, dy)<span class="o">|</span>
+      score <span class="o">=</span> <span class="n">0</span>
+      (<span class="n">1</span>..<span class="n">6</span>).each { <span class="o">|</span>k<span class="o">|</span> <span class="k">break</span> <span class="k">unless</span> d.walkable?(p.x <span class="o">+</span> dx <span class="o">*</span> k, p.y <span class="o">+</span> dy <span class="o">*</span> k); score <span class="o">+=</span> d.explored?(p.x <span class="o">+</span> dx <span class="o">*</span> k, p.y <span class="o">+</span> dy <span class="o">*</span> k) ? <span class="n">1</span> : <span class="n">3</span> }
+      <span class="k">if</span> score <span class="o">&gt;</span> best_score
+        best_score <span class="o">=</span> score; best <span class="o">=</span> {dx, dy}
+      <span class="k">end</span>
+    <span class="k">end</span>
+    @game.move_player(best[<span class="n">0</span>], best[<span class="n">1</span>]) <span class="o">||</span> @game.wait_turn
+  <span class="k">end</span>
 
-  def update(dt : Float32)
-    @flash = Math.max(0_f32, @flash - dt)
-    before = @game.messages.size
-    moved = false
-    moved = @game.move_player(-1, 0) if Input.pressed?(&quot;left&quot;)
-    moved = @game.move_player(1, 0) if Input.pressed?(&quot;right&quot;)
-    moved = @game.move_player(0, -1) if Input.pressed?(&quot;up&quot;)
-    moved = @game.move_player(0, 1) if Input.pressed?(&quot;down&quot;)
-    @game.wait_turn if Input.pressed?(&quot;wait&quot;) &amp;&amp; !@game.game_over?
-    if Input.pressed?(&quot;descend&quot;) &amp;&amp; Input.shift? || Input.pressed?(Key::Enter)
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    @flash <span class="o">=</span> <span class="t">Math</span>.max(<span class="n">0_f32</span>, @flash <span class="o">-</span> dt)
+    before <span class="o">=</span> @game.messages.size
+    moved <span class="o">=</span> <span class="n">false</span>
+    moved <span class="o">=</span> @game.move_player(<span class="n">-1</span>, <span class="n">0</span>) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;left&quot;</span>)
+    moved <span class="o">=</span> @game.move_player(<span class="n">1</span>, <span class="n">0</span>) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;right&quot;</span>)
+    moved <span class="o">=</span> @game.move_player(<span class="n">0</span>, <span class="n">-1</span>) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;up&quot;</span>)
+    moved <span class="o">=</span> @game.move_player(<span class="n">0</span>, <span class="n">1</span>) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;down&quot;</span>)
+    @game.wait_turn <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;wait&quot;</span>) <span class="o">&amp;&amp;</span> <span class="o">!</span>@game.game_over?
+    <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;descend&quot;</span>) <span class="o">&amp;&amp;</span> <span class="t">Input</span>.shift? <span class="o">||</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Enter</span>)
       @game.descend
-    end
-    if @game.messages.size &gt; before
-      msg = @game.messages.last
-      if msg.includes?(&quot;hits you&quot;)
-        @flash = 0.2_f32; @snd_hit.try(&amp;.play)
-      elsif msg.includes?(&quot;pick up&quot;) || msg.includes?(&quot;found&quot;) || msg.includes?(&quot;potion&quot;)
-        @snd_pick.try(&amp;.play)
-      end
-    end
-    @game = Rogue::Game.new((Random.rand * 10000).to_i) if Input.pressed?(Key::R)
-    Eagle.quit if Input.pressed?(Key::Escape)
-  end
+    <span class="k">end</span>
+    <span class="k">if</span> @game.messages.size <span class="o">&gt;</span> before
+      msg <span class="o">=</span> @game.messages.last
+      <span class="k">if</span> msg.includes?(<span class="s">&quot;hits you&quot;</span>)
+        @flash <span class="o">=</span> <span class="n">0.2_f32</span>; @snd_hit.try(<span class="o">&amp;</span>.play)
+      <span class="k">elsif</span> msg.includes?(<span class="s">&quot;pick up&quot;</span>) <span class="o">||</span> msg.includes?(<span class="s">&quot;found&quot;</span>) <span class="o">||</span> msg.includes?(<span class="s">&quot;potion&quot;</span>)
+        @snd_pick.try(<span class="o">&amp;</span>.play)
+      <span class="k">end</span>
+    <span class="k">end</span>
+    @game <span class="o">=</span> <span class="t">Rogue</span><span class="t">::</span><span class="t">Game</span>.new((<span class="t">Random</span>.rand <span class="o">*</span> <span class="n">10000</span>).to_i) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">R</span>)
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+  <span class="k">end</span>
 
-  def draw(g : Graphics)
-    d = @game.dungeon
-    ox = 10; oy = 40
-    f = @font || g.font
-    d.height.times do |y|
-      d.width.times do |x|
-        next unless d.explored?(x, y)
-        vis = d.visible?(x, y)
-        t = d[x, y]
-        color = case t
-                in Rogue::Tile::Wall then Color.hex(&quot;#5b6b8a&quot;)
-                in Rogue::Tile::Floor then Color.hex(&quot;#2e3448&quot;)
-                in Rogue::Tile::Door then Color.hex(&quot;#a0703c&quot;)
-                in Rogue::Tile::StairsDown then Color.hex(&quot;#e0c060&quot;)
-                end
-        color = color.darken(0.55) unless vis
-        px = ox + x * CELL; py = oy + y * CELL
-        case t
-        in Rogue::Tile::Wall then g.rect(px, py, CELL, CELL, color: color)
-        in Rogue::Tile::Floor then g.rect(px, py, CELL, CELL, color: color); g.rect(px + CELL / 2 - 1, py + CELL / 2 - 1, 2, 2, color: color.lighten(0.2))
-        in Rogue::Tile::Door then g.rect(px, py, CELL, CELL, color: Color.hex(&quot;#2e3448&quot;)); g.rect(px + 4, py + 2, CELL - 8, CELL - 4, color: color)
-        in Rogue::Tile::StairsDown then g.rect(px, py, CELL, CELL, color: Color.hex(&quot;#2e3448&quot;)); g.print(&quot;&gt;&quot;, px + CELL / 2, py + 2, color, f, align: TextAlign::Center)
-        end
-      end
-    end
-    @game.items.each do |it|
-      next unless d.visible?(it.x, it.y)
-      c = it.kind.gold? ? Color::YELLOW : it.kind.potion? ? Color.hex(&quot;#ff6b9d&quot;) : Color.hex(&quot;#9ad0ff&quot;)
-      g.print(it.glyph.to_s, ox + it.x * CELL + CELL / 2, oy + it.y * CELL + 2, c, f, align: TextAlign::Center)
-    end
-    @game.monsters.each do |m|
-      next unless d.visible?(m.x, m.y)
-      c = {&#39;r&#39; =&gt; Color.hex(&quot;#c9a27e&quot;), &#39;g&#39; =&gt; Color.hex(&quot;#7bd88f&quot;), &#39;o&#39; =&gt; Color.hex(&quot;#e07a5f&quot;), &#39;T&#39; =&gt; Color.hex(&quot;#c77dff&quot;)}[m.glyph]? || Color::WHITE
-      g.print(m.glyph.to_s, ox + m.x * CELL + CELL / 2, oy + m.y * CELL + 2, c, f, align: TextAlign::Center)
-      g.rect(ox + m.x * CELL + 2, oy + m.y * CELL + CELL - 3, (CELL - 4) * m.hp / m.max_hp, 2, color: Color::RED)
-    end
-    p = @game.player
-    g.print(&quot;@&quot;, ox + p.x * CELL + CELL / 2, oy + p.y * CELL + 2, Color::WHITE, f, align: TextAlign::Center)
-    # HUD
-    g.rect(0, 0, Window.width, 32, color: Color.hex(&quot;#12141c&quot;))
-    g.print(&quot;HP #{p.hp}/#{p.max_hp}  ATK #{p.attack}  DEF #{p.defense}  Lv #{@game.char_level} (xp #{@game.xp})  Gold #{@game.gold}  Dungeon #{@game.level}/#{Rogue::Game::MAX_LEVEL}  Turn #{@game.turns}&quot;, 10, 8, Color::WHITE)
-    g.rect(Window.width - 210, 8, 200, 16, color: Color.gray(0.2))
-    g.rect(Window.width - 210, 8, 200 * p.hp / p.max_hp, 16, color: p.hp &gt; p.max_hp / 3 ? Color::GREEN : Color::RED)
-    # messages
-    my = oy + d.height * CELL + 6
-    @game.messages.last(5).each_with_index do |m, i|
-      g.print(m, 10, my + i * 18, Color.gray(0.55 + i * 0.1))
-    end
-    g.print(&quot;arrows/WASD/hjkl move - space wait - Enter descends on &gt; - R restart&quot;, Window.width - 10, Window.height - 20, Color.gray(0.4), align: TextAlign::Right)
-    g.rect(0, 0, Window.width, Window.height, color: Color::RED.with_alpha(@flash * 1.5)) if @flash &gt; 0
-    if @game.game_over?
-      g.rect(0, 0, Window.width, Window.height, color: Color.new(0, 0, 0, 0.6))
-      g.print(@game.won? ? &quot;YOU ESCAPED!&quot; : &quot;YOU DIED&quot;, Window.width / 2, Window.height / 2 - 30, @game.won? ? Color::YELLOW : Color::RED, scale: 2, align: TextAlign::Center)
-      g.print(&quot;press R for a new dungeon&quot;, Window.width / 2, Window.height / 2 + 20, Color::WHITE, align: TextAlign::Center)
-    end
-  end
-end
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    d <span class="o">=</span> @game.dungeon
+    ox <span class="o">=</span> <span class="n">10</span>; oy <span class="o">=</span> <span class="n">40</span>
+    f <span class="o">=</span> @font <span class="o">||</span> g.font
+    d.height.times <span class="k">do</span> <span class="o">|</span>y<span class="o">|</span>
+      d.width.times <span class="k">do</span> <span class="o">|</span>x<span class="o">|</span>
+        <span class="k">next</span> <span class="k">unless</span> d.explored?(x, y)
+        vis <span class="o">=</span> d.visible?(x, y)
+        t <span class="o">=</span> d[x, y]
+        color <span class="o">=</span> <span class="k">case</span> t
+                <span class="k">in</span> <span class="t">Rogue</span><span class="t">::</span><span class="t">Tile</span><span class="t">::</span><span class="t">Wall</span> <span class="k">then</span> <span class="t">Color</span>.hex(<span class="s">&quot;#5b6b8a&quot;</span>)
+                <span class="k">in</span> <span class="t">Rogue</span><span class="t">::</span><span class="t">Tile</span><span class="t">::</span><span class="t">Floor</span> <span class="k">then</span> <span class="t">Color</span>.hex(<span class="s">&quot;#2e3448&quot;</span>)
+                <span class="k">in</span> <span class="t">Rogue</span><span class="t">::</span><span class="t">Tile</span><span class="t">::</span><span class="t">Door</span> <span class="k">then</span> <span class="t">Color</span>.hex(<span class="s">&quot;#a0703c&quot;</span>)
+                <span class="k">in</span> <span class="t">Rogue</span><span class="t">::</span><span class="t">Tile</span><span class="t">::</span><span class="t">StairsDown</span> <span class="k">then</span> <span class="t">Color</span>.hex(<span class="s">&quot;#e0c060&quot;</span>)
+                <span class="k">end</span>
+        color <span class="o">=</span> color.darken(<span class="n">0.55</span>) <span class="k">unless</span> vis
+        px <span class="o">=</span> ox <span class="o">+</span> x <span class="o">*</span> <span class="t">CELL</span>; py <span class="o">=</span> oy <span class="o">+</span> y <span class="o">*</span> <span class="t">CELL</span>
+        <span class="k">case</span> t
+        <span class="k">in</span> <span class="t">Rogue</span><span class="t">::</span><span class="t">Tile</span><span class="t">::</span><span class="t">Wall</span> <span class="k">then</span> g.rect(px, py, <span class="t">CELL</span>, <span class="t">CELL</span>, color: color)
+        <span class="k">in</span> <span class="t">Rogue</span><span class="t">::</span><span class="t">Tile</span><span class="t">::</span><span class="t">Floor</span> <span class="k">then</span> g.rect(px, py, <span class="t">CELL</span>, <span class="t">CELL</span>, color: color); g.rect(px <span class="o">+</span> <span class="t">CELL</span> <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">1</span>, py <span class="o">+</span> <span class="t">CELL</span> <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">1</span>, <span class="n">2</span>, <span class="n">2</span>, color: color.lighten(<span class="n">0.2</span>))
+        <span class="k">in</span> <span class="t">Rogue</span><span class="t">::</span><span class="t">Tile</span><span class="t">::</span><span class="t">Door</span> <span class="k">then</span> g.rect(px, py, <span class="t">CELL</span>, <span class="t">CELL</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#2e3448&quot;</span>)); g.rect(px <span class="o">+</span> <span class="n">4</span>, py <span class="o">+</span> <span class="n">2</span>, <span class="t">CELL</span> <span class="o">-</span> <span class="n">8</span>, <span class="t">CELL</span> <span class="o">-</span> <span class="n">4</span>, color: color)
+        <span class="k">in</span> <span class="t">Rogue</span><span class="t">::</span><span class="t">Tile</span><span class="t">::</span><span class="t">StairsDown</span> <span class="k">then</span> g.rect(px, py, <span class="t">CELL</span>, <span class="t">CELL</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#2e3448&quot;</span>)); g.print(<span class="s">&quot;&gt;&quot;</span>, px <span class="o">+</span> <span class="t">CELL</span> <span class="o">/</span> <span class="n">2</span>, py <span class="o">+</span> <span class="n">2</span>, color, f, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    @game.items.each <span class="k">do</span> <span class="o">|</span>it<span class="o">|</span>
+      <span class="k">next</span> <span class="k">unless</span> d.visible?(it.x, it.y)
+      c <span class="o">=</span> it.kind.gold? ? <span class="t">Color</span><span class="t">::</span><span class="t">YELLOW</span> : it.kind.potion? ? <span class="t">Color</span>.hex(<span class="s">&quot;#ff6b9d&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#9ad0ff&quot;</span>)
+      g.print(it.glyph.to_s, ox <span class="o">+</span> it.x <span class="o">*</span> <span class="t">CELL</span> <span class="o">+</span> <span class="t">CELL</span> <span class="o">/</span> <span class="n">2</span>, oy <span class="o">+</span> it.y <span class="o">*</span> <span class="t">CELL</span> <span class="o">+</span> <span class="n">2</span>, c, f, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+    <span class="k">end</span>
+    @game.monsters.each <span class="k">do</span> <span class="o">|</span>m<span class="o">|</span>
+      <span class="k">next</span> <span class="k">unless</span> d.visible?(m.x, m.y)
+      c <span class="o">=</span> {<span class="s">&#39;r&#39;</span> <span class="o">=&gt;</span> <span class="t">Color</span>.hex(<span class="s">&quot;#c9a27e&quot;</span>), <span class="s">&#39;g&#39;</span> <span class="o">=&gt;</span> <span class="t">Color</span>.hex(<span class="s">&quot;#7bd88f&quot;</span>), <span class="s">&#39;o&#39;</span> <span class="o">=&gt;</span> <span class="t">Color</span>.hex(<span class="s">&quot;#e07a5f&quot;</span>), <span class="s">&#39;T&#39;</span> <span class="o">=&gt;</span> <span class="t">Color</span>.hex(<span class="s">&quot;#c77dff&quot;</span>)}[m.glyph]? <span class="o">||</span> <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>
+      g.print(m.glyph.to_s, ox <span class="o">+</span> m.x <span class="o">*</span> <span class="t">CELL</span> <span class="o">+</span> <span class="t">CELL</span> <span class="o">/</span> <span class="n">2</span>, oy <span class="o">+</span> m.y <span class="o">*</span> <span class="t">CELL</span> <span class="o">+</span> <span class="n">2</span>, c, f, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+      g.rect(ox <span class="o">+</span> m.x <span class="o">*</span> <span class="t">CELL</span> <span class="o">+</span> <span class="n">2</span>, oy <span class="o">+</span> m.y <span class="o">*</span> <span class="t">CELL</span> <span class="o">+</span> <span class="t">CELL</span> <span class="o">-</span> <span class="n">3</span>, (<span class="t">CELL</span> <span class="o">-</span> <span class="n">4</span>) <span class="o">*</span> m.hp <span class="o">/</span> m.max_hp, <span class="n">2</span>, color: <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>)
+    <span class="k">end</span>
+    p <span class="o">=</span> @game.player
+    g.print(<span class="s">&quot;@&quot;</span>, ox <span class="o">+</span> p.x <span class="o">*</span> <span class="t">CELL</span> <span class="o">+</span> <span class="t">CELL</span> <span class="o">/</span> <span class="n">2</span>, oy <span class="o">+</span> p.y <span class="o">*</span> <span class="t">CELL</span> <span class="o">+</span> <span class="n">2</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, f, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+    <span class="c"># HUD</span>
+    g.rect(<span class="n">0</span>, <span class="n">0</span>, <span class="t">Window</span>.width, <span class="n">32</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#12141c&quot;</span>))
+    g.print(<span class="s">&quot;HP </span><span class="i">#{</span>p.hp<span class="i">}</span><span class="s">/</span><span class="i">#{</span>p.max_hp<span class="i">}</span><span class="s">  ATK </span><span class="i">#{</span>p.attack<span class="i">}</span><span class="s">  DEF </span><span class="i">#{</span>p.defense<span class="i">}</span><span class="s">  Lv </span><span class="i">#{</span>@game.char_level<span class="i">}</span><span class="s"> (xp </span><span class="i">#{</span>@game.xp<span class="i">}</span><span class="s">)  Gold </span><span class="i">#{</span>@game.gold<span class="i">}</span><span class="s">  Dungeon </span><span class="i">#{</span>@game.level<span class="i">}</span><span class="s">/</span><span class="i">#{</span><span class="t">Rogue</span><span class="t">::</span><span class="t">Game</span><span class="t">::</span><span class="t">MAX_LEVEL</span><span class="i">}</span><span class="s">  Turn </span><span class="i">#{</span>@game.turns<span class="i">}</span><span class="s">&quot;</span>, <span class="n">10</span>, <span class="n">8</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.rect(<span class="t">Window</span>.width <span class="o">-</span> <span class="n">210</span>, <span class="n">8</span>, <span class="n">200</span>, <span class="n">16</span>, color: <span class="t">Color</span>.gray(<span class="n">0.2</span>))
+    g.rect(<span class="t">Window</span>.width <span class="o">-</span> <span class="n">210</span>, <span class="n">8</span>, <span class="n">200</span> <span class="o">*</span> p.hp <span class="o">/</span> p.max_hp, <span class="n">16</span>, color: p.hp <span class="o">&gt;</span> p.max_hp <span class="o">/</span> <span class="n">3</span> ? <span class="t">Color</span><span class="t">::</span><span class="t">GREEN</span> : <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>)
+    <span class="c"># messages</span>
+    my <span class="o">=</span> oy <span class="o">+</span> d.height <span class="o">*</span> <span class="t">CELL</span> <span class="o">+</span> <span class="n">6</span>
+    @game.messages.last(<span class="n">5</span>).each_with_index <span class="k">do</span> <span class="o">|</span>m, i<span class="o">|</span>
+      g.print(m, <span class="n">10</span>, my <span class="o">+</span> i <span class="o">*</span> <span class="n">18</span>, <span class="t">Color</span>.gray(<span class="n">0.55</span> <span class="o">+</span> i <span class="o">*</span> <span class="n">0.1</span>))
+    <span class="k">end</span>
+    g.print(<span class="s">&quot;arrows/WASD/hjkl move - space wait - Enter descends on &gt; - R restart&quot;</span>, <span class="t">Window</span>.width <span class="o">-</span> <span class="n">10</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">20</span>, <span class="t">Color</span>.gray(<span class="n">0.4</span>), align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Right</span>)
+    g.rect(<span class="n">0</span>, <span class="n">0</span>, <span class="t">Window</span>.width, <span class="t">Window</span>.height, color: <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>.with_alpha(@flash <span class="o">*</span> <span class="n">1.5</span>)) <span class="k">if</span> @flash <span class="o">&gt;</span> <span class="n">0</span>
+    <span class="k">if</span> @game.game_over?
+      g.rect(<span class="n">0</span>, <span class="n">0</span>, <span class="t">Window</span>.width, <span class="t">Window</span>.height, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.6</span>))
+      g.print(@game.won? ? <span class="s">&quot;YOU ESCAPED!&quot;</span> : <span class="s">&quot;YOU DIED&quot;</span>, <span class="t">Window</span>.width <span class="o">/</span> <span class="n">2</span>, <span class="t">Window</span>.height <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">30</span>, @game.won? ? <span class="t">Color</span><span class="t">::</span><span class="t">YELLOW</span> : <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>, scale: <span class="n">2</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+      g.print(<span class="s">&quot;press R for a new dungeon&quot;</span>, <span class="t">Window</span>.width <span class="o">/</span> <span class="n">2</span>, <span class="t">Window</span>.height <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">20</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 
-Eagle.run(RoguelikeApp, title: &quot;Eagle Roguelike&quot;, width: 60 * RoguelikeApp::CELL + 20, height: 34 * RoguelikeApp::CELL + 160)
-</code></pre><h3>dungeon.cr</h3><pre><code># Roguelike core: procedural dungeon, shadowcasting FOV, turn-based combat.
-# Independent of rendering so it can be unit tested.
-module Rogue
-  enum Tile : UInt8
-    Wall
-    Floor
-    Door
-    StairsDown
-    def walkable? : Bool; !wall?; end
-    def opaque? : Bool; wall? || door?; end
-  end
+<span class="t">Eagle</span>.run(<span class="t">RoguelikeApp</span>, title: <span class="s">&quot;Eagle Roguelike&quot;</span>, width: <span class="n">60</span> <span class="o">*</span> <span class="t">RoguelikeApp</span><span class="t">::</span><span class="t">CELL</span> <span class="o">+</span> <span class="n">20</span>, height: <span class="n">34</span> <span class="o">*</span> <span class="t">RoguelikeApp</span><span class="t">::</span><span class="t">CELL</span> <span class="o">+</span> <span class="n">160</span>)
+</code></pre>
+<h3>examples/roguelike/dungeon.cr</h3><pre class="code"><code class="lang-crystal"><span class="c"># Roguelike core: procedural dungeon, shadowcasting FOV, turn-based combat.</span>
+<span class="c"># Independent of rendering so it can be unit tested.</span>
+<span class="k">module</span> <span class="t">Rogue</span>
+  <span class="k">enum</span> <span class="t">Tile</span> : <span class="t">UInt8</span>
+    <span class="t">Wall</span>
+    <span class="t">Floor</span>
+    <span class="t">Door</span>
+    <span class="t">StairsDown</span>
+    <span class="k">def</span> <span class="m">walkable?</span> : <span class="t">Bool</span>; <span class="o">!</span>wall?; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">opaque?</span> : <span class="t">Bool</span>; wall? <span class="o">||</span> door?; <span class="k">end</span>
+  <span class="k">end</span>
 
-  record Room, x : Int32, y : Int32, w : Int32, h : Int32 do
-    def center : {Int32, Int32}; {x + w // 2, y + h // 2}; end
-    def intersects?(o : Room, pad = 1) : Bool
-      x - pad &lt; o.x + o.w &amp;&amp; x + w + pad &gt; o.x &amp;&amp; y - pad &lt; o.y + o.h &amp;&amp; y + h + pad &gt; o.y
-    end
-  end
+  record <span class="t">Room</span>, x : <span class="t">Int32</span>, y : <span class="t">Int32</span>, w : <span class="t">Int32</span>, h : <span class="t">Int32</span> <span class="k">do</span>
+    <span class="k">def</span> <span class="m">center</span> : {<span class="t">Int32</span>, <span class="t">Int32</span>}; {x <span class="o">+</span> w <span class="o">//</span> <span class="n">2</span>, y <span class="o">+</span> h <span class="o">//</span> <span class="n">2</span>}; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">intersects?</span>(o : <span class="t">Room</span>, pad <span class="o">=</span> <span class="n">1</span>) : <span class="t">Bool</span>
+      x <span class="o">-</span> pad <span class="o">&lt;</span> o.x <span class="o">+</span> o.w <span class="o">&amp;&amp;</span> x <span class="o">+</span> w <span class="o">+</span> pad <span class="o">&gt;</span> o.x <span class="o">&amp;&amp;</span> y <span class="o">-</span> pad <span class="o">&lt;</span> o.y <span class="o">+</span> o.h <span class="o">&amp;&amp;</span> y <span class="o">+</span> h <span class="o">+</span> pad <span class="o">&gt;</span> o.y
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  class Entity
-    property name : String
-    property x : Int32
-    property y : Int32
-    property hp : Int32
-    property max_hp : Int32
-    property attack : Int32
-    property defense : Int32
-    property glyph : Char
-    property? player : Bool
-    property xp_value : Int32 = 0
-    property sight : Int32 = 6
+  <span class="k">class</span> <span class="t">Entity</span>
+    property name : <span class="t">String</span>
+    property x : <span class="t">Int32</span>
+    property y : <span class="t">Int32</span>
+    property hp : <span class="t">Int32</span>
+    property max_hp : <span class="t">Int32</span>
+    property attack : <span class="t">Int32</span>
+    property defense : <span class="t">Int32</span>
+    property glyph : <span class="t">Char</span>
+    property? player : <span class="t">Bool</span>
+    property xp_value : <span class="t">Int32</span> <span class="o">=</span> <span class="n">0</span>
+    property sight : <span class="t">Int32</span> <span class="o">=</span> <span class="n">6</span>
 
-    def initialize(@name, @x, @y, @hp, @attack, @defense, @glyph, @player = false, @xp_value = 0)
-      @max_hp = @hp
-    end
+    <span class="k">def</span> <span class="m">initialize</span>(@name, @x, @y, @hp, @attack, @defense, @glyph, @player <span class="o">=</span> <span class="n">false</span>, @xp_value <span class="o">=</span> <span class="n">0</span>)
+      @max_hp <span class="o">=</span> @hp
+    <span class="k">end</span>
 
-    def alive? : Bool; @hp &gt; 0; end
-    def pos : {Int32, Int32}; {@x, @y}; end
-  end
+    <span class="k">def</span> <span class="m">alive?</span> : <span class="t">Bool</span>; @hp <span class="o">&gt;</span> <span class="n">0</span>; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">pos</span> : {<span class="t">Int32</span>, <span class="t">Int32</span>}; {@x, @y}; <span class="k">end</span>
+  <span class="k">end</span>
 
-  class Item
-    enum Kind
-      Potion
-      Gold
-      Sword
-      Shield
-    end
-    property kind : Kind
-    property x : Int32
-    property y : Int32
-    property value : Int32
-    def initialize(@kind, @x, @y, @value = 1); end
-    def glyph : Char
-      case @kind
-      in Kind::Potion then &#39;!&#39;
-      in Kind::Gold then &#39;$&#39;
-      in Kind::Sword then &#39;/&#39;
-      in Kind::Shield then &#39;]&#39;
-      end
-    end
-  end
+  <span class="k">class</span> <span class="t">Item</span>
+    <span class="k">enum</span> <span class="t">Kind</span>
+      <span class="t">Potion</span>
+      <span class="t">Gold</span>
+      <span class="t">Sword</span>
+      <span class="t">Shield</span>
+    <span class="k">end</span>
+    property kind : <span class="t">Kind</span>
+    property x : <span class="t">Int32</span>
+    property y : <span class="t">Int32</span>
+    property value : <span class="t">Int32</span>
+    <span class="k">def</span> <span class="m">initialize</span>(@kind, @x, @y, @value <span class="o">=</span> <span class="n">1</span>); <span class="k">end</span>
+    <span class="k">def</span> <span class="m">glyph</span> : <span class="t">Char</span>
+      <span class="k">case</span> @kind
+      <span class="k">in</span> <span class="t">Kind</span><span class="t">::</span><span class="t">Potion</span> <span class="k">then</span> <span class="s">&#39;!&#39;</span>
+      <span class="k">in</span> <span class="t">Kind</span><span class="t">::</span><span class="t">Gold</span> <span class="k">then</span> <span class="s">&#39;$&#39;</span>
+      <span class="k">in</span> <span class="t">Kind</span><span class="t">::</span><span class="t">Sword</span> <span class="k">then</span> <span class="s">&#39;/&#39;</span>
+      <span class="k">in</span> <span class="t">Kind</span><span class="t">::</span><span class="t">Shield</span> <span class="k">then</span> <span class="s">&#39;]&#39;</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  class Dungeon
-    getter width : Int32
-    getter height : Int32
-    getter tiles : Array(Tile)
-    getter rooms = [] of Room
-    getter explored : Array(Bool)
-    getter visible : Array(Bool)
-    getter rng : Random
+  <span class="k">class</span> <span class="t">Dungeon</span>
+    getter width : <span class="t">Int32</span>
+    getter height : <span class="t">Int32</span>
+    getter tiles : <span class="t">Array</span>(<span class="t">Tile</span>)
+    getter rooms <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Room</span>
+    getter explored : <span class="t">Array</span>(<span class="t">Bool</span>)
+    getter visible : <span class="t">Array</span>(<span class="t">Bool</span>)
+    getter rng : <span class="t">Random</span>
 
-    def initialize(@width, @height, seed : Int32 = 1, room_attempts = 40)
-      @rng = Random.new(seed)
-      @tiles = Array(Tile).new(@width * @height, Tile::Wall)
-      @explored = Array(Bool).new(@width * @height, false)
-      @visible = Array(Bool).new(@width * @height, false)
+    <span class="k">def</span> <span class="m">initialize</span>(@width, @height, seed : <span class="t">Int32</span> <span class="o">=</span> <span class="n">1</span>, room_attempts <span class="o">=</span> <span class="n">40</span>)
+      @rng <span class="o">=</span> <span class="t">Random</span>.new(seed)
+      @tiles <span class="o">=</span> <span class="t">Array</span>(<span class="t">Tile</span>).new(@width <span class="o">*</span> @height, <span class="t">Tile</span><span class="t">::</span><span class="t">Wall</span>)
+      @explored <span class="o">=</span> <span class="t">Array</span>(<span class="t">Bool</span>).new(@width <span class="o">*</span> @height, <span class="n">false</span>)
+      @visible <span class="o">=</span> <span class="t">Array</span>(<span class="t">Bool</span>).new(@width <span class="o">*</span> @height, <span class="n">false</span>)
       generate(room_attempts)
-    end
+    <span class="k">end</span>
 
-    def [](x : Int32, y : Int32) : Tile
-      in_bounds?(x, y) ? @tiles[y * @width + x] : Tile::Wall
-    end
+    <span class="k">def</span> <span class="m">[]</span>(x : <span class="t">Int32</span>, y : <span class="t">Int32</span>) : <span class="t">Tile</span>
+      in_bounds?(x, y) ? @tiles[y <span class="o">*</span> @width <span class="o">+</span> x] : <span class="t">Tile</span><span class="t">::</span><span class="t">Wall</span>
+    <span class="k">end</span>
 
-    def []=(x : Int32, y : Int32, t : Tile); @tiles[y * @width + x] = t; end
-    def in_bounds?(x, y) : Bool; x &gt;= 0 &amp;&amp; y &gt;= 0 &amp;&amp; x &lt; @width &amp;&amp; y &lt; @height; end
-    def walkable?(x, y) : Bool; self[x, y].walkable?; end
-    def visible?(x, y) : Bool; in_bounds?(x, y) &amp;&amp; @visible[y * @width + x]; end
-    def explored?(x, y) : Bool; in_bounds?(x, y) &amp;&amp; @explored[y * @width + x]; end
+    <span class="k">def</span> <span class="m">[]=</span>(x : <span class="t">Int32</span>, y : <span class="t">Int32</span>, t : <span class="t">Tile</span>); @tiles[y <span class="o">*</span> @width <span class="o">+</span> x] <span class="o">=</span> t; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">in_bounds?</span>(x, y) : <span class="t">Bool</span>; x <span class="o">&gt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> y <span class="o">&gt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> x <span class="o">&lt;</span> @width <span class="o">&amp;&amp;</span> y <span class="o">&lt;</span> @height; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">walkable?</span>(x, y) : <span class="t">Bool</span>; <span class="k">self</span>[x, y].walkable?; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">visible?</span>(x, y) : <span class="t">Bool</span>; in_bounds?(x, y) <span class="o">&amp;&amp;</span> @visible[y <span class="o">*</span> @width <span class="o">+</span> x]; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">explored?</span>(x, y) : <span class="t">Bool</span>; in_bounds?(x, y) <span class="o">&amp;&amp;</span> @explored[y <span class="o">*</span> @width <span class="o">+</span> x]; <span class="k">end</span>
 
-    private def generate(attempts)
-      attempts.times do
-        w = @rng.rand(4..10); h = @rng.rand(3..7)
-        x = @rng.rand(1..(@width - w - 2)); y = @rng.rand(1..(@height - h - 2))
-        room = Room.new(x, y, w, h)
-        next if @rooms.any? { |r| r.intersects?(room) }
+    <span class="k">private</span> <span class="k">def</span> <span class="m">generate</span>(attempts)
+      attempts.times <span class="k">do</span>
+        w <span class="o">=</span> @rng.rand(<span class="n">4</span>..<span class="n">10</span>); h <span class="o">=</span> @rng.rand(<span class="n">3</span>..<span class="n">7</span>)
+        x <span class="o">=</span> @rng.rand(<span class="n">1</span>..(@width <span class="o">-</span> w <span class="o">-</span> <span class="n">2</span>)); y <span class="o">=</span> @rng.rand(<span class="n">1</span>..(@height <span class="o">-</span> h <span class="o">-</span> <span class="n">2</span>))
+        room <span class="o">=</span> <span class="t">Room</span>.new(x, y, w, h)
+        <span class="k">next</span> <span class="k">if</span> @rooms.any? { <span class="o">|</span>r<span class="o">|</span> r.intersects?(room) }
         carve(room)
-        if last = @rooms.last?
+        <span class="k">if</span> last <span class="o">=</span> @rooms.last?
           corridor(last.center, room.center)
-        end
-        @rooms &lt;&lt; room
-      end
-      # doors where corridors meet room walls, stairs in the last room
-      cx, cy = @rooms.last.center
-      self[cx, cy] = Tile::StairsDown
+        <span class="k">end</span>
+        @rooms <span class="o">&lt;&lt;</span> room
+      <span class="k">end</span>
+      <span class="c"># doors where corridors meet room walls, stairs in the last room</span>
+      cx, cy <span class="o">=</span> @rooms.last.center
+      <span class="k">self</span>[cx, cy] <span class="o">=</span> <span class="t">Tile</span><span class="t">::</span><span class="t">StairsDown</span>
       place_doors
-    end
+    <span class="k">end</span>
 
-    private def carve(r : Room)
-      (r.y...r.y + r.h).each { |yy| (r.x...r.x + r.w).each { |xx| self[xx, yy] = Tile::Floor } }
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">carve</span>(r : <span class="t">Room</span>)
+      (r.y...r.y <span class="o">+</span> r.h).each { <span class="o">|</span>yy<span class="o">|</span> (r.x...r.x <span class="o">+</span> r.w).each { <span class="o">|</span>xx<span class="o">|</span> <span class="k">self</span>[xx, yy] <span class="o">=</span> <span class="t">Tile</span><span class="t">::</span><span class="t">Floor</span> } }
+    <span class="k">end</span>
 
-    private def corridor(a, b)
-      x, y = a
-      tx, ty = b
-      if @rng.rand &lt; 0.5
-        until x == tx; self[x, y] = Tile::Floor if self[x, y].wall?; x += x &lt; tx ? 1 : -1; end
-        until y == ty; self[x, y] = Tile::Floor if self[x, y].wall?; y += y &lt; ty ? 1 : -1; end
-      else
-        until y == ty; self[x, y] = Tile::Floor if self[x, y].wall?; y += y &lt; ty ? 1 : -1; end
-        until x == tx; self[x, y] = Tile::Floor if self[x, y].wall?; x += x &lt; tx ? 1 : -1; end
-      end
-      self[x, y] = Tile::Floor if self[x, y].wall?
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">corridor</span>(a, b)
+      x, y <span class="o">=</span> a
+      tx, ty <span class="o">=</span> b
+      <span class="k">if</span> @rng.rand <span class="o">&lt;</span> <span class="n">0.5</span>
+        <span class="k">until</span> x <span class="o">==</span> tx; <span class="k">self</span>[x, y] <span class="o">=</span> <span class="t">Tile</span><span class="t">::</span><span class="t">Floor</span> <span class="k">if</span> <span class="k">self</span>[x, y].wall?; x <span class="o">+=</span> x <span class="o">&lt;</span> tx ? <span class="n">1</span> : <span class="n">-1</span>; <span class="k">end</span>
+        <span class="k">until</span> y <span class="o">==</span> ty; <span class="k">self</span>[x, y] <span class="o">=</span> <span class="t">Tile</span><span class="t">::</span><span class="t">Floor</span> <span class="k">if</span> <span class="k">self</span>[x, y].wall?; y <span class="o">+=</span> y <span class="o">&lt;</span> ty ? <span class="n">1</span> : <span class="n">-1</span>; <span class="k">end</span>
+      <span class="k">else</span>
+        <span class="k">until</span> y <span class="o">==</span> ty; <span class="k">self</span>[x, y] <span class="o">=</span> <span class="t">Tile</span><span class="t">::</span><span class="t">Floor</span> <span class="k">if</span> <span class="k">self</span>[x, y].wall?; y <span class="o">+=</span> y <span class="o">&lt;</span> ty ? <span class="n">1</span> : <span class="n">-1</span>; <span class="k">end</span>
+        <span class="k">until</span> x <span class="o">==</span> tx; <span class="k">self</span>[x, y] <span class="o">=</span> <span class="t">Tile</span><span class="t">::</span><span class="t">Floor</span> <span class="k">if</span> <span class="k">self</span>[x, y].wall?; x <span class="o">+=</span> x <span class="o">&lt;</span> tx ? <span class="n">1</span> : <span class="n">-1</span>; <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="k">self</span>[x, y] <span class="o">=</span> <span class="t">Tile</span><span class="t">::</span><span class="t">Floor</span> <span class="k">if</span> <span class="k">self</span>[x, y].wall?
+    <span class="k">end</span>
 
-    private def place_doors
-      @rooms.each do |r|
-        # scan the room&#39;s outline for corridor openings
-        (r.x - 1..r.x + r.w).each do |xx|
-          [r.y - 1, r.y + r.h].each do |yy|
-            self[xx, yy] = Tile::Door if self[xx, yy].floor? &amp;&amp; corridor_cell?(xx, yy) &amp;&amp; @rng.rand &lt; 0.6
-          end
-        end
-        (r.y - 1..r.y + r.h).each do |yy|
-          [r.x - 1, r.x + r.w].each do |xx|
-            self[xx, yy] = Tile::Door if self[xx, yy].floor? &amp;&amp; corridor_cell?(xx, yy) &amp;&amp; @rng.rand &lt; 0.6
-          end
-        end
-      end
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">place_doors</span>
+      @rooms.each <span class="k">do</span> <span class="o">|</span>r<span class="o">|</span>
+        <span class="c"># scan the room&#39;s outline for corridor openings</span>
+        (r.x <span class="o">-</span> <span class="n">1</span>..r.x <span class="o">+</span> r.w).each <span class="k">do</span> <span class="o">|</span>xx<span class="o">|</span>
+          [r.y <span class="o">-</span> <span class="n">1</span>, r.y <span class="o">+</span> r.h].each <span class="k">do</span> <span class="o">|</span>yy<span class="o">|</span>
+            <span class="k">self</span>[xx, yy] <span class="o">=</span> <span class="t">Tile</span><span class="t">::</span><span class="t">Door</span> <span class="k">if</span> <span class="k">self</span>[xx, yy].floor? <span class="o">&amp;&amp;</span> corridor_cell?(xx, yy) <span class="o">&amp;&amp;</span> @rng.rand <span class="o">&lt;</span> <span class="n">0.6</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+        (r.y <span class="o">-</span> <span class="n">1</span>..r.y <span class="o">+</span> r.h).each <span class="k">do</span> <span class="o">|</span>yy<span class="o">|</span>
+          [r.x <span class="o">-</span> <span class="n">1</span>, r.x <span class="o">+</span> r.w].each <span class="k">do</span> <span class="o">|</span>xx<span class="o">|</span>
+            <span class="k">self</span>[xx, yy] <span class="o">=</span> <span class="t">Tile</span><span class="t">::</span><span class="t">Door</span> <span class="k">if</span> <span class="k">self</span>[xx, yy].floor? <span class="o">&amp;&amp;</span> corridor_cell?(xx, yy) <span class="o">&amp;&amp;</span> @rng.rand <span class="o">&lt;</span> <span class="n">0.6</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
 
-    private def corridor_cell?(x, y) : Bool
-      h = self[x - 1, y].wall? &amp;&amp; self[x + 1, y].wall?
-      v = self[x, y - 1].wall? &amp;&amp; self[x, y + 1].wall?
-      h || v
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">corridor_cell?</span>(x, y) : <span class="t">Bool</span>
+      h <span class="o">=</span> <span class="k">self</span>[x <span class="o">-</span> <span class="n">1</span>, y].wall? <span class="o">&amp;&amp;</span> <span class="k">self</span>[x <span class="o">+</span> <span class="n">1</span>, y].wall?
+      v <span class="o">=</span> <span class="k">self</span>[x, y <span class="o">-</span> <span class="n">1</span>].wall? <span class="o">&amp;&amp;</span> <span class="k">self</span>[x, y <span class="o">+</span> <span class="n">1</span>].wall?
+      h <span class="o">||</span> v
+    <span class="k">end</span>
 
-    # All walkable tiles reachable from (x, y) via 4-neighbour moves.
-    def reachable_from(x, y) : Set({Int32, Int32})
-      seen = Set({Int32, Int32}).new
-      stack = [{x, y}]
-      while p = stack.pop?
-        next if seen.includes?(p)
-        seen &lt;&lt; p
-        px, py = p
-        [{1, 0}, {-1, 0}, {0, 1}, {0, -1}].each do |(dx, dy)|
-          nx = px + dx; ny = py + dy
-          stack &lt;&lt; {nx, ny} if walkable?(nx, ny) &amp;&amp; !seen.includes?({nx, ny})
-        end
-      end
+    <span class="c"># All walkable tiles reachable from (x, y) via 4-neighbour moves.</span>
+    <span class="k">def</span> <span class="m">reachable_from</span>(x, y) : <span class="t">Set</span>({<span class="t">Int32</span>, <span class="t">Int32</span>})
+      seen <span class="o">=</span> <span class="t">Set</span>({<span class="t">Int32</span>, <span class="t">Int32</span>}).new
+      stack <span class="o">=</span> [{x, y}]
+      <span class="k">while</span> p <span class="o">=</span> stack.pop?
+        <span class="k">next</span> <span class="k">if</span> seen.includes?(p)
+        seen <span class="o">&lt;&lt;</span> p
+        px, py <span class="o">=</span> p
+        [{<span class="n">1</span>, <span class="n">0</span>}, {<span class="n">-1</span>, <span class="n">0</span>}, {<span class="n">0</span>, <span class="n">1</span>}, {<span class="n">0</span>, <span class="n">-1</span>}].each <span class="k">do</span> <span class="o">|</span>(dx, dy)<span class="o">|</span>
+          nx <span class="o">=</span> px <span class="o">+</span> dx; ny <span class="o">=</span> py <span class="o">+</span> dy
+          stack <span class="o">&lt;&lt;</span> {nx, ny} <span class="k">if</span> walkable?(nx, ny) <span class="o">&amp;&amp;</span> <span class="o">!</span>seen.includes?({nx, ny})
+        <span class="k">end</span>
+      <span class="k">end</span>
       seen
-    end
+    <span class="k">end</span>
 
-    def walkable_count : Int32; @tiles.count(&amp;.walkable?); end
+    <span class="k">def</span> <span class="m">walkable_count</span> : <span class="t">Int32</span>; @tiles.count(<span class="o">&amp;</span>.walkable?); <span class="k">end</span>
 
-    # Symmetric shadowcasting FOV (recursive, 8 octants).
-    def compute_fov(ox, oy, radius) : Nil
-      @visible.fill(false)
+    <span class="c"># Symmetric shadowcasting FOV (recursive, 8 octants).</span>
+    <span class="k">def</span> <span class="m">compute_fov</span>(ox, oy, radius) : <span class="t">Nil</span>
+      @visible.fill(<span class="n">false</span>)
       mark_visible(ox, oy)
-      8.times { |oct| cast_light(ox, oy, radius, 1, 1.0, 0.0, oct) }
-    end
+      <span class="n">8</span>.times { <span class="o">|</span>oct<span class="o">|</span> cast_light(ox, oy, radius, <span class="n">1</span>, <span class="n">1.0</span>, <span class="n">0.0</span>, oct) }
+    <span class="k">end</span>
 
-    private def mark_visible(x, y)
-      return unless in_bounds?(x, y)
-      @visible[y * @width + x] = true
-      @explored[y * @width + x] = true
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">mark_visible</span>(x, y)
+      <span class="k">return</span> <span class="k">unless</span> in_bounds?(x, y)
+      @visible[y <span class="o">*</span> @width <span class="o">+</span> x] <span class="o">=</span> <span class="n">true</span>
+      @explored[y <span class="o">*</span> @width <span class="o">+</span> x] <span class="o">=</span> <span class="n">true</span>
+    <span class="k">end</span>
 
-    MULT = [[1, 0, 0, -1, -1, 0, 0, 1], [0, 1, -1, 0, 0, -1, 1, 0], [0, 1, 1, 0, 0, -1, -1, 0], [1, 0, 0, 1, -1, 0, 0, -1]]
+    <span class="t">MULT</span> <span class="o">=</span> [[<span class="n">1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-1</span>, <span class="n">-1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">1</span>], [<span class="n">0</span>, <span class="n">1</span>, <span class="n">-1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-1</span>, <span class="n">1</span>, <span class="n">0</span>], [<span class="n">0</span>, <span class="n">1</span>, <span class="n">1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-1</span>, <span class="n">-1</span>, <span class="n">0</span>], [<span class="n">1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">1</span>, <span class="n">-1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-1</span>]]
 
-    private def cast_light(cx, cy, radius, row, start : Float64, finish : Float64, oct)
-      return if start &lt; finish
-      xx = MULT[0][oct]; xy = MULT[1][oct]; yx = MULT[2][oct]; yy = MULT[3][oct]
-      r2 = radius * radius
-      (row..radius).each do |j|
-        dx = -j - 1; dy = -j
-        blocked = false
-        new_start = start
-        while dx &lt;= 0
-          dx += 1
-          x = cx + dx * xx + dy * xy
-          y = cy + dx * yx + dy * yy
-          l_slope = (dx - 0.5) / (dy + 0.5)
-          r_slope = (dx + 0.5) / (dy - 0.5)
-          if start &lt; r_slope
-            next
-          elsif finish &gt; l_slope
-            break
-          end
-          mark_visible(x, y) if dx * dx + dy * dy &lt; r2
-          if blocked
-            if self[x, y].opaque?
-              new_start = r_slope
-              next
-            else
-              blocked = false
-              start = new_start
-            end
-          elsif self[x, y].opaque? &amp;&amp; j &lt; radius
-            blocked = true
-            cast_light(cx, cy, radius, j + 1, start, l_slope, oct)
-            new_start = r_slope
-          end
-        end
-        break if blocked
-      end
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">cast_light</span>(cx, cy, radius, row, start : <span class="t">Float64</span>, finish : <span class="t">Float64</span>, oct)
+      <span class="k">return</span> <span class="k">if</span> start <span class="o">&lt;</span> finish
+      xx <span class="o">=</span> <span class="t">MULT</span>[<span class="n">0</span>][oct]; xy <span class="o">=</span> <span class="t">MULT</span>[<span class="n">1</span>][oct]; yx <span class="o">=</span> <span class="t">MULT</span>[<span class="n">2</span>][oct]; yy <span class="o">=</span> <span class="t">MULT</span>[<span class="n">3</span>][oct]
+      r2 <span class="o">=</span> radius <span class="o">*</span> radius
+      (row..radius).each <span class="k">do</span> <span class="o">|</span>j<span class="o">|</span>
+        dx <span class="o">=</span> <span class="o">-</span>j <span class="o">-</span> <span class="n">1</span>; dy <span class="o">=</span> <span class="o">-</span>j
+        blocked <span class="o">=</span> <span class="n">false</span>
+        new_start <span class="o">=</span> start
+        <span class="k">while</span> dx <span class="o">&lt;=</span> <span class="n">0</span>
+          dx <span class="o">+=</span> <span class="n">1</span>
+          x <span class="o">=</span> cx <span class="o">+</span> dx <span class="o">*</span> xx <span class="o">+</span> dy <span class="o">*</span> xy
+          y <span class="o">=</span> cy <span class="o">+</span> dx <span class="o">*</span> yx <span class="o">+</span> dy <span class="o">*</span> yy
+          l_slope <span class="o">=</span> (dx <span class="o">-</span> <span class="n">0.5</span>) <span class="o">/</span> (dy <span class="o">+</span> <span class="n">0.5</span>)
+          r_slope <span class="o">=</span> (dx <span class="o">+</span> <span class="n">0.5</span>) <span class="o">/</span> (dy <span class="o">-</span> <span class="n">0.5</span>)
+          <span class="k">if</span> start <span class="o">&lt;</span> r_slope
+            <span class="k">next</span>
+          <span class="k">elsif</span> finish <span class="o">&gt;</span> l_slope
+            <span class="k">break</span>
+          <span class="k">end</span>
+          mark_visible(x, y) <span class="k">if</span> dx <span class="o">*</span> dx <span class="o">+</span> dy <span class="o">*</span> dy <span class="o">&lt;</span> r2
+          <span class="k">if</span> blocked
+            <span class="k">if</span> <span class="k">self</span>[x, y].opaque?
+              new_start <span class="o">=</span> r_slope
+              <span class="k">next</span>
+            <span class="k">else</span>
+              blocked <span class="o">=</span> <span class="n">false</span>
+              start <span class="o">=</span> new_start
+            <span class="k">end</span>
+          <span class="k">elsif</span> <span class="k">self</span>[x, y].opaque? <span class="o">&amp;&amp;</span> j <span class="o">&lt;</span> radius
+            blocked <span class="o">=</span> <span class="n">true</span>
+            cast_light(cx, cy, radius, j <span class="o">+</span> <span class="n">1</span>, start, l_slope, oct)
+            new_start <span class="o">=</span> r_slope
+          <span class="k">end</span>
+        <span class="k">end</span>
+        <span class="k">break</span> <span class="k">if</span> blocked
+      <span class="k">end</span>
+    <span class="k">end</span>
 
-    # Simple BFS path (4-neighbour) avoiding `blocked` cells; returns the next step or nil.
-    def next_step(from : {Int32, Int32}, to : {Int32, Int32}, blocked : Set({Int32, Int32}) = Set({Int32, Int32}).new) : {Int32, Int32}?
-      return nil if from == to
-      prev = {} of {Int32, Int32} =&gt; {Int32, Int32}
-      queue = Deque{from}
-      seen = Set{from}
-      found = false
-      while (cur = queue.shift?)
-        if cur == to
-          found = true
-          break
-        end
-        cx, cy = cur
-        [{1, 0}, {-1, 0}, {0, 1}, {0, -1}].each do |(dx, dy)|
-          n = {cx + dx, cy + dy}
-          next if seen.includes?(n) || !walkable?(n[0], n[1]) || (blocked.includes?(n) &amp;&amp; n != to)
-          seen &lt;&lt; n
-          prev[n] = cur
-          queue &lt;&lt; n
-        end
-        break if seen.size &gt; 4000
-      end
-      return nil unless found
-      step = to
-      while prev[step]? != from
-        step = prev[step]? || return nil
-      end
+    <span class="c"># Simple BFS path (4-neighbour) avoiding `blocked` cells; returns the next step or nil.</span>
+    <span class="k">def</span> <span class="m">next_step</span>(from : {<span class="t">Int32</span>, <span class="t">Int32</span>}, to : {<span class="t">Int32</span>, <span class="t">Int32</span>}, blocked : <span class="t">Set</span>({<span class="t">Int32</span>, <span class="t">Int32</span>}) <span class="o">=</span> <span class="t">Set</span>({<span class="t">Int32</span>, <span class="t">Int32</span>}).new) : {<span class="t">Int32</span>, <span class="t">Int32</span>}?
+      <span class="k">return</span> <span class="n">nil</span> <span class="k">if</span> from <span class="o">==</span> to
+      prev <span class="o">=</span> {} <span class="k">of</span> {<span class="t">Int32</span>, <span class="t">Int32</span>} <span class="o">=&gt;</span> {<span class="t">Int32</span>, <span class="t">Int32</span>}
+      queue <span class="o">=</span> <span class="t">Deque</span>{from}
+      seen <span class="o">=</span> <span class="t">Set</span>{from}
+      found <span class="o">=</span> <span class="n">false</span>
+      <span class="k">while</span> (cur <span class="o">=</span> queue.shift?)
+        <span class="k">if</span> cur <span class="o">==</span> to
+          found <span class="o">=</span> <span class="n">true</span>
+          <span class="k">break</span>
+        <span class="k">end</span>
+        cx, cy <span class="o">=</span> cur
+        [{<span class="n">1</span>, <span class="n">0</span>}, {<span class="n">-1</span>, <span class="n">0</span>}, {<span class="n">0</span>, <span class="n">1</span>}, {<span class="n">0</span>, <span class="n">-1</span>}].each <span class="k">do</span> <span class="o">|</span>(dx, dy)<span class="o">|</span>
+          n <span class="o">=</span> {cx <span class="o">+</span> dx, cy <span class="o">+</span> dy}
+          <span class="k">next</span> <span class="k">if</span> seen.includes?(n) <span class="o">||</span> <span class="o">!</span>walkable?(n[<span class="n">0</span>], n[<span class="n">1</span>]) <span class="o">||</span> (blocked.includes?(n) <span class="o">&amp;&amp;</span> n <span class="o">!=</span> to)
+          seen <span class="o">&lt;&lt;</span> n
+          prev[n] <span class="o">=</span> cur
+          queue <span class="o">&lt;&lt;</span> n
+        <span class="k">end</span>
+        <span class="k">break</span> <span class="k">if</span> seen.size <span class="o">&gt;</span> <span class="n">4000</span>
+      <span class="k">end</span>
+      <span class="k">return</span> <span class="n">nil</span> <span class="k">unless</span> found
+      step <span class="o">=</span> to
+      <span class="k">while</span> prev[step]? <span class="o">!=</span> from
+        step <span class="o">=</span> prev[step]? <span class="o">||</span> <span class="k">return</span> <span class="n">nil</span>
+      <span class="k">end</span>
       step
-    end
-  end
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  class Game
-    getter dungeon : Dungeon
-    getter player : Entity
-    getter monsters = [] of Entity
-    getter items = [] of Item
-    getter messages = [] of String
-    getter level = 1
-    getter turns = 0
-    getter gold = 0
-    getter xp = 0
-    getter char_level = 1
-    getter? game_over = false
-    getter? won = false
-    getter rng : Random
-    property seed : Int32
+  <span class="k">class</span> <span class="t">Game</span>
+    getter dungeon : <span class="t">Dungeon</span>
+    getter player : <span class="t">Entity</span>
+    getter monsters <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Entity</span>
+    getter items <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Item</span>
+    getter messages <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">String</span>
+    getter level <span class="o">=</span> <span class="n">1</span>
+    getter turns <span class="o">=</span> <span class="n">0</span>
+    getter gold <span class="o">=</span> <span class="n">0</span>
+    getter xp <span class="o">=</span> <span class="n">0</span>
+    getter char_level <span class="o">=</span> <span class="n">1</span>
+    getter? game_over <span class="o">=</span> <span class="n">false</span>
+    getter? won <span class="o">=</span> <span class="n">false</span>
+    getter rng : <span class="t">Random</span>
+    property seed : <span class="t">Int32</span>
 
-    MAX_LEVEL = 5
+    <span class="t">MAX_LEVEL</span> <span class="o">=</span> <span class="n">5</span>
 
-    def initialize(@seed : Int32 = 1, width = 60, height = 34)
-      @rng = Random.new(@seed)
-      @width = width; @height = height
-      @dungeon = Dungeon.new(width, height, @seed)
-      sx, sy = @dungeon.rooms.first.center
-      @player = Entity.new(&quot;You&quot;, sx, sy, 20, 4, 1, &#39;@&#39;, true)
+    <span class="k">def</span> <span class="m">initialize</span>(@seed : <span class="t">Int32</span> <span class="o">=</span> <span class="n">1</span>, width <span class="o">=</span> <span class="n">60</span>, height <span class="o">=</span> <span class="n">34</span>)
+      @rng <span class="o">=</span> <span class="t">Random</span>.new(@seed)
+      @width <span class="o">=</span> width; @height <span class="o">=</span> height
+      @dungeon <span class="o">=</span> <span class="t">Dungeon</span>.new(width, height, @seed)
+      sx, sy <span class="o">=</span> @dungeon.rooms.first.center
+      @player <span class="o">=</span> <span class="t">Entity</span>.new(<span class="s">&quot;You&quot;</span>, sx, sy, <span class="n">20</span>, <span class="n">4</span>, <span class="n">1</span>, <span class="s">&#39;@&#39;</span>, <span class="n">true</span>)
       populate
-      log(&quot;Welcome to the dungeon. Find the stairs (&gt;) on level #{MAX_LEVEL}.&quot;)
+      log(<span class="s">&quot;Welcome to the dungeon. Find the stairs (&gt;) on level </span><span class="i">#{</span><span class="t">MAX_LEVEL</span><span class="i">}</span><span class="s">.&quot;</span>)
       @dungeon.compute_fov(@player.x, @player.y, @player.sight)
-    end
+    <span class="k">end</span>
 
-    def log(msg : String)
-      @messages &lt;&lt; msg
-      @messages.shift if @messages.size &gt; 50
-    end
+    <span class="k">def</span> <span class="m">log</span>(msg : <span class="t">String</span>)
+      @messages <span class="o">&lt;&lt;</span> msg
+      @messages.shift <span class="k">if</span> @messages.size <span class="o">&gt;</span> <span class="n">50</span>
+    <span class="k">end</span>
 
-    private def populate
+    <span class="k">private</span> <span class="k">def</span> <span class="m">populate</span>
       @monsters.clear; @items.clear
-      @dungeon.rooms.each_with_index do |room, i|
-        next if i == 0
-        count = @rng.rand(0..(1 + @level // 2))
-        count.times do
-          x = @rng.rand(room.x...room.x + room.w); y = @rng.rand(room.y...room.y + room.h)
-          next if @monsters.any? { |m| m.x == x &amp;&amp; m.y == y }
-          kind = @rng.rand(0..2) + (@level &gt;= 3 ? 1 : 0)
-          m = case kind
-              when 0 then Entity.new(&quot;rat&quot;, x, y, 4, 2, 0, &#39;r&#39;, xp_value: 3)
-              when 1 then Entity.new(&quot;goblin&quot;, x, y, 7, 3, 1, &#39;g&#39;, xp_value: 6)
-              when 2 then Entity.new(&quot;orc&quot;, x, y, 12, 5, 1, &#39;o&#39;, xp_value: 12)
-              else Entity.new(&quot;troll&quot;, x, y, 20, 7, 2, &#39;T&#39;, xp_value: 25)
-              end
-          @monsters &lt;&lt; m
-        end
-        if @rng.rand &lt; 0.7
-          x = @rng.rand(room.x...room.x + room.w); y = @rng.rand(room.y...room.y + room.h)
-          r = @rng.rand
-          @items &lt;&lt; (r &lt; 0.45 ? Item.new(Item::Kind::Gold, x, y, @rng.rand(5..25)) : r &lt; 0.85 ? Item.new(Item::Kind::Potion, x, y, 8) : r &lt; 0.93 ? Item.new(Item::Kind::Sword, x, y, 1) : Item.new(Item::Kind::Shield, x, y, 1))
-        end
-      end
-    end
+      @dungeon.rooms.each_with_index <span class="k">do</span> <span class="o">|</span>room, i<span class="o">|</span>
+        <span class="k">next</span> <span class="k">if</span> i <span class="o">==</span> <span class="n">0</span>
+        count <span class="o">=</span> @rng.rand(<span class="n">0</span>..(<span class="n">1</span> <span class="o">+</span> @level <span class="o">//</span> <span class="n">2</span>))
+        count.times <span class="k">do</span>
+          x <span class="o">=</span> @rng.rand(room.x...room.x <span class="o">+</span> room.w); y <span class="o">=</span> @rng.rand(room.y...room.y <span class="o">+</span> room.h)
+          <span class="k">next</span> <span class="k">if</span> @monsters.any? { <span class="o">|</span>m<span class="o">|</span> m.x <span class="o">==</span> x <span class="o">&amp;&amp;</span> m.y <span class="o">==</span> y }
+          kind <span class="o">=</span> @rng.rand(<span class="n">0</span>..<span class="n">2</span>) <span class="o">+</span> (@level <span class="o">&gt;=</span> <span class="n">3</span> ? <span class="n">1</span> : <span class="n">0</span>)
+          m <span class="o">=</span> <span class="k">case</span> kind
+              <span class="k">when</span> <span class="n">0</span> <span class="k">then</span> <span class="t">Entity</span>.new(<span class="s">&quot;rat&quot;</span>, x, y, <span class="n">4</span>, <span class="n">2</span>, <span class="n">0</span>, <span class="s">&#39;r&#39;</span>, xp_value: <span class="n">3</span>)
+              <span class="k">when</span> <span class="n">1</span> <span class="k">then</span> <span class="t">Entity</span>.new(<span class="s">&quot;goblin&quot;</span>, x, y, <span class="n">7</span>, <span class="n">3</span>, <span class="n">1</span>, <span class="s">&#39;g&#39;</span>, xp_value: <span class="n">6</span>)
+              <span class="k">when</span> <span class="n">2</span> <span class="k">then</span> <span class="t">Entity</span>.new(<span class="s">&quot;orc&quot;</span>, x, y, <span class="n">12</span>, <span class="n">5</span>, <span class="n">1</span>, <span class="s">&#39;o&#39;</span>, xp_value: <span class="n">12</span>)
+              <span class="k">else</span> <span class="t">Entity</span>.new(<span class="s">&quot;troll&quot;</span>, x, y, <span class="n">20</span>, <span class="n">7</span>, <span class="n">2</span>, <span class="s">&#39;T&#39;</span>, xp_value: <span class="n">25</span>)
+              <span class="k">end</span>
+          @monsters <span class="o">&lt;&lt;</span> m
+        <span class="k">end</span>
+        <span class="k">if</span> @rng.rand <span class="o">&lt;</span> <span class="n">0.7</span>
+          x <span class="o">=</span> @rng.rand(room.x...room.x <span class="o">+</span> room.w); y <span class="o">=</span> @rng.rand(room.y...room.y <span class="o">+</span> room.h)
+          r <span class="o">=</span> @rng.rand
+          @items <span class="o">&lt;&lt;</span> (r <span class="o">&lt;</span> <span class="n">0.45</span> ? <span class="t">Item</span>.new(<span class="t">Item</span><span class="t">::</span><span class="t">Kind</span><span class="t">::</span><span class="t">Gold</span>, x, y, @rng.rand(<span class="n">5</span>..<span class="n">25</span>)) : r <span class="o">&lt;</span> <span class="n">0.85</span> ? <span class="t">Item</span>.new(<span class="t">Item</span><span class="t">::</span><span class="t">Kind</span><span class="t">::</span><span class="t">Potion</span>, x, y, <span class="n">8</span>) : r <span class="o">&lt;</span> <span class="n">0.93</span> ? <span class="t">Item</span>.new(<span class="t">Item</span><span class="t">::</span><span class="t">Kind</span><span class="t">::</span><span class="t">Sword</span>, x, y, <span class="n">1</span>) : <span class="t">Item</span>.new(<span class="t">Item</span><span class="t">::</span><span class="t">Kind</span><span class="t">::</span><span class="t">Shield</span>, x, y, <span class="n">1</span>))
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
 
-    def monster_at(x, y) : Entity?; @monsters.find { |m| m.alive? &amp;&amp; m.x == x &amp;&amp; m.y == y }; end
-    def item_at(x, y) : Item?; @items.find { |i| i.x == x &amp;&amp; i.y == y }; end
+    <span class="k">def</span> <span class="m">monster_at</span>(x, y) : <span class="t">Entity</span>?; @monsters.find { <span class="o">|</span>m<span class="o">|</span> m.alive? <span class="o">&amp;&amp;</span> m.x <span class="o">==</span> x <span class="o">&amp;&amp;</span> m.y <span class="o">==</span> y }; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">item_at</span>(x, y) : <span class="t">Item</span>?; @items.find { <span class="o">|</span>i<span class="o">|</span> i.x <span class="o">==</span> x <span class="o">&amp;&amp;</span> i.y <span class="o">==</span> y }; <span class="k">end</span>
 
-    # Player action: move/attack in a direction. Returns true if a turn passed.
-    def move_player(dx : Int32, dy : Int32) : Bool
-      return false if @game_over
-      nx = @player.x + dx; ny = @player.y + dy
-      if m = monster_at(nx, ny)
+    <span class="c"># Player action: move/attack in a direction. Returns true if a turn passed.</span>
+    <span class="k">def</span> <span class="m">move_player</span>(dx : <span class="t">Int32</span>, dy : <span class="t">Int32</span>) : <span class="t">Bool</span>
+      <span class="k">return</span> <span class="n">false</span> <span class="k">if</span> @game_over
+      nx <span class="o">=</span> @player.x <span class="o">+</span> dx; ny <span class="o">=</span> @player.y <span class="o">+</span> dy
+      <span class="k">if</span> m <span class="o">=</span> monster_at(nx, ny)
         attack(@player, m)
-      elsif @dungeon.walkable?(nx, ny)
-        @player.x = nx; @player.y = ny
+      <span class="k">elsif</span> @dungeon.walkable?(nx, ny)
+        @player.x <span class="o">=</span> nx; @player.y <span class="o">=</span> ny
         pick_up
-      else
-        return false
-      end
+      <span class="k">else</span>
+        <span class="k">return</span> <span class="n">false</span>
+      <span class="k">end</span>
       end_turn
-      true
-    end
+      <span class="n">true</span>
+    <span class="k">end</span>
 
-    def wait_turn : Nil
+    <span class="k">def</span> <span class="m">wait_turn</span> : <span class="t">Nil</span>
       end_turn
-    end
+    <span class="k">end</span>
 
-    def descend : Bool
-      return false unless @dungeon[@player.x, @player.y].stairs_down?
-      @level += 1
-      if @level &gt; MAX_LEVEL
-        @won = true; @game_over = true
-        log(&quot;You escape the dungeon with #{@gold} gold. You win!&quot;)
-        return true
-      end
-      @dungeon = Dungeon.new(@width, @height, @seed * 31 + @level)
-      sx, sy = @dungeon.rooms.first.center
-      @player.x = sx; @player.y = sy
+    <span class="k">def</span> <span class="m">descend</span> : <span class="t">Bool</span>
+      <span class="k">return</span> <span class="n">false</span> <span class="k">unless</span> @dungeon[@player.x, @player.y].stairs_down?
+      @level <span class="o">+=</span> <span class="n">1</span>
+      <span class="k">if</span> @level <span class="o">&gt;</span> <span class="t">MAX_LEVEL</span>
+        @won <span class="o">=</span> <span class="n">true</span>; @game_over <span class="o">=</span> <span class="n">true</span>
+        log(<span class="s">&quot;You escape the dungeon with </span><span class="i">#{</span>@gold<span class="i">}</span><span class="s"> gold. You win!&quot;</span>)
+        <span class="k">return</span> <span class="n">true</span>
+      <span class="k">end</span>
+      @dungeon <span class="o">=</span> <span class="t">Dungeon</span>.new(@width, @height, @seed <span class="o">*</span> <span class="n">31</span> <span class="o">+</span> @level)
+      sx, sy <span class="o">=</span> @dungeon.rooms.first.center
+      @player.x <span class="o">=</span> sx; @player.y <span class="o">=</span> sy
       populate
-      log(&quot;You descend to level #{@level}.&quot;)
+      log(<span class="s">&quot;You descend to level </span><span class="i">#{</span>@level<span class="i">}</span><span class="s">.&quot;</span>)
       @dungeon.compute_fov(@player.x, @player.y, @player.sight)
-      true
-    end
+      <span class="n">true</span>
+    <span class="k">end</span>
 
-    private def pick_up
-      if item = item_at(@player.x, @player.y)
+    <span class="k">private</span> <span class="k">def</span> <span class="m">pick_up</span>
+      <span class="k">if</span> item <span class="o">=</span> item_at(@player.x, @player.y)
         @items.delete(item)
-        case item.kind
-        in Item::Kind::Gold then @gold += item.value; log(&quot;You pick up #{item.value} gold.&quot;)
-        in Item::Kind::Potion
-          heal = Math.min(item.value, @player.max_hp - @player.hp)
-          @player.hp += heal
-          log(&quot;You drink a potion and heal #{heal}.&quot;)
-        in Item::Kind::Sword then @player.attack += 2; log(&quot;You found a sword! Attack +2.&quot;)
-        in Item::Kind::Shield then @player.defense += 1; log(&quot;You found a shield! Defense +1.&quot;)
-        end
-      end
-    end
+        <span class="k">case</span> item.kind
+        <span class="k">in</span> <span class="t">Item</span><span class="t">::</span><span class="t">Kind</span><span class="t">::</span><span class="t">Gold</span> <span class="k">then</span> @gold <span class="o">+=</span> item.value; log(<span class="s">&quot;You pick up </span><span class="i">#{</span>item.value<span class="i">}</span><span class="s"> gold.&quot;</span>)
+        <span class="k">in</span> <span class="t">Item</span><span class="t">::</span><span class="t">Kind</span><span class="t">::</span><span class="t">Potion</span>
+          heal <span class="o">=</span> <span class="t">Math</span>.min(item.value, @player.max_hp <span class="o">-</span> @player.hp)
+          @player.hp <span class="o">+=</span> heal
+          log(<span class="s">&quot;You drink a potion and heal </span><span class="i">#{</span>heal<span class="i">}</span><span class="s">.&quot;</span>)
+        <span class="k">in</span> <span class="t">Item</span><span class="t">::</span><span class="t">Kind</span><span class="t">::</span><span class="t">Sword</span> <span class="k">then</span> @player.attack <span class="o">+=</span> <span class="n">2</span>; log(<span class="s">&quot;You found a sword! Attack +2.&quot;</span>)
+        <span class="k">in</span> <span class="t">Item</span><span class="t">::</span><span class="t">Kind</span><span class="t">::</span><span class="t">Shield</span> <span class="k">then</span> @player.defense <span class="o">+=</span> <span class="n">1</span>; log(<span class="s">&quot;You found a shield! Defense +1.&quot;</span>)
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
 
-    def attack(a : Entity, d : Entity) : Nil
-      dmg = Math.max(0, a.attack + @rng.rand(0..2) - d.defense)
-      d.hp -= dmg
-      if a.player?
-        log(dmg &gt; 0 ? &quot;You hit the #{d.name} for #{dmg}.&quot; : &quot;You miss the #{d.name}.&quot;)
-        if !d.alive?
-          log(&quot;The #{d.name} dies.&quot;)
+    <span class="k">def</span> <span class="m">attack</span>(a : <span class="t">Entity</span>, d : <span class="t">Entity</span>) : <span class="t">Nil</span>
+      dmg <span class="o">=</span> <span class="t">Math</span>.max(<span class="n">0</span>, a.attack <span class="o">+</span> @rng.rand(<span class="n">0</span>..<span class="n">2</span>) <span class="o">-</span> d.defense)
+      d.hp <span class="o">-=</span> dmg
+      <span class="k">if</span> a.player?
+        log(dmg <span class="o">&gt;</span> <span class="n">0</span> ? <span class="s">&quot;You hit the </span><span class="i">#{</span>d.name<span class="i">}</span><span class="s"> for </span><span class="i">#{</span>dmg<span class="i">}</span><span class="s">.&quot;</span> : <span class="s">&quot;You miss the </span><span class="i">#{</span>d.name<span class="i">}</span><span class="s">.&quot;</span>)
+        <span class="k">if</span> <span class="o">!</span>d.alive?
+          log(<span class="s">&quot;The </span><span class="i">#{</span>d.name<span class="i">}</span><span class="s"> dies.&quot;</span>)
           gain_xp(d.xp_value)
-        end
-      else
-        log(dmg &gt; 0 ? &quot;The #{a.name} hits you for #{dmg}.&quot; : &quot;The #{a.name} misses.&quot;)
-        if !d.alive?
-          @game_over = true
-          log(&quot;You die on level #{@level} after #{@turns} turns.&quot;)
-        end
-      end
-    end
+        <span class="k">end</span>
+      <span class="k">else</span>
+        log(dmg <span class="o">&gt;</span> <span class="n">0</span> ? <span class="s">&quot;The </span><span class="i">#{</span>a.name<span class="i">}</span><span class="s"> hits you for </span><span class="i">#{</span>dmg<span class="i">}</span><span class="s">.&quot;</span> : <span class="s">&quot;The </span><span class="i">#{</span>a.name<span class="i">}</span><span class="s"> misses.&quot;</span>)
+        <span class="k">if</span> <span class="o">!</span>d.alive?
+          @game_over <span class="o">=</span> <span class="n">true</span>
+          log(<span class="s">&quot;You die on level </span><span class="i">#{</span>@level<span class="i">}</span><span class="s"> after </span><span class="i">#{</span>@turns<span class="i">}</span><span class="s"> turns.&quot;</span>)
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
 
-    private def gain_xp(n)
-      @xp += n
-      while @xp &gt;= @char_level * 10
-        @xp -= @char_level * 10
-        @char_level += 1
-        @player.max_hp += 5; @player.hp = @player.max_hp; @player.attack += 1
-        log(&quot;You reach level #{@char_level}!&quot;)
-      end
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">gain_xp</span>(n)
+      @xp <span class="o">+=</span> n
+      <span class="k">while</span> @xp <span class="o">&gt;=</span> @char_level <span class="o">*</span> <span class="n">10</span>
+        @xp <span class="o">-=</span> @char_level <span class="o">*</span> <span class="n">10</span>
+        @char_level <span class="o">+=</span> <span class="n">1</span>
+        @player.max_hp <span class="o">+=</span> <span class="n">5</span>; @player.hp <span class="o">=</span> @player.max_hp; @player.attack <span class="o">+=</span> <span class="n">1</span>
+        log(<span class="s">&quot;You reach level </span><span class="i">#{</span>@char_level<span class="i">}</span><span class="s">!&quot;</span>)
+      <span class="k">end</span>
+    <span class="k">end</span>
 
-    private def end_turn
-      @turns += 1
-      @monsters.reject! { |m| !m.alive? }
+    <span class="k">private</span> <span class="k">def</span> <span class="m">end_turn</span>
+      @turns <span class="o">+=</span> <span class="n">1</span>
+      @monsters.reject! { <span class="o">|</span>m<span class="o">|</span> <span class="o">!</span>m.alive? }
       @dungeon.compute_fov(@player.x, @player.y, @player.sight)
-      occupied = @monsters.map(&amp;.pos).to_set
-      @monsters.each do |m|
-        next if @game_over
-        dist = (m.x - @player.x).abs + (m.y - @player.y).abs
-        if dist == 1
+      occupied <span class="o">=</span> @monsters.map(<span class="o">&amp;</span>.pos).to_set
+      @monsters.each <span class="k">do</span> <span class="o">|</span>m<span class="o">|</span>
+        <span class="k">next</span> <span class="k">if</span> @game_over
+        dist <span class="o">=</span> (m.x <span class="o">-</span> @player.x).abs <span class="o">+</span> (m.y <span class="o">-</span> @player.y).abs
+        <span class="k">if</span> dist <span class="o">==</span> <span class="n">1</span>
           attack(m, @player)
-        elsif @dungeon.visible?(m.x, m.y) &amp;&amp; dist &lt;= 8
+        <span class="k">elsif</span> @dungeon.visible?(m.x, m.y) <span class="o">&amp;&amp;</span> dist <span class="o">&lt;=</span> <span class="n">8</span>
           occupied.delete(m.pos)
-          if step = @dungeon.next_step(m.pos, @player.pos, occupied)
-            if step != @player.pos
-              m.x, m.y = step
-            end
-          end
-          occupied &lt;&lt; m.pos
-        elsif @rng.rand &lt; 0.3
-          dx, dy = [{1, 0}, {-1, 0}, {0, 1}, {0, -1}][@rng.rand(4)]
-          nx = m.x + dx; ny = m.y + dy
-          if @dungeon.walkable?(nx, ny) &amp;&amp; !occupied.includes?({nx, ny}) &amp;&amp; {nx, ny} != @player.pos
-            occupied.delete(m.pos); m.x = nx; m.y = ny; occupied &lt;&lt; m.pos
-          end
-        end
-      end
-      # regenerate slowly
-      @player.hp = Math.min(@player.max_hp, @player.hp + 1) if @turns % 10 == 0 &amp;&amp; !@game_over
-    end
-  end
-end
-</code></pre></details></div>
+          <span class="k">if</span> step <span class="o">=</span> @dungeon.next_step(m.pos, @player.pos, occupied)
+            <span class="k">if</span> step <span class="o">!=</span> @player.pos
+              m.x, m.y <span class="o">=</span> step
+            <span class="k">end</span>
+          <span class="k">end</span>
+          occupied <span class="o">&lt;&lt;</span> m.pos
+        <span class="k">elsif</span> @rng.rand <span class="o">&lt;</span> <span class="n">0.3</span>
+          dx, dy <span class="o">=</span> [{<span class="n">1</span>, <span class="n">0</span>}, {<span class="n">-1</span>, <span class="n">0</span>}, {<span class="n">0</span>, <span class="n">1</span>}, {<span class="n">0</span>, <span class="n">-1</span>}][@rng.rand(<span class="n">4</span>)]
+          nx <span class="o">=</span> m.x <span class="o">+</span> dx; ny <span class="o">=</span> m.y <span class="o">+</span> dy
+          <span class="k">if</span> @dungeon.walkable?(nx, ny) <span class="o">&amp;&amp;</span> <span class="o">!</span>occupied.includes?({nx, ny}) <span class="o">&amp;&amp;</span> {nx, ny} <span class="o">!=</span> @player.pos
+            occupied.delete(m.pos); m.x <span class="o">=</span> nx; m.y <span class="o">=</span> ny; occupied <span class="o">&lt;&lt;</span> m.pos
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="c"># regenerate slowly</span>
+      @player.hp <span class="o">=</span> <span class="t">Math</span>.min(@player.max_hp, @player.hp <span class="o">+</span> <span class="n">1</span>) <span class="k">if</span> @turns <span class="o">%</span> <span class="n">10</span> <span class="o">==</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="o">!</span>@game_over
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./roguelike.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

@@ -1,166 +1,171 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Coin Rush (3D) · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>Coin Rush (3D)</h1><p class="lead">Roll a ball around a lit, shadowed arena collecting coins before the timer runs out.</p><canvas id="eagle"></canvas><p class="controls">WASD move · Space jump · right-drag orbits the camera</p>
-<details><summary>Source — examples/coinrush3d/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
-include Eagle
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>Coin Rush (3D)</h1><p class="lead">Roll a ball around a lit, shadowed arena collecting coins before the timer runs out.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">WASD move · Space jump · right-drag orbits the camera</p>
+<details><summary>Source: <code>examples/coinrush3d/main.cr</code></summary><h3>examples/coinrush3d/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-# Coin Rush (3D game): roll the ball with WASD / left stick, jump with space,
-# collect all coins before time runs out. Third-person follow camera, shadows, UI.
-class CoinRush &lt; App
-  ARENA = 22_f32
-  @cam = Camera3D.new(position: v3(0, 8, 12))
-  @ball = MeshInstance3D.new(Mesh.sphere(0.5, 24, 16), Material.new(Color.hex(&quot;#ff6b6b&quot;), shininess: 64, specular: 0.6), position: v3(0, 0.5, 0))
-  @vel = Vec3::ZERO
-  @coins = [] of MeshInstance3D
-  @obstacles = [] of AABB
-  @score = 0
-  @time_left = 45_f32
-  @state = :playing
-  @hud = Label.new(&quot;&quot;)
-  @big = Label.new(&quot;&quot;, align: TextAlign::Center)
-  @snd_coin : Sound? = nil
-  @snd_jump : Sound? = nil
-  @rng = Random.new(3)
-  @yaw = 0_f32
+<span class="c"># Coin Rush (3D game): roll the ball with WASD / left stick, jump with space,</span>
+<span class="c"># collect all coins before time runs out. Third-person follow camera, shadows, UI.</span>
+<span class="k">class</span> <span class="t">CoinRush</span> <span class="o">&lt;</span> <span class="t">App</span>
+  <span class="t">ARENA</span> <span class="o">=</span> <span class="n">22_f32</span>
+  @cam <span class="o">=</span> <span class="t">Camera3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">8</span>, <span class="n">12</span>))
+  @ball <span class="o">=</span> <span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.sphere(<span class="n">0.5</span>, <span class="n">24</span>, <span class="n">16</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#ff6b6b&quot;</span>), shininess: <span class="n">64</span>, specular: <span class="n">0.6</span>), position: v3(<span class="n">0</span>, <span class="n">0.5</span>, <span class="n">0</span>))
+  @vel <span class="o">=</span> <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>
+  @coins <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">MeshInstance3D</span>
+  @obstacles <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">AABB</span>
+  @score <span class="o">=</span> <span class="n">0</span>
+  @time_left <span class="o">=</span> <span class="n">45_f32</span>
+  @state <span class="o">=</span> <span class="n">:playing</span>
+  @hud <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;&quot;</span>)
+  @big <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;&quot;</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+  @snd_coin : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @snd_jump : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @rng <span class="o">=</span> <span class="t">Random</span>.new(<span class="n">3</span>)
+  @yaw <span class="o">=</span> <span class="n">0_f32</span>
 
-  def load
-    Input.map &quot;left&quot;, Key::A, Key::Left, Input.axis(GamepadAxis::LeftX, -1)
-    Input.map &quot;right&quot;, Key::D, Key::Right, Input.axis(GamepadAxis::LeftX, 1)
-    Input.map &quot;up&quot;, Key::W, Key::Up, Input.axis(GamepadAxis::LeftY, -1)
-    Input.map &quot;down&quot;, Key::S, Key::Down, Input.axis(GamepadAxis::LeftY, 1)
-    Input.map &quot;jump&quot;, Key::Space, GamepadButton::A
-    @snd_coin = Sound.tone(1300, 0.1, Sound::Wave::Sine, 0.3)
-    @snd_jump = Sound.tone(400, 0.12, Sound::Wave::Triangle, 0.25)
-    root = SceneTree.root
-    env = Scene3D.environment
-    env.fog(25, 70, Color.hex(&quot;#c9d8ee&quot;))
-    env.sky_colors(Color.hex(&quot;#6fa8ff&quot;), Color.hex(&quot;#dbe8ff&quot;), Color.hex(&quot;#4d5a70&quot;))
-    tex = Texture.new(Image.checkerboard(32, 32, 16, Color.hex(&quot;#8bc34a&quot;), Color.hex(&quot;#7cb342&quot;)), wrap: GPU::Wrap::Repeat)
-    root.add(MeshInstance3D.new(Mesh.plane(ARENA * 2, ARENA * 2, 1, uv_scale: 11), Material.new(texture: tex, specular: 0.05)))
-    # walls
-    [{v3(0, 1, -ARENA), v3(ARENA * 2, 2, 1)}, {v3(0, 1, ARENA), v3(ARENA * 2, 2, 1)}, {v3(-ARENA, 1, 0), v3(1, 2, ARENA * 2)}, {v3(ARENA, 1, 0), v3(1, 2, ARENA * 2)}].each do |(pos, size)|
-      root.add(MeshInstance3D.new(Mesh.box(size.x, size.y, size.z), Material.new(Color.hex(&quot;#556270&quot;)), position: pos))
-      @obstacles &lt;&lt; AABB.from_center(pos, size / 2)
-    end
-    # obstacles
-    14.times do
-      size = v3(1 + @rng.rand * 3, 1 + @rng.rand * 2, 1 + @rng.rand * 3)
-      pos = v3((@rng.rand - 0.5) * ARENA * 1.6, size.y / 2, (@rng.rand - 0.5) * ARENA * 1.6)
-      next if pos.xz.length &lt; 4
-      root.add(MeshInstance3D.new(Mesh.box(size.x, size.y, size.z), Material.new(Color.hsv(@rng.rand * 360, 0.35, 0.9)), position: pos))
-      @obstacles &lt;&lt; AABB.from_center(pos, size / 2)
-    end
-    # coins
-    20.times do
-      pos = v3((@rng.rand - 0.5) * ARENA * 1.7, 0.8, (@rng.rand - 0.5) * ARENA * 1.7)
-      next if @obstacles.any? { |o| o.contains?(pos) }
-      coin = MeshInstance3D.new(Mesh.cylinder(0.45, 0.12, 20), Material.new(Color.hex(&quot;#ffd700&quot;), shininess: 96, specular: 0.9, emissive: Color.new(0.15, 0.1, 0)), position: pos)
-      coin.rotate_x(Math::PI / 2)
+  <span class="k">def</span> <span class="m">load</span>
+    <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Right</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;up&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">W</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Up</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;down&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">S</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Down</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;jump&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Space</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">A</span>
+    @snd_coin <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">1300</span>, <span class="n">0.1</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Sine</span>, <span class="n">0.3</span>)
+    @snd_jump <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">400</span>, <span class="n">0.12</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Triangle</span>, <span class="n">0.25</span>)
+    root <span class="o">=</span> <span class="t">SceneTree</span>.root
+    env <span class="o">=</span> <span class="t">Scene3D</span>.environment
+    env.fog(<span class="n">25</span>, <span class="n">70</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#c9d8ee&quot;</span>))
+    env.sky_colors(<span class="t">Color</span>.hex(<span class="s">&quot;#6fa8ff&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#dbe8ff&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#4d5a70&quot;</span>))
+    tex <span class="o">=</span> <span class="t">Texture</span>.new(<span class="t">Image</span>.checkerboard(<span class="n">32</span>, <span class="n">32</span>, <span class="n">16</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#8bc34a&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#7cb342&quot;</span>)), wrap: <span class="t">GPU</span><span class="t">::</span><span class="t">Wrap</span><span class="t">::</span><span class="t">Repeat</span>)
+    root.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.plane(<span class="t">ARENA</span> <span class="o">*</span> <span class="n">2</span>, <span class="t">ARENA</span> <span class="o">*</span> <span class="n">2</span>, <span class="n">1</span>, uv_scale: <span class="n">11</span>), <span class="t">Material</span>.new(texture: tex, specular: <span class="n">0.05</span>)))
+    <span class="c"># walls</span>
+    [{v3(<span class="n">0</span>, <span class="n">1</span>, <span class="o">-</span><span class="t">ARENA</span>), v3(<span class="t">ARENA</span> <span class="o">*</span> <span class="n">2</span>, <span class="n">2</span>, <span class="n">1</span>)}, {v3(<span class="n">0</span>, <span class="n">1</span>, <span class="t">ARENA</span>), v3(<span class="t">ARENA</span> <span class="o">*</span> <span class="n">2</span>, <span class="n">2</span>, <span class="n">1</span>)}, {v3(<span class="o">-</span><span class="t">ARENA</span>, <span class="n">1</span>, <span class="n">0</span>), v3(<span class="n">1</span>, <span class="n">2</span>, <span class="t">ARENA</span> <span class="o">*</span> <span class="n">2</span>)}, {v3(<span class="t">ARENA</span>, <span class="n">1</span>, <span class="n">0</span>), v3(<span class="n">1</span>, <span class="n">2</span>, <span class="t">ARENA</span> <span class="o">*</span> <span class="n">2</span>)}].each <span class="k">do</span> <span class="o">|</span>(pos, size)<span class="o">|</span>
+      root.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.box(size.x, size.y, size.z), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#556270&quot;</span>)), position: pos))
+      @obstacles <span class="o">&lt;&lt;</span> <span class="t">AABB</span>.from_center(pos, size <span class="o">/</span> <span class="n">2</span>)
+    <span class="k">end</span>
+    <span class="c"># obstacles</span>
+    <span class="n">14</span>.times <span class="k">do</span>
+      size <span class="o">=</span> v3(<span class="n">1</span> <span class="o">+</span> @rng.rand <span class="o">*</span> <span class="n">3</span>, <span class="n">1</span> <span class="o">+</span> @rng.rand <span class="o">*</span> <span class="n">2</span>, <span class="n">1</span> <span class="o">+</span> @rng.rand <span class="o">*</span> <span class="n">3</span>)
+      pos <span class="o">=</span> v3((@rng.rand <span class="o">-</span> <span class="n">0.5</span>) <span class="o">*</span> <span class="t">ARENA</span> <span class="o">*</span> <span class="n">1.6</span>, size.y <span class="o">/</span> <span class="n">2</span>, (@rng.rand <span class="o">-</span> <span class="n">0.5</span>) <span class="o">*</span> <span class="t">ARENA</span> <span class="o">*</span> <span class="n">1.6</span>)
+      <span class="k">next</span> <span class="k">if</span> pos.xz.length <span class="o">&lt;</span> <span class="n">4</span>
+      root.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.box(size.x, size.y, size.z), <span class="t">Material</span>.new(<span class="t">Color</span>.hsv(@rng.rand <span class="o">*</span> <span class="n">360</span>, <span class="n">0.35</span>, <span class="n">0.9</span>)), position: pos))
+      @obstacles <span class="o">&lt;&lt;</span> <span class="t">AABB</span>.from_center(pos, size <span class="o">/</span> <span class="n">2</span>)
+    <span class="k">end</span>
+    <span class="c"># coins</span>
+    <span class="n">20</span>.times <span class="k">do</span>
+      pos <span class="o">=</span> v3((@rng.rand <span class="o">-</span> <span class="n">0.5</span>) <span class="o">*</span> <span class="t">ARENA</span> <span class="o">*</span> <span class="n">1.7</span>, <span class="n">0.8</span>, (@rng.rand <span class="o">-</span> <span class="n">0.5</span>) <span class="o">*</span> <span class="t">ARENA</span> <span class="o">*</span> <span class="n">1.7</span>)
+      <span class="k">next</span> <span class="k">if</span> @obstacles.any? { <span class="o">|</span>o<span class="o">|</span> o.contains?(pos) }
+      coin <span class="o">=</span> <span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.cylinder(<span class="n">0.45</span>, <span class="n">0.12</span>, <span class="n">20</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#ffd700&quot;</span>), shininess: <span class="n">96</span>, specular: <span class="n">0.9</span>, emissive: <span class="t">Color</span>.new(<span class="n">0.15</span>, <span class="n">0.1</span>, <span class="n">0</span>)), position: pos)
+      coin.rotate_x(<span class="t">Math</span><span class="t">::</span><span class="t">PI</span> <span class="o">/</span> <span class="n">2</span>)
       root.add(coin)
-      @coins &lt;&lt; coin
-    end
+      @coins <span class="o">&lt;&lt;</span> coin
+    <span class="k">end</span>
     root.add(@ball)
-    root.add(DirectionalLight3D.new(v3(-0.4, -1, -0.5), Color.hex(&quot;#fff4e0&quot;), 1.1))
-    root.add(PointLight3D.new(v3(0, 4, 0), Color.hex(&quot;#ffe0a0&quot;), 1.5, 14))
+    root.add(<span class="t">DirectionalLight3D</span>.new(v3(<span class="n">-0.4</span>, <span class="n">-1</span>, <span class="n">-0.5</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#fff4e0&quot;</span>), <span class="n">1.1</span>))
+    root.add(<span class="t">PointLight3D</span>.new(v3(<span class="n">0</span>, <span class="n">4</span>, <span class="n">0</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#ffe0a0&quot;</span>), <span class="n">1.5</span>, <span class="n">14</span>))
     root.add(@cam)
-    hud = CanvasLayer.new
-    @hud.position = v2(12, 10)
-    @hud.shadow = Color::BLACK
-    @hud.shadow_offset = v2(2, 2)
-    @big.anchor = Anchor::Center
-    @big.font_scale = 2
-    @big.shadow = Color::BLACK
-    @big.shadow_offset = v2(3, 3)
+    hud <span class="o">=</span> <span class="t">CanvasLayer</span>.new
+    @hud.position <span class="o">=</span> v2(<span class="n">12</span>, <span class="n">10</span>)
+    @hud.shadow <span class="o">=</span> <span class="t">Color</span><span class="t">::</span><span class="t">BLACK</span>
+    @hud.shadow_offset <span class="o">=</span> v2(<span class="n">2</span>, <span class="n">2</span>)
+    @big.anchor <span class="o">=</span> <span class="t">Anchor</span><span class="t">::</span><span class="t">Center</span>
+    @big.font_scale <span class="o">=</span> <span class="n">2</span>
+    @big.shadow <span class="o">=</span> <span class="t">Color</span><span class="t">::</span><span class="t">BLACK</span>
+    @big.shadow_offset <span class="o">=</span> v2(<span class="n">3</span>, <span class="n">3</span>)
     hud.add(@hud, @big)
     root.add(hud)
-  end
+  <span class="k">end</span>
 
-  def update(dt : Float32)
-    if @state == :playing
-      @time_left -= dt
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    <span class="k">if</span> @state <span class="o">==</span> <span class="n">:playing</span>
+      @time_left <span class="o">-=</span> dt
       move(dt)
-      @coins.each { |c| c.rotate(Vec3::UP, dt * 2) }
-      @coins.reject! do |c|
-        if c.global_position.distance(@ball.position) &lt; 1.0
+      @coins.each { <span class="o">|</span>c<span class="o">|</span> c.rotate(<span class="t">Vec3</span><span class="t">::</span><span class="t">UP</span>, dt <span class="o">*</span> <span class="n">2</span>) }
+      @coins.reject! <span class="k">do</span> <span class="o">|</span>c<span class="o">|</span>
+        <span class="k">if</span> c.global_position.distance(@ball.position) <span class="o">&lt;</span> <span class="n">1.0</span>
           c.free
-          @score += 1
-          @snd_coin.try(&amp;.play(pitch: 1 + @score * 0.03))
-          true
-        end
-      end
-      if @coins.empty?
-        @state = :won
-      elsif @time_left &lt;= 0
-        @state = :lost
-      end
-    elsif Input.pressed?(Key::R)
-      SceneTree.reset
-      @coins.clear; @obstacles.clear; @score = 0; @time_left = 45_f32; @state = :playing
-      @ball = MeshInstance3D.new(Mesh.sphere(0.5, 24, 16), Material.new(Color.hex(&quot;#ff6b6b&quot;), shininess: 64, specular: 0.6), position: v3(0, 0.5, 0))
-      @vel = Vec3::ZERO
-      @cam = Camera3D.new(position: v3(0, 8, 12))
+          @score <span class="o">+=</span> <span class="n">1</span>
+          @snd_coin.try(<span class="o">&amp;</span>.play(pitch: <span class="n">1</span> <span class="o">+</span> @score <span class="o">*</span> <span class="n">0.03</span>))
+          <span class="n">true</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="k">if</span> @coins.empty?
+        @state <span class="o">=</span> <span class="n">:won</span>
+      <span class="k">elsif</span> @time_left <span class="o">&lt;=</span> <span class="n">0</span>
+        @state <span class="o">=</span> <span class="n">:lost</span>
+      <span class="k">end</span>
+    <span class="k">elsif</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">R</span>)
+      <span class="t">SceneTree</span>.reset
+      @coins.clear; @obstacles.clear; @score <span class="o">=</span> <span class="n">0</span>; @time_left <span class="o">=</span> <span class="n">45_f32</span>; @state <span class="o">=</span> <span class="n">:playing</span>
+      @ball <span class="o">=</span> <span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.sphere(<span class="n">0.5</span>, <span class="n">24</span>, <span class="n">16</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#ff6b6b&quot;</span>), shininess: <span class="n">64</span>, specular: <span class="n">0.6</span>), position: v3(<span class="n">0</span>, <span class="n">0.5</span>, <span class="n">0</span>))
+      @vel <span class="o">=</span> <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>
+      @cam <span class="o">=</span> <span class="t">Camera3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">8</span>, <span class="n">12</span>))
       load
-    end
-    # camera: orbit with right drag, follow the ball
-    @yaw -= Input.mouse_delta.x * 0.005 if Input.mouse_down?(MouseButton::Right)
-    if g = Input.gamepad
-      @yaw -= g.right_stick.x * dt * 2
-    end
-    offset = Quat.from_axis_angle(Vec3::UP, @yaw) * v3(0, 6, 10)
-    @cam.position = Mathf.damp(@cam.position, @ball.position + offset, 6, dt)
-    @cam.look_at(@ball.position + v3(0, 0.5, 0))
-    @hud.text = &quot;coins #{@score}/#{@score + @coins.size}   time #{@time_left.clamp(0, 999).ceil.to_i}   fps #{Clock.fps.round.to_i}&quot;
-    @big.text = case @state
-                when :won then &quot;YOU WIN!\nR to play again&quot;
-                when :lost then &quot;TIME&#39;S UP\nR to play again&quot;
-                else &quot;&quot;
-                end
-    Eagle.quit if Input.pressed?(Key::Escape)
-  end
+    <span class="k">end</span>
+    <span class="c"># camera: orbit with right drag, follow the ball</span>
+    @yaw <span class="o">-=</span> <span class="t">Input</span>.mouse_delta.x <span class="o">*</span> <span class="n">0.005</span> <span class="k">if</span> <span class="t">Input</span>.mouse_down?(<span class="t">MouseButton</span><span class="t">::</span><span class="t">Right</span>)
+    <span class="k">if</span> g <span class="o">=</span> <span class="t">Input</span>.gamepad
+      @yaw <span class="o">-=</span> g.right_stick.x <span class="o">*</span> dt <span class="o">*</span> <span class="n">2</span>
+    <span class="k">end</span>
+    offset <span class="o">=</span> <span class="t">Quat</span>.from_axis_angle(<span class="t">Vec3</span><span class="t">::</span><span class="t">UP</span>, @yaw) <span class="o">*</span> v3(<span class="n">0</span>, <span class="n">6</span>, <span class="n">10</span>)
+    @cam.position <span class="o">=</span> <span class="t">Mathf</span>.damp(@cam.position, @ball.position <span class="o">+</span> offset, <span class="n">6</span>, dt)
+    @cam.look_at(@ball.position <span class="o">+</span> v3(<span class="n">0</span>, <span class="n">0.5</span>, <span class="n">0</span>))
+    @hud.text <span class="o">=</span> <span class="s">&quot;coins </span><span class="i">#{</span>@score<span class="i">}</span><span class="s">/</span><span class="i">#{</span>@score <span class="o">+</span> @coins.size<span class="i">}</span><span class="s">   time </span><span class="i">#{</span>@time_left.clamp(<span class="n">0</span>, <span class="n">999</span>).ceil.to_i<span class="i">}</span><span class="s">   fps </span><span class="i">#{</span><span class="t">Clock</span>.fps.round.to_i<span class="i">}</span><span class="s">&quot;</span>
+    @big.text <span class="o">=</span> <span class="k">case</span> @state
+                <span class="k">when</span> <span class="n">:won</span> <span class="k">then</span> <span class="s">&quot;YOU WIN!\nR to play again&quot;</span>
+                <span class="k">when</span> <span class="n">:lost</span> <span class="k">then</span> <span class="s">&quot;TIME&#39;S UP\nR to play again&quot;</span>
+                <span class="k">else</span> <span class="s">&quot;&quot;</span>
+                <span class="k">end</span>
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+  <span class="k">end</span>
 
-  private def move(dt : Float32)
-    # input relative to the camera yaw
-    inp = Input.vector(&quot;left&quot;, &quot;right&quot;, &quot;up&quot;, &quot;down&quot;)
-    dir = Quat.from_axis_angle(Vec3::UP, @yaw) * v3(inp.x, 0, inp.y)
-    @vel += dir * 40 * dt
-    @vel = v3(@vel.x * (1 / (1 + dt * 2.5)), @vel.y - 25 * dt, @vel.z * (1 / (1 + dt * 2.5)))
-    on_ground = @ball.position.y &lt;= 0.501
-    if on_ground &amp;&amp; Input.pressed?(&quot;jump&quot;)
-      @vel = v3(@vel.x, 9, @vel.z)
-      @snd_jump.try(&amp;.play)
-    end
-    pos = @ball.position + @vel * dt
-    if pos.y &lt; 0.5
-      pos = v3(pos.x, 0.5, pos.z); @vel = v3(@vel.x, 0, @vel.z)
-    end
-    # sphere vs boxes: push out along the smallest axis
-    @obstacles.each do |box|
-      closest = pos.max(box.min).min(box.max)
-      d = pos - closest
-      dist = d.length
-      if dist &lt; 0.5
-        n = dist &gt; 1e-4 ? d / dist : Vec3::UP
-        pos = closest + n * 0.5
-        vn = @vel.dot(n)
-        @vel -= n * vn * 1.3 if vn &lt; 0
-      end
-    end
-    # roll the ball visually
-    horiz = v3(@vel.x, 0, @vel.z)
-    if horiz.length &gt; 0.01
-      axis = Vec3::UP.cross(horiz).normalized
-      @ball.rotate(axis, horiz.length * dt / 0.5)
-    end
-    @ball.position = pos
-  end
-end
+  <span class="k">private</span> <span class="k">def</span> <span class="m">move</span>(dt : <span class="t">Float32</span>)
+    <span class="c"># input relative to the camera yaw</span>
+    inp <span class="o">=</span> <span class="t">Input</span>.vector(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>, <span class="s">&quot;up&quot;</span>, <span class="s">&quot;down&quot;</span>)
+    dir <span class="o">=</span> <span class="t">Quat</span>.from_axis_angle(<span class="t">Vec3</span><span class="t">::</span><span class="t">UP</span>, @yaw) <span class="o">*</span> v3(inp.x, <span class="n">0</span>, inp.y)
+    @vel <span class="o">+=</span> dir <span class="o">*</span> <span class="n">40</span> <span class="o">*</span> dt
+    @vel <span class="o">=</span> v3(@vel.x <span class="o">*</span> (<span class="n">1</span> <span class="o">/</span> (<span class="n">1</span> <span class="o">+</span> dt <span class="o">*</span> <span class="n">2.5</span>)), @vel.y <span class="o">-</span> <span class="n">25</span> <span class="o">*</span> dt, @vel.z <span class="o">*</span> (<span class="n">1</span> <span class="o">/</span> (<span class="n">1</span> <span class="o">+</span> dt <span class="o">*</span> <span class="n">2.5</span>)))
+    on_ground <span class="o">=</span> @ball.position.y <span class="o">&lt;=</span> <span class="n">0.501</span>
+    <span class="k">if</span> on_ground <span class="o">&amp;&amp;</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;jump&quot;</span>)
+      @vel <span class="o">=</span> v3(@vel.x, <span class="n">9</span>, @vel.z)
+      @snd_jump.try(<span class="o">&amp;</span>.play)
+    <span class="k">end</span>
+    pos <span class="o">=</span> @ball.position <span class="o">+</span> @vel <span class="o">*</span> dt
+    <span class="k">if</span> pos.y <span class="o">&lt;</span> <span class="n">0.5</span>
+      pos <span class="o">=</span> v3(pos.x, <span class="n">0.5</span>, pos.z); @vel <span class="o">=</span> v3(@vel.x, <span class="n">0</span>, @vel.z)
+    <span class="k">end</span>
+    <span class="c"># sphere vs boxes: push out along the smallest axis</span>
+    @obstacles.each <span class="k">do</span> <span class="o">|</span>box<span class="o">|</span>
+      closest <span class="o">=</span> pos.max(box.min).min(box.max)
+      d <span class="o">=</span> pos <span class="o">-</span> closest
+      dist <span class="o">=</span> d.length
+      <span class="k">if</span> dist <span class="o">&lt;</span> <span class="n">0.5</span>
+        n <span class="o">=</span> dist <span class="o">&gt;</span> <span class="n">1e-4</span> ? d <span class="o">/</span> dist : <span class="t">Vec3</span><span class="t">::</span><span class="t">UP</span>
+        pos <span class="o">=</span> closest <span class="o">+</span> n <span class="o">*</span> <span class="n">0.5</span>
+        vn <span class="o">=</span> @vel.dot(n)
+        @vel <span class="o">-=</span> n <span class="o">*</span> vn <span class="o">*</span> <span class="n">1.3</span> <span class="k">if</span> vn <span class="o">&lt;</span> <span class="n">0</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="c"># roll the ball visually</span>
+    horiz <span class="o">=</span> v3(@vel.x, <span class="n">0</span>, @vel.z)
+    <span class="k">if</span> horiz.length <span class="o">&gt;</span> <span class="n">0.01</span>
+      axis <span class="o">=</span> <span class="t">Vec3</span><span class="t">::</span><span class="t">UP</span>.cross(horiz).normalized
+      @ball.rotate(axis, horiz.length <span class="o">*</span> dt <span class="o">/</span> <span class="n">0.5</span>)
+    <span class="k">end</span>
+    @ball.position <span class="o">=</span> pos
+  <span class="k">end</span>
+<span class="k">end</span>
 
-Eagle.run(CoinRush, title: &quot;Eagle Coin Rush&quot;, width: 1024, height: 640, msaa: 4)
-</code></pre></details></div>
+<span class="t">Eagle</span>.run(<span class="t">CoinRush</span>, title: <span class="s">&quot;Eagle Coin Rush&quot;</span>, width: <span class="n">1024</span>, height: <span class="n">640</span>, msaa: <span class="n">4</span>)
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./coinrush3d.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

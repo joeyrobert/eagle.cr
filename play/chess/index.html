@@ -1,697 +1,703 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chess · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>Chess</h1><p class="lead">Full rules with castling, en passant, promotion; perft-verified move generator and an alpha-beta AI.</p><canvas id="eagle"></canvas><p class="controls">Click a piece, then a square. U undo · R restart · N toggle AI · 1-4 AI depth</p>
-<details><summary>Source — examples/chess/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
-require &quot;./chess&quot;
-include Eagle
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>Chess</h1><p class="lead">Full rules with castling, en passant, promotion; perft-verified move generator and an alpha-beta AI.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Click a piece, then a square. U undo · R restart · N toggle AI · 1-4 AI depth</p>
+<details><summary>Source: <code>examples/chess/main.cr</code></summary><h3>examples/chess/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./chess&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-# Chess: click a piece then a destination. You play White; the AI plays Black.
-# Keys: U undo, R restart, N new game vs human (two players), 1-4 set AI depth.
-class ChessGame &lt; App
-  SIZE = 72
-  ORIGIN = v2(60, 40)
+<span class="c"># Chess: click a piece then a destination. You play White; the AI plays Black.</span>
+<span class="c"># Keys: U undo, R restart, N new game vs human (two players), 1-4 set AI depth.</span>
+<span class="k">class</span> <span class="t">ChessGame</span> <span class="o">&lt;</span> <span class="t">App</span>
+  <span class="t">SIZE</span> <span class="o">=</span> <span class="n">72</span>
+  <span class="t">ORIGIN</span> <span class="o">=</span> v2(<span class="n">60</span>, <span class="n">40</span>)
 
-  @board = Chess::Board.new
-  @ai = Chess::AI.new(3)
-  @selected : Int32? = nil
-  @legal = [] of Chess::Move
-  @status = &quot;&quot;
-  @vs_ai = true
-  @thinking = false
-  @last : Chess::Move? = nil
-  @move_sound : Sound? = nil
-  @capture_sound : Sound? = nil
-  @font : Font? = nil
+  @board <span class="o">=</span> <span class="t">Chess</span><span class="t">::</span><span class="t">Board</span>.new
+  @ai <span class="o">=</span> <span class="t">Chess</span><span class="t">::</span><span class="t">AI</span>.new(<span class="n">3</span>)
+  @selected : <span class="t">Int32</span>? <span class="o">=</span> <span class="n">nil</span>
+  @legal <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Chess</span><span class="t">::</span><span class="t">Move</span>
+  @status <span class="o">=</span> <span class="s">&quot;&quot;</span>
+  @vs_ai <span class="o">=</span> <span class="n">true</span>
+  @thinking <span class="o">=</span> <span class="n">false</span>
+  @last : <span class="t">Chess</span><span class="t">::</span><span class="t">Move</span>? <span class="o">=</span> <span class="n">nil</span>
+  @move_sound : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @capture_sound : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @font : <span class="t">Font</span>? <span class="o">=</span> <span class="n">nil</span>
 
-  def load
-    @move_sound = Sound.tone(440, 0.06, Sound::Wave::Triangle, 0.4)
-    @capture_sound = Sound.tone(220, 0.12, Sound::Wave::Square, 0.3)
-    ttf = [&quot;/System/Library/Fonts/Supplemental/Arial.ttf&quot;, &quot;/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf&quot;].find { |p| File.exists?(p) }
-    @font = Font.load(ttf, 40) if ttf
+  <span class="k">def</span> <span class="m">load</span>
+    @move_sound <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">440</span>, <span class="n">0.06</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Triangle</span>, <span class="n">0.4</span>)
+    @capture_sound <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">220</span>, <span class="n">0.12</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Square</span>, <span class="n">0.3</span>)
+    ttf <span class="o">=</span> [<span class="s">&quot;/System/Library/Fonts/Supplemental/Arial.ttf&quot;</span>, <span class="s">&quot;/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf&quot;</span>].find { <span class="o">|</span>p<span class="o">|</span> <span class="t">File</span>.exists?(p) }
+    @font <span class="o">=</span> <span class="t">Font</span>.load(ttf, <span class="n">40</span>) <span class="k">if</span> ttf
     update_status
-  end
+  <span class="k">end</span>
 
-  def square_at(p : Vec2) : Int32?
-    l = p - ORIGIN
-    return nil if l.x &lt; 0 || l.y &lt; 0 || l.x &gt;= SIZE * 8 || l.y &gt;= SIZE * 8
-    f = (l.x / SIZE).to_i; r = 7 - (l.y / SIZE).to_i
-    r * 8 + f
-  end
+  <span class="k">def</span> <span class="m">square_at</span>(p : <span class="t">Vec2</span>) : <span class="t">Int32</span>?
+    l <span class="o">=</span> p <span class="o">-</span> <span class="t">ORIGIN</span>
+    <span class="k">return</span> <span class="n">nil</span> <span class="k">if</span> l.x <span class="o">&lt;</span> <span class="n">0</span> <span class="o">||</span> l.y <span class="o">&lt;</span> <span class="n">0</span> <span class="o">||</span> l.x <span class="o">&gt;=</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">||</span> l.y <span class="o">&gt;=</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span>
+    f <span class="o">=</span> (l.x <span class="o">/</span> <span class="t">SIZE</span>).to_i; r <span class="o">=</span> <span class="n">7</span> <span class="o">-</span> (l.y <span class="o">/</span> <span class="t">SIZE</span>).to_i
+    r <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> f
+  <span class="k">end</span>
 
-  def square_pos(i : Int32) : Vec2
-    ORIGIN + v2((i % 8) * SIZE, (7 - i // 8) * SIZE)
-  end
+  <span class="k">def</span> <span class="m">square_pos</span>(i : <span class="t">Int32</span>) : <span class="t">Vec2</span>
+    <span class="t">ORIGIN</span> <span class="o">+</span> v2((i <span class="o">%</span> <span class="n">8</span>) <span class="o">*</span> <span class="t">SIZE</span>, (<span class="n">7</span> <span class="o">-</span> i <span class="o">//</span> <span class="n">8</span>) <span class="o">*</span> <span class="t">SIZE</span>)
+  <span class="k">end</span>
 
-  def input(e : Event)
-    return if @thinking
-    if e.is_a?(MouseButtonEvent) &amp;&amp; e.pressed? &amp;&amp; e.button.left?
-      sq = square_at(e.position)
-      return unless sq
-      if (sel = @selected) &amp;&amp; (mv = @legal.find { |m| m.to == sq })
+  <span class="k">def</span> <span class="m">input</span>(e : <span class="t">Event</span>)
+    <span class="k">return</span> <span class="k">if</span> @thinking
+    <span class="k">if</span> e.<span class="k">is_a?</span>(<span class="t">MouseButtonEvent</span>) <span class="o">&amp;&amp;</span> e.pressed? <span class="o">&amp;&amp;</span> e.button.left?
+      sq <span class="o">=</span> square_at(e.position)
+      <span class="k">return</span> <span class="k">unless</span> sq
+      <span class="k">if</span> (sel <span class="o">=</span> @selected) <span class="o">&amp;&amp;</span> (mv <span class="o">=</span> @legal.find { <span class="o">|</span>m<span class="o">|</span> m.to <span class="o">==</span> sq })
         play(mv)
-      else
-        s = @board[sq]
-        if !s.empty? &amp;&amp; s.side == @board.turn
-          @selected = sq
-          @legal = @board.legal_moves_from(sq)
-        else
-          @selected = nil; @legal.clear
-        end
-      end
-    elsif e.is_a?(KeyEvent) &amp;&amp; e.pressed?
-      case e.key
-      when Key::U then undo
-      when Key::R then restart
-      when Key::N then @vs_ai = !@vs_ai; update_status
-      when Key::Num1, Key::Num2, Key::Num3, Key::Num4
-        @ai.depth = e.key.value - Key::Num1.value + 1; update_status
-      end
-    end
-  end
+      <span class="k">else</span>
+        s <span class="o">=</span> @board[sq]
+        <span class="k">if</span> <span class="o">!</span>s.empty? <span class="o">&amp;&amp;</span> s.side <span class="o">==</span> @board.turn
+          @selected <span class="o">=</span> sq
+          @legal <span class="o">=</span> @board.legal_moves_from(sq)
+        <span class="k">else</span>
+          @selected <span class="o">=</span> <span class="n">nil</span>; @legal.clear
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">elsif</span> e.<span class="k">is_a?</span>(<span class="t">KeyEvent</span>) <span class="o">&amp;&amp;</span> e.pressed?
+      <span class="k">case</span> e.key
+      <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">U</span> <span class="k">then</span> undo
+      <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">R</span> <span class="k">then</span> restart
+      <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">N</span> <span class="k">then</span> @vs_ai <span class="o">=</span> <span class="o">!</span>@vs_ai; update_status
+      <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">Num1</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num2</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num3</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num4</span>
+        @ai.depth <span class="o">=</span> e.key.value <span class="o">-</span> <span class="t">Key</span><span class="t">::</span><span class="t">Num1</span>.value <span class="o">+</span> <span class="n">1</span>; update_status
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  def play(m : Chess::Move)
-    capture = !@board[m.to].empty? || m.en_passant?
-    # promote to queen by default
-    m = Chess::Move.new(m.from, m.to, Chess::Piece::Queen) unless m.promotion.none?
+  <span class="k">def</span> <span class="m">play</span>(m : <span class="t">Chess</span><span class="t">::</span><span class="t">Move</span>)
+    capture <span class="o">=</span> <span class="o">!</span>@board[m.to].empty? <span class="o">||</span> m.en_passant?
+    <span class="c"># promote to queen by default</span>
+    m <span class="o">=</span> <span class="t">Chess</span><span class="t">::</span><span class="t">Move</span>.new(m.from, m.to, <span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">Queen</span>) <span class="k">unless</span> m.promotion.none?
     @board.play(m)
-    @last = @board.history.last
-    (capture ? @capture_sound : @move_sound).try(&amp;.play)
-    @selected = nil; @legal.clear
+    @last <span class="o">=</span> @board.history.last
+    (capture ? @capture_sound : @move_sound).try(<span class="o">&amp;</span>.play)
+    @selected <span class="o">=</span> <span class="n">nil</span>; @legal.clear
     update_status
-    if @vs_ai &amp;&amp; @board.turn.black? &amp;&amp; !@board.game_over?
-      @thinking = true
-      @status = &quot;Thinking...&quot;
-    end
-  end
+    <span class="k">if</span> @vs_ai <span class="o">&amp;&amp;</span> @board.turn.black? <span class="o">&amp;&amp;</span> <span class="o">!</span>@board.game_over?
+      @thinking <span class="o">=</span> <span class="n">true</span>
+      @status <span class="o">=</span> <span class="s">&quot;Thinking...&quot;</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  def update(dt : Float32)
-    if @thinking
-      # AI move (blocking for a few ms at depth 3; fine for a demo)
-      if mv = @ai.best_move(@board)
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    <span class="k">if</span> @thinking
+      <span class="c"># AI move (blocking for a few ms at depth 3; fine for a demo)</span>
+      <span class="k">if</span> mv <span class="o">=</span> @ai.best_move(@board)
         @board.apply(mv)
-        @last = mv
-        @move_sound.try(&amp;.play(pitch: 0.8))
-      end
-      @thinking = false
+        @last <span class="o">=</span> mv
+        @move_sound.try(<span class="o">&amp;</span>.play(pitch: <span class="n">0.8</span>))
+      <span class="k">end</span>
+      @thinking <span class="o">=</span> <span class="n">false</span>
       update_status
-    end
-    Eagle.quit if Input.pressed?(Key::Escape)
-  end
+    <span class="k">end</span>
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+  <span class="k">end</span>
 
-  def undo
-    n = (@vs_ai &amp;&amp; @board.history.size &gt;= 2) ? 2 : 1
-    return if @board.history.size &lt; n
-    hist = @board.history[0...-n]
-    @board = Chess::Board.new
-    hist.each { |m| @board.apply(m) }
-    @last = hist.last?
-    @selected = nil; @legal.clear
+  <span class="k">def</span> <span class="m">undo</span>
+    n <span class="o">=</span> (@vs_ai <span class="o">&amp;&amp;</span> @board.history.size <span class="o">&gt;=</span> <span class="n">2</span>) ? <span class="n">2</span> : <span class="n">1</span>
+    <span class="k">return</span> <span class="k">if</span> @board.history.size <span class="o">&lt;</span> n
+    hist <span class="o">=</span> @board.history[<span class="n">0</span>...<span class="o">-</span>n]
+    @board <span class="o">=</span> <span class="t">Chess</span><span class="t">::</span><span class="t">Board</span>.new
+    hist.each { <span class="o">|</span>m<span class="o">|</span> @board.apply(m) }
+    @last <span class="o">=</span> hist.last?
+    @selected <span class="o">=</span> <span class="n">nil</span>; @legal.clear
     update_status
-  end
+  <span class="k">end</span>
 
-  def restart
-    @board = Chess::Board.new
-    @selected = nil; @legal.clear; @last = nil
+  <span class="k">def</span> <span class="m">restart</span>
+    @board <span class="o">=</span> <span class="t">Chess</span><span class="t">::</span><span class="t">Board</span>.new
+    @selected <span class="o">=</span> <span class="n">nil</span>; @legal.clear; @last <span class="o">=</span> <span class="n">nil</span>
     update_status
-  end
+  <span class="k">end</span>
 
-  def update_status
-    st = @board.status
-    who = @board.turn.white? ? &quot;White&quot; : &quot;Black&quot;
-    @status = case st
-              when .checkmate? then &quot;Checkmate! #{@board.turn.other.white? ? &quot;White&quot; : &quot;Black&quot;} wins&quot;
-              when .stalemate? then &quot;Stalemate&quot;
-              when .draw? then &quot;Draw&quot;
-              when .check? then &quot;#{who} to move — check!&quot;
-              else &quot;#{who} to move&quot;
-              end
-    @status += &quot;   (vs AI depth #{@ai.depth})&quot; if @vs_ai
-  end
+  <span class="k">def</span> <span class="m">update_status</span>
+    st <span class="o">=</span> @board.status
+    who <span class="o">=</span> @board.turn.white? ? <span class="s">&quot;White&quot;</span> : <span class="s">&quot;Black&quot;</span>
+    @status <span class="o">=</span> <span class="k">case</span> st
+              <span class="k">when</span> .checkmate? <span class="k">then</span> <span class="s">&quot;Checkmate! </span><span class="i">#{</span>@board.turn.other.white? ? <span class="s">&quot;White&quot;</span> : <span class="s">&quot;Black&quot;</span><span class="i">}</span><span class="s"> wins&quot;</span>
+              <span class="k">when</span> .stalemate? <span class="k">then</span> <span class="s">&quot;Stalemate&quot;</span>
+              <span class="k">when</span> .draw? <span class="k">then</span> <span class="s">&quot;Draw&quot;</span>
+              <span class="k">when</span> .check? <span class="k">then</span> <span class="s">&quot;</span><span class="i">#{</span>who<span class="i">}</span><span class="s"> to move, check!&quot;</span>
+              <span class="k">else</span> <span class="s">&quot;</span><span class="i">#{</span>who<span class="i">}</span><span class="s"> to move&quot;</span>
+              <span class="k">end</span>
+    @status <span class="o">+=</span> <span class="s">&quot;   (vs AI depth </span><span class="i">#{</span>@ai.depth<span class="i">}</span><span class="s">)&quot;</span> <span class="k">if</span> @vs_ai
+  <span class="k">end</span>
 
-  LETTERS = {Chess::Piece::King =&gt; &quot;K&quot;, Chess::Piece::Queen =&gt; &quot;Q&quot;, Chess::Piece::Rook =&gt; &quot;R&quot;, Chess::Piece::Bishop =&gt; &quot;B&quot;, Chess::Piece::Knight =&gt; &quot;N&quot;, Chess::Piece::Pawn =&gt; &quot;P&quot;}
-  GLYPHS = {Chess::Piece::King =&gt; &quot;♚&quot;, Chess::Piece::Queen =&gt; &quot;♛&quot;, Chess::Piece::Rook =&gt; &quot;♜&quot;, Chess::Piece::Bishop =&gt; &quot;♝&quot;, Chess::Piece::Knight =&gt; &quot;♞&quot;, Chess::Piece::Pawn =&gt; &quot;♟&quot;}
+  <span class="t">LETTERS</span> <span class="o">=</span> {<span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">King</span> <span class="o">=&gt;</span> <span class="s">&quot;K&quot;</span>, <span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">Queen</span> <span class="o">=&gt;</span> <span class="s">&quot;Q&quot;</span>, <span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">Rook</span> <span class="o">=&gt;</span> <span class="s">&quot;R&quot;</span>, <span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">Bishop</span> <span class="o">=&gt;</span> <span class="s">&quot;B&quot;</span>, <span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">Knight</span> <span class="o">=&gt;</span> <span class="s">&quot;N&quot;</span>, <span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">Pawn</span> <span class="o">=&gt;</span> <span class="s">&quot;P&quot;</span>}
+  <span class="t">GLYPHS</span> <span class="o">=</span> {<span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">King</span> <span class="o">=&gt;</span> <span class="s">&quot;♚&quot;</span>, <span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">Queen</span> <span class="o">=&gt;</span> <span class="s">&quot;♛&quot;</span>, <span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">Rook</span> <span class="o">=&gt;</span> <span class="s">&quot;♜&quot;</span>, <span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">Bishop</span> <span class="o">=&gt;</span> <span class="s">&quot;♝&quot;</span>, <span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">Knight</span> <span class="o">=&gt;</span> <span class="s">&quot;♞&quot;</span>, <span class="t">Chess</span><span class="t">::</span><span class="t">Piece</span><span class="t">::</span><span class="t">Pawn</span> <span class="o">=&gt;</span> <span class="s">&quot;♟&quot;</span>}
 
-  def draw(g : Graphics)
-    light = Color.hex(&quot;#f0d9b5&quot;); dark = Color.hex(&quot;#b58863&quot;)
-    64.times do |i|
-      p = square_pos(i)
-      c = ((i % 8 + i // 8) % 2 == 0) ? dark : light
-      if (l = @last) &amp;&amp; (l.from == i || l.to == i)
-        c = c.lerp(Color.hex(&quot;#f6f669&quot;), 0.5)
-      end
-      c = c.lerp(Color.hex(&quot;#4caf50&quot;), 0.5) if @selected == i
-      g.rect(p.x, p.y, SIZE, SIZE, color: c)
-    end
-    if @board.in_check?
-      k = square_pos(@board.king_square(@board.turn))
-      g.rect(k.x, k.y, SIZE, SIZE, color: Color::RED.with_alpha(0.4))
-    end
-    @legal.each do |m|
-      p = square_pos(m.to) + v2(SIZE / 2, SIZE / 2)
-      if @board[m.to].empty? &amp;&amp; !m.en_passant?
-        g.circle(p, 10, color: Color.new(0, 0, 0, 0.25))
-      else
-        g.circle(p, SIZE / 2 - 4, DrawMode::Line, color: Color.new(0, 0, 0, 0.3))
-      end
-    end
-    # coordinates
-    8.times do |i|
-      g.print((&#39;a&#39;.ord + i).chr.to_s, ORIGIN.x + i * SIZE + SIZE - 14, ORIGIN.y + SIZE * 8 + 4, Color::GRAY)
-      g.print((8 - i).to_s, ORIGIN.x - 20, ORIGIN.y + i * SIZE + 4, Color::GRAY)
-    end
-    font = @font
-    64.times do |i|
-      s = @board[i]
-      next if s.empty?
-      p = square_pos(i) + v2(SIZE / 2, SIZE / 2)
-      fill = s.side.white? ? Color::WHITE : Color.hex(&quot;#202020&quot;)
-      outline = s.side.white? ? Color.hex(&quot;#202020&quot;) : Color.hex(&quot;#e0e0e0&quot;)
-      if font &amp;&amp; font.is_a?(TrueTypeFont) &amp;&amp; font.as(TrueTypeFont).ttf.has_glyph?(&#39;♚&#39;)
-        glyph = GLYPHS[s.piece]
-        w = font.width(glyph)
-        g.print(glyph, p.x - w / 2 + 2, p.y - font.height / 2 + 2, Color.new(0, 0, 0, 0.35), font)
-        g.print(glyph, p.x - w / 2, p.y - font.height / 2, fill, font)
-      else
-        g.circle(p, SIZE * 0.36, color: outline)
-        g.circle(p, SIZE * 0.32, color: fill)
-        g.print(LETTERS[s.piece], p.x, p.y - 8, outline, scale: 1, align: TextAlign::Center)
-      end
-    end
-    g.print(@status, ORIGIN.x, ORIGIN.y + SIZE * 8 + 28, Color::WHITE)
-    g.print(&quot;click to move  U undo  R restart  N toggle AI  1-4 AI depth  moves #{@board.history.size}  nodes #{@ai.nodes}&quot;, ORIGIN.x, ORIGIN.y + SIZE * 8 + 52, Color::GRAY)
-    g.print(&quot;FEN #{@board.to_fen}&quot;, ORIGIN.x, ORIGIN.y + SIZE * 8 + 76, Color.gray(0.4))
-    # captured pieces
-    cap = @board.captured.reject(&amp;.empty?)
-    x = ORIGIN.x + SIZE * 8 + 30
-    g.print(&quot;Captured&quot;, x, ORIGIN.y, Color::WHITE)
-    cap.each_with_index do |c, i|
-      g.print(LETTERS[c.piece], x + (i % 6) * 22, ORIGIN.y + 26 + (i // 6) * 22, c.side.white? ? Color::WHITE : Color.gray(0.55))
-    end
-  end
-end
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    light <span class="o">=</span> <span class="t">Color</span>.hex(<span class="s">&quot;#f0d9b5&quot;</span>); dark <span class="o">=</span> <span class="t">Color</span>.hex(<span class="s">&quot;#b58863&quot;</span>)
+    <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+      p <span class="o">=</span> square_pos(i)
+      c <span class="o">=</span> ((i <span class="o">%</span> <span class="n">8</span> <span class="o">+</span> i <span class="o">//</span> <span class="n">8</span>) <span class="o">%</span> <span class="n">2</span> <span class="o">==</span> <span class="n">0</span>) ? dark : light
+      <span class="k">if</span> (l <span class="o">=</span> @last) <span class="o">&amp;&amp;</span> (l.from <span class="o">==</span> i <span class="o">||</span> l.to <span class="o">==</span> i)
+        c <span class="o">=</span> c.lerp(<span class="t">Color</span>.hex(<span class="s">&quot;#f6f669&quot;</span>), <span class="n">0.5</span>)
+      <span class="k">end</span>
+      c <span class="o">=</span> c.lerp(<span class="t">Color</span>.hex(<span class="s">&quot;#4caf50&quot;</span>), <span class="n">0.5</span>) <span class="k">if</span> @selected <span class="o">==</span> i
+      g.rect(p.x, p.y, <span class="t">SIZE</span>, <span class="t">SIZE</span>, color: c)
+    <span class="k">end</span>
+    <span class="k">if</span> @board.in_check?
+      k <span class="o">=</span> square_pos(@board.king_square(@board.turn))
+      g.rect(k.x, k.y, <span class="t">SIZE</span>, <span class="t">SIZE</span>, color: <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>.with_alpha(<span class="n">0.4</span>))
+    <span class="k">end</span>
+    @legal.each <span class="k">do</span> <span class="o">|</span>m<span class="o">|</span>
+      p <span class="o">=</span> square_pos(m.to) <span class="o">+</span> v2(<span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>, <span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>)
+      <span class="k">if</span> @board[m.to].empty? <span class="o">&amp;&amp;</span> <span class="o">!</span>m.en_passant?
+        g.circle(p, <span class="n">10</span>, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.25</span>))
+      <span class="k">else</span>
+        g.circle(p, <span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">4</span>, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.3</span>))
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="c"># coordinates</span>
+    <span class="n">8</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+      g.print((<span class="s">&#39;a&#39;</span>.ord <span class="o">+</span> i).chr.to_s, <span class="t">ORIGIN</span>.x <span class="o">+</span> i <span class="o">*</span> <span class="t">SIZE</span> <span class="o">+</span> <span class="t">SIZE</span> <span class="o">-</span> <span class="n">14</span>, <span class="t">ORIGIN</span>.y <span class="o">+</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">4</span>, <span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>)
+      g.print((<span class="n">8</span> <span class="o">-</span> i).to_s, <span class="t">ORIGIN</span>.x <span class="o">-</span> <span class="n">20</span>, <span class="t">ORIGIN</span>.y <span class="o">+</span> i <span class="o">*</span> <span class="t">SIZE</span> <span class="o">+</span> <span class="n">4</span>, <span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>)
+    <span class="k">end</span>
+    font <span class="o">=</span> @font
+    <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+      s <span class="o">=</span> @board[i]
+      <span class="k">next</span> <span class="k">if</span> s.empty?
+      p <span class="o">=</span> square_pos(i) <span class="o">+</span> v2(<span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>, <span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>)
+      fill <span class="o">=</span> s.side.white? ? <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span> : <span class="t">Color</span>.hex(<span class="s">&quot;#202020&quot;</span>)
+      outline <span class="o">=</span> s.side.white? ? <span class="t">Color</span>.hex(<span class="s">&quot;#202020&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#e0e0e0&quot;</span>)
+      <span class="k">if</span> font <span class="o">&amp;&amp;</span> font.<span class="k">is_a?</span>(<span class="t">TrueTypeFont</span>) <span class="o">&amp;&amp;</span> font.<span class="k">as</span>(<span class="t">TrueTypeFont</span>).ttf.has_glyph?(<span class="s">&#39;♚&#39;</span>)
+        glyph <span class="o">=</span> <span class="t">GLYPHS</span>[s.piece]
+        w <span class="o">=</span> font.width(glyph)
+        g.print(glyph, p.x <span class="o">-</span> w <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">2</span>, p.y <span class="o">-</span> font.height <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">2</span>, <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.35</span>), font)
+        g.print(glyph, p.x <span class="o">-</span> w <span class="o">/</span> <span class="n">2</span>, p.y <span class="o">-</span> font.height <span class="o">/</span> <span class="n">2</span>, fill, font)
+      <span class="k">else</span>
+        g.circle(p, <span class="t">SIZE</span> <span class="o">*</span> <span class="n">0.36</span>, color: outline)
+        g.circle(p, <span class="t">SIZE</span> <span class="o">*</span> <span class="n">0.32</span>, color: fill)
+        g.print(<span class="t">LETTERS</span>[s.piece], p.x, p.y <span class="o">-</span> <span class="n">8</span>, outline, scale: <span class="n">1</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+      <span class="k">end</span>
+    <span class="k">end</span>
+    g.print(@status, <span class="t">ORIGIN</span>.x, <span class="t">ORIGIN</span>.y <span class="o">+</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">28</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.print(<span class="s">&quot;click to move  U undo  R restart  N toggle AI  1-4 AI depth  moves </span><span class="i">#{</span>@board.history.size<span class="i">}</span><span class="s">  nodes </span><span class="i">#{</span>@ai.nodes<span class="i">}</span><span class="s">&quot;</span>, <span class="t">ORIGIN</span>.x, <span class="t">ORIGIN</span>.y <span class="o">+</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">52</span>, <span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>)
+    g.print(<span class="s">&quot;FEN </span><span class="i">#{</span>@board.to_fen<span class="i">}</span><span class="s">&quot;</span>, <span class="t">ORIGIN</span>.x, <span class="t">ORIGIN</span>.y <span class="o">+</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">76</span>, <span class="t">Color</span>.gray(<span class="n">0.4</span>))
+    <span class="c"># captured pieces</span>
+    cap <span class="o">=</span> @board.captured.reject(<span class="o">&amp;</span>.empty?)
+    x <span class="o">=</span> <span class="t">ORIGIN</span>.x <span class="o">+</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">30</span>
+    g.print(<span class="s">&quot;Captured&quot;</span>, x, <span class="t">ORIGIN</span>.y, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    cap.each_with_index <span class="k">do</span> <span class="o">|</span>c, i<span class="o">|</span>
+      g.print(<span class="t">LETTERS</span>[c.piece], x <span class="o">+</span> (i <span class="o">%</span> <span class="n">6</span>) <span class="o">*</span> <span class="n">22</span>, <span class="t">ORIGIN</span>.y <span class="o">+</span> <span class="n">26</span> <span class="o">+</span> (i <span class="o">//</span> <span class="n">6</span>) <span class="o">*</span> <span class="n">22</span>, c.side.white? ? <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span> : <span class="t">Color</span>.gray(<span class="n">0.55</span>))
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
 
-Eagle.run(ChessGame, title: &quot;Eagle Chess&quot;, width: 1000, height: 740)
-</code></pre><h3>chess.cr</h3><pre><code># A complete chess rules engine + alpha-beta AI, independent of rendering.
-module Chess
-  enum Piece : Int8
-    None = 0
-    Pawn; Knight; Bishop; Rook; Queen; King
-  end
+<span class="t">Eagle</span>.run(<span class="t">ChessGame</span>, title: <span class="s">&quot;Eagle Chess&quot;</span>, width: <span class="n">1000</span>, height: <span class="n">740</span>)
+</code></pre>
+<h3>examples/chess/chess.cr</h3><pre class="code"><code class="lang-crystal"><span class="c"># A complete chess rules engine + alpha-beta AI, independent of rendering.</span>
+<span class="k">module</span> <span class="t">Chess</span>
+  <span class="k">enum</span> <span class="t">Piece</span> : <span class="t">Int8</span>
+    <span class="t">None</span> <span class="o">=</span> <span class="n">0</span>
+    <span class="t">Pawn</span>; <span class="t">Knight</span>; <span class="t">Bishop</span>; <span class="t">Rook</span>; <span class="t">Queen</span>; <span class="t">King</span>
+  <span class="k">end</span>
 
-  enum Side : Int8
-    White = 0
-    Black = 1
-    def other : Side; white? ? Black : White; end
-  end
+  <span class="k">enum</span> <span class="t">Side</span> : <span class="t">Int8</span>
+    <span class="t">White</span> <span class="o">=</span> <span class="n">0</span>
+    <span class="t">Black</span> <span class="o">=</span> <span class="n">1</span>
+    <span class="k">def</span> <span class="m">other</span> : <span class="t">Side</span>; white? ? <span class="t">Black</span> : <span class="t">White</span>; <span class="k">end</span>
+  <span class="k">end</span>
 
-  # A square holds a piece + side packed as (side &lt;&lt; 3 | piece); 0 = empty.
-  struct Square
-    getter raw : Int8
-    def initialize(@raw : Int8 = 0); end
-    def self.of(piece : Piece, side : Side) : Square; new((side.value &lt;&lt; 3 | piece.value).to_i8); end
-    def empty? : Bool; @raw == 0; end
-    def piece : Piece; Piece.new((@raw &amp; 7).to_i8); end
-    def side : Side; Side.new((@raw &gt;&gt; 3).to_i8); end
-    def ==(o : Square) : Bool; @raw == o.raw; end
-    def to_s : String
-      return &quot;.&quot; if empty?
-      c = {Piece::Pawn =&gt; &#39;p&#39;, Piece::Knight =&gt; &#39;n&#39;, Piece::Bishop =&gt; &#39;b&#39;, Piece::Rook =&gt; &#39;r&#39;, Piece::Queen =&gt; &#39;q&#39;, Piece::King =&gt; &#39;k&#39;}[piece]
+  <span class="c"># A square holds a piece + side packed as (side &lt;&lt; 3 | piece); 0 = empty.</span>
+  <span class="k">struct</span> <span class="t">Square</span>
+    getter raw : <span class="t">Int8</span>
+    <span class="k">def</span> <span class="m">initialize</span>(@raw : <span class="t">Int8</span> <span class="o">=</span> <span class="n">0</span>); <span class="k">end</span>
+    <span class="k">def</span> <span class="m">self</span>.<span class="k">of</span>(piece : <span class="t">Piece</span>, side : <span class="t">Side</span>) : <span class="t">Square</span>; new((side.value <span class="o">&lt;&lt;</span> <span class="n">3</span> <span class="o">|</span> piece.value).to_i8); <span class="k">end</span>
+    <span class="k">def</span> <span class="m">empty?</span> : <span class="t">Bool</span>; @raw <span class="o">==</span> <span class="n">0</span>; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">piece</span> : <span class="t">Piece</span>; <span class="t">Piece</span>.new((@raw <span class="o">&amp;</span> <span class="n">7</span>).to_i8); <span class="k">end</span>
+    <span class="k">def</span> <span class="m">side</span> : <span class="t">Side</span>; <span class="t">Side</span>.new((@raw <span class="o">&gt;&gt;</span> <span class="n">3</span>).to_i8); <span class="k">end</span>
+    <span class="k">def</span> <span class="m">==</span>(o : <span class="t">Square</span>) : <span class="t">Bool</span>; @raw <span class="o">==</span> o.raw; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">to_s</span> : <span class="t">String</span>
+      <span class="k">return</span> <span class="s">&quot;.&quot;</span> <span class="k">if</span> empty?
+      c <span class="o">=</span> {<span class="t">Piece</span><span class="t">::</span><span class="t">Pawn</span> <span class="o">=&gt;</span> <span class="s">&#39;p&#39;</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Knight</span> <span class="o">=&gt;</span> <span class="s">&#39;n&#39;</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Bishop</span> <span class="o">=&gt;</span> <span class="s">&#39;b&#39;</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Rook</span> <span class="o">=&gt;</span> <span class="s">&#39;r&#39;</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Queen</span> <span class="o">=&gt;</span> <span class="s">&#39;q&#39;</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">King</span> <span class="o">=&gt;</span> <span class="s">&#39;k&#39;</span>}[piece]
       side.white? ? c.upcase.to_s : c.to_s
-    end
-  end
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  struct Move
-    getter from : Int32
-    getter to : Int32
-    getter promotion : Piece
-    getter? castle : Bool
-    getter? en_passant : Bool
-    def initialize(@from, @to, @promotion = Piece::None, @castle = false, @en_passant = false); end
-    def ==(o : Move) : Bool; @from == o.from &amp;&amp; @to == o.to &amp;&amp; @promotion == o.promotion; end
-    def to_s : String
-      s = Chess.square_name(@from) + Chess.square_name(@to)
-      @promotion.none? ? s : s + {Piece::Queen =&gt; &quot;q&quot;, Piece::Rook =&gt; &quot;r&quot;, Piece::Bishop =&gt; &quot;b&quot;, Piece::Knight =&gt; &quot;n&quot;}[@promotion]
-    end
-  end
+  <span class="k">struct</span> <span class="t">Move</span>
+    getter from : <span class="t">Int32</span>
+    getter to : <span class="t">Int32</span>
+    getter promotion : <span class="t">Piece</span>
+    getter? castle : <span class="t">Bool</span>
+    getter? en_passant : <span class="t">Bool</span>
+    <span class="k">def</span> <span class="m">initialize</span>(@from, @to, @promotion <span class="o">=</span> <span class="t">Piece</span><span class="t">::</span><span class="t">None</span>, @castle <span class="o">=</span> <span class="n">false</span>, @en_passant <span class="o">=</span> <span class="n">false</span>); <span class="k">end</span>
+    <span class="k">def</span> <span class="m">==</span>(o : <span class="t">Move</span>) : <span class="t">Bool</span>; @from <span class="o">==</span> o.from <span class="o">&amp;&amp;</span> @to <span class="o">==</span> o.to <span class="o">&amp;&amp;</span> @promotion <span class="o">==</span> o.promotion; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">to_s</span> : <span class="t">String</span>
+      s <span class="o">=</span> <span class="t">Chess</span>.square_name(@from) <span class="o">+</span> <span class="t">Chess</span>.square_name(@to)
+      @promotion.none? ? s : s <span class="o">+</span> {<span class="t">Piece</span><span class="t">::</span><span class="t">Queen</span> <span class="o">=&gt;</span> <span class="s">&quot;q&quot;</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Rook</span> <span class="o">=&gt;</span> <span class="s">&quot;r&quot;</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Bishop</span> <span class="o">=&gt;</span> <span class="s">&quot;b&quot;</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Knight</span> <span class="o">=&gt;</span> <span class="s">&quot;n&quot;</span>}[@promotion]
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  def self.square_name(i : Int32) : String
-    &quot;#{(&#39;a&#39;.ord + i % 8).chr}#{i // 8 + 1}&quot;
-  end
+  <span class="k">def</span> <span class="m">self</span>.square_name(i : <span class="t">Int32</span>) : <span class="t">String</span>
+    <span class="s">&quot;</span><span class="i">#{</span>(<span class="s">&#39;a&#39;</span>.ord <span class="o">+</span> i <span class="o">%</span> <span class="n">8</span>).chr<span class="i">}</span><span class="s"></span><span class="i">#{</span>i <span class="o">//</span> <span class="n">8</span> <span class="o">+</span> <span class="n">1</span><span class="i">}</span><span class="s">&quot;</span>
+  <span class="k">end</span>
 
-  def self.square_index(name : String) : Int32
-    (name[0].ord - &#39;a&#39;.ord) + (name[1].to_i - 1) * 8
-  end
+  <span class="k">def</span> <span class="m">self</span>.square_index(name : <span class="t">String</span>) : <span class="t">Int32</span>
+    (name[<span class="n">0</span>].ord <span class="o">-</span> <span class="s">&#39;a&#39;</span>.ord) <span class="o">+</span> (name[<span class="n">1</span>].to_i <span class="o">-</span> <span class="n">1</span>) <span class="o">*</span> <span class="n">8</span>
+  <span class="k">end</span>
 
-  enum Status
-    Playing
-    Check
-    Checkmate
-    Stalemate
-    Draw
-  end
+  <span class="k">enum</span> <span class="t">Status</span>
+    <span class="t">Playing</span>
+    <span class="t">Check</span>
+    <span class="t">Checkmate</span>
+    <span class="t">Stalemate</span>
+    <span class="t">Draw</span>
+  <span class="k">end</span>
 
-  class Board
-    getter squares : Array(Square)
-    getter turn : Side
-    # castling rights: [white kingside, white queenside, black kingside, black queenside]
-    getter castling : Array(Bool)
-    getter en_passant : Int32 # target square or -1
-    getter halfmove : Int32
-    getter fullmove : Int32
-    getter history : Array(Move)
-    getter captured : Array(Square)
+  <span class="k">class</span> <span class="t">Board</span>
+    getter squares : <span class="t">Array</span>(<span class="t">Square</span>)
+    getter turn : <span class="t">Side</span>
+    <span class="c"># castling rights: [white kingside, white queenside, black kingside, black queenside]</span>
+    getter castling : <span class="t">Array</span>(<span class="t">Bool</span>)
+    getter en_passant : <span class="t">Int32</span> <span class="c"># target square or -1</span>
+    getter halfmove : <span class="t">Int32</span>
+    getter fullmove : <span class="t">Int32</span>
+    getter history : <span class="t">Array</span>(<span class="t">Move</span>)
+    getter captured : <span class="t">Array</span>(<span class="t">Square</span>)
 
-    def initialize
-      @squares = Array(Square).new(64, Square.new)
-      @turn = Side::White
-      @castling = [true, true, true, true]
-      @en_passant = -1
-      @halfmove = 0
-      @fullmove = 1
-      @history = [] of Move
-      @captured = [] of Square
+    <span class="k">def</span> <span class="m">initialize</span>
+      @squares <span class="o">=</span> <span class="t">Array</span>(<span class="t">Square</span>).new(<span class="n">64</span>, <span class="t">Square</span>.new)
+      @turn <span class="o">=</span> <span class="t">Side</span><span class="t">::</span><span class="t">White</span>
+      @castling <span class="o">=</span> [<span class="n">true</span>, <span class="n">true</span>, <span class="n">true</span>, <span class="n">true</span>]
+      @en_passant <span class="o">=</span> <span class="n">-1</span>
+      @halfmove <span class="o">=</span> <span class="n">0</span>
+      @fullmove <span class="o">=</span> <span class="n">1</span>
+      @history <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Move</span>
+      @captured <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Square</span>
       setup
-    end
+    <span class="k">end</span>
 
-    protected def initialize(@squares, @turn, @castling, @en_passant, @halfmove, @fullmove, @history, @captured); end
+    <span class="k">protected</span> <span class="k">def</span> <span class="m">initialize</span>(@squares, @turn, @castling, @en_passant, @halfmove, @fullmove, @history, @captured); <span class="k">end</span>
 
-    def clone : Board
-      Board.new(@squares.dup, @turn, @castling.dup, @en_passant, @halfmove, @fullmove, @history.dup, @captured.dup)
-    end
+    <span class="k">def</span> <span class="m">clone</span> : <span class="t">Board</span>
+      <span class="t">Board</span>.new(@squares.dup, @turn, @castling.dup, @en_passant, @halfmove, @fullmove, @history.dup, @captured.dup)
+    <span class="k">end</span>
 
-    def setup : Nil
-      @squares.fill(Square.new)
-      back = [Piece::Rook, Piece::Knight, Piece::Bishop, Piece::Queen, Piece::King, Piece::Bishop, Piece::Knight, Piece::Rook]
-      8.times do |f|
-        @squares[f] = Square.of(back[f], Side::White)
-        @squares[8 + f] = Square.of(Piece::Pawn, Side::White)
-        @squares[48 + f] = Square.of(Piece::Pawn, Side::Black)
-        @squares[56 + f] = Square.of(back[f], Side::Black)
-      end
-    end
+    <span class="k">def</span> <span class="m">setup</span> : <span class="t">Nil</span>
+      @squares.fill(<span class="t">Square</span>.new)
+      back <span class="o">=</span> [<span class="t">Piece</span><span class="t">::</span><span class="t">Rook</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Knight</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Bishop</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Queen</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">King</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Bishop</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Knight</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Rook</span>]
+      <span class="n">8</span>.times <span class="k">do</span> <span class="o">|</span>f<span class="o">|</span>
+        @squares[f] <span class="o">=</span> <span class="t">Square</span>.<span class="k">of</span>(back[f], <span class="t">Side</span><span class="t">::</span><span class="t">White</span>)
+        @squares[<span class="n">8</span> <span class="o">+</span> f] <span class="o">=</span> <span class="t">Square</span>.<span class="k">of</span>(<span class="t">Piece</span><span class="t">::</span><span class="t">Pawn</span>, <span class="t">Side</span><span class="t">::</span><span class="t">White</span>)
+        @squares[<span class="n">48</span> <span class="o">+</span> f] <span class="o">=</span> <span class="t">Square</span>.<span class="k">of</span>(<span class="t">Piece</span><span class="t">::</span><span class="t">Pawn</span>, <span class="t">Side</span><span class="t">::</span><span class="t">Black</span>)
+        @squares[<span class="n">56</span> <span class="o">+</span> f] <span class="o">=</span> <span class="t">Square</span>.<span class="k">of</span>(back[f], <span class="t">Side</span><span class="t">::</span><span class="t">Black</span>)
+      <span class="k">end</span>
+    <span class="k">end</span>
 
-    # Load a FEN position (board, turn, castling, en passant).
-    def self.from_fen(fen : String) : Board
-      b = new
-      b.squares.fill(Square.new)
-      parts = fen.split
-      rank = 7; file = 0
-      parts[0].each_char do |c|
-        case c
-        when &#39;/&#39; then rank -= 1; file = 0
-        when .ascii_number? then file += c.to_i
-        else
-          piece = {&#39;p&#39; =&gt; Piece::Pawn, &#39;n&#39; =&gt; Piece::Knight, &#39;b&#39; =&gt; Piece::Bishop, &#39;r&#39; =&gt; Piece::Rook, &#39;q&#39; =&gt; Piece::Queen, &#39;k&#39; =&gt; Piece::King}[c.downcase]
-          b.squares[rank * 8 + file] = Square.of(piece, c.uppercase? ? Side::White : Side::Black)
-          file += 1
-        end
-      end
-      b.set_state(parts[1]? == &quot;b&quot; ? Side::Black : Side::White,
-        [parts[2]?.try(&amp;.includes?(&#39;K&#39;)) || false, parts[2]?.try(&amp;.includes?(&#39;Q&#39;)) || false, parts[2]?.try(&amp;.includes?(&#39;k&#39;)) || false, parts[2]?.try(&amp;.includes?(&#39;q&#39;)) || false],
-        (parts[3]? &amp;&amp; parts[3] != &quot;-&quot;) ? Chess.square_index(parts[3]) : -1,
-        parts[4]?.try(&amp;.to_i?) || 0, parts[5]?.try(&amp;.to_i?) || 1)
+    <span class="c"># Load a FEN position (board, turn, castling, en passant).</span>
+    <span class="k">def</span> <span class="m">self</span>.from_fen(fen : <span class="t">String</span>) : <span class="t">Board</span>
+      b <span class="o">=</span> new
+      b.squares.fill(<span class="t">Square</span>.new)
+      parts <span class="o">=</span> fen.split
+      rank <span class="o">=</span> <span class="n">7</span>; file <span class="o">=</span> <span class="n">0</span>
+      parts[<span class="n">0</span>].each_char <span class="k">do</span> <span class="o">|</span>c<span class="o">|</span>
+        <span class="k">case</span> c
+        <span class="k">when</span> <span class="s">&#39;/&#39;</span> <span class="k">then</span> rank <span class="o">-=</span> <span class="n">1</span>; file <span class="o">=</span> <span class="n">0</span>
+        <span class="k">when</span> .ascii_number? <span class="k">then</span> file <span class="o">+=</span> c.to_i
+        <span class="k">else</span>
+          piece <span class="o">=</span> {<span class="s">&#39;p&#39;</span> <span class="o">=&gt;</span> <span class="t">Piece</span><span class="t">::</span><span class="t">Pawn</span>, <span class="s">&#39;n&#39;</span> <span class="o">=&gt;</span> <span class="t">Piece</span><span class="t">::</span><span class="t">Knight</span>, <span class="s">&#39;b&#39;</span> <span class="o">=&gt;</span> <span class="t">Piece</span><span class="t">::</span><span class="t">Bishop</span>, <span class="s">&#39;r&#39;</span> <span class="o">=&gt;</span> <span class="t">Piece</span><span class="t">::</span><span class="t">Rook</span>, <span class="s">&#39;q&#39;</span> <span class="o">=&gt;</span> <span class="t">Piece</span><span class="t">::</span><span class="t">Queen</span>, <span class="s">&#39;k&#39;</span> <span class="o">=&gt;</span> <span class="t">Piece</span><span class="t">::</span><span class="t">King</span>}[c.downcase]
+          b.squares[rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> file] <span class="o">=</span> <span class="t">Square</span>.<span class="k">of</span>(piece, c.uppercase? ? <span class="t">Side</span><span class="t">::</span><span class="t">White</span> : <span class="t">Side</span><span class="t">::</span><span class="t">Black</span>)
+          file <span class="o">+=</span> <span class="n">1</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+      b.set_state(parts[<span class="n">1</span>]? <span class="o">==</span> <span class="s">&quot;b&quot;</span> ? <span class="t">Side</span><span class="t">::</span><span class="t">Black</span> : <span class="t">Side</span><span class="t">::</span><span class="t">White</span>,
+        [parts[<span class="n">2</span>]?.try(<span class="o">&amp;</span>.includes?(<span class="s">&#39;K&#39;</span>)) <span class="o">||</span> <span class="n">false</span>, parts[<span class="n">2</span>]?.try(<span class="o">&amp;</span>.includes?(<span class="s">&#39;Q&#39;</span>)) <span class="o">||</span> <span class="n">false</span>, parts[<span class="n">2</span>]?.try(<span class="o">&amp;</span>.includes?(<span class="s">&#39;k&#39;</span>)) <span class="o">||</span> <span class="n">false</span>, parts[<span class="n">2</span>]?.try(<span class="o">&amp;</span>.includes?(<span class="s">&#39;q&#39;</span>)) <span class="o">||</span> <span class="n">false</span>],
+        (parts[<span class="n">3</span>]? <span class="o">&amp;&amp;</span> parts[<span class="n">3</span>] <span class="o">!=</span> <span class="s">&quot;-&quot;</span>) ? <span class="t">Chess</span>.square_index(parts[<span class="n">3</span>]) : <span class="n">-1</span>,
+        parts[<span class="n">4</span>]?.try(<span class="o">&amp;</span>.to_i?) <span class="o">||</span> <span class="n">0</span>, parts[<span class="n">5</span>]?.try(<span class="o">&amp;</span>.to_i?) <span class="o">||</span> <span class="n">1</span>)
       b
-    end
+    <span class="k">end</span>
 
-    # :nodoc:
-    def set_state(@turn, @castling, @en_passant, @halfmove = 0, @fullmove = 1); end
+    <span class="c"># :nodoc:</span>
+    <span class="k">def</span> <span class="m">set_state</span>(@turn, @castling, @en_passant, @halfmove <span class="o">=</span> <span class="n">0</span>, @fullmove <span class="o">=</span> <span class="n">1</span>); <span class="k">end</span>
 
-    def to_fen : String
-      rows = (0..7).to_a.reverse.map do |r|
-        s = &quot;&quot;; empty = 0
-        8.times do |f|
-          sq = @squares[r * 8 + f]
-          if sq.empty?
-            empty += 1
-          else
-            s += empty.to_s if empty &gt; 0
-            empty = 0
-            s += sq.to_s
-          end
-        end
-        s += empty.to_s if empty &gt; 0
+    <span class="k">def</span> <span class="m">to_fen</span> : <span class="t">String</span>
+      rows <span class="o">=</span> (<span class="n">0</span>..<span class="n">7</span>).to_a.reverse.map <span class="k">do</span> <span class="o">|</span>r<span class="o">|</span>
+        s <span class="o">=</span> <span class="s">&quot;&quot;</span>; empty <span class="o">=</span> <span class="n">0</span>
+        <span class="n">8</span>.times <span class="k">do</span> <span class="o">|</span>f<span class="o">|</span>
+          sq <span class="o">=</span> @squares[r <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> f]
+          <span class="k">if</span> sq.empty?
+            empty <span class="o">+=</span> <span class="n">1</span>
+          <span class="k">else</span>
+            s <span class="o">+=</span> empty.to_s <span class="k">if</span> empty <span class="o">&gt;</span> <span class="n">0</span>
+            empty <span class="o">=</span> <span class="n">0</span>
+            s <span class="o">+=</span> sq.to_s
+          <span class="k">end</span>
+        <span class="k">end</span>
+        s <span class="o">+=</span> empty.to_s <span class="k">if</span> empty <span class="o">&gt;</span> <span class="n">0</span>
         s
-      end
-      c = &quot;&quot;
-      c += &quot;K&quot; if @castling[0]; c += &quot;Q&quot; if @castling[1]; c += &quot;k&quot; if @castling[2]; c += &quot;q&quot; if @castling[3]
-      c = &quot;-&quot; if c.empty?
-      &quot;#{rows.join(&quot;/&quot;)} #{@turn.white? ? &quot;w&quot; : &quot;b&quot;} #{c} #{@en_passant &gt;= 0 ? Chess.square_name(@en_passant) : &quot;-&quot;} #{@halfmove} #{@fullmove}&quot;
-    end
+      <span class="k">end</span>
+      c <span class="o">=</span> <span class="s">&quot;&quot;</span>
+      c <span class="o">+=</span> <span class="s">&quot;K&quot;</span> <span class="k">if</span> @castling[<span class="n">0</span>]; c <span class="o">+=</span> <span class="s">&quot;Q&quot;</span> <span class="k">if</span> @castling[<span class="n">1</span>]; c <span class="o">+=</span> <span class="s">&quot;k&quot;</span> <span class="k">if</span> @castling[<span class="n">2</span>]; c <span class="o">+=</span> <span class="s">&quot;q&quot;</span> <span class="k">if</span> @castling[<span class="n">3</span>]
+      c <span class="o">=</span> <span class="s">&quot;-&quot;</span> <span class="k">if</span> c.empty?
+      <span class="s">&quot;</span><span class="i">#{</span>rows.join(<span class="s">&quot;/&quot;</span>)<span class="i">}</span><span class="s"> </span><span class="i">#{</span>@turn.white? ? <span class="s">&quot;w&quot;</span> : <span class="s">&quot;b&quot;</span><span class="i">}</span><span class="s"> </span><span class="i">#{</span>c<span class="i">}</span><span class="s"> </span><span class="i">#{</span>@en_passant <span class="o">&gt;=</span> <span class="n">0</span> ? <span class="t">Chess</span>.square_name(@en_passant) : <span class="s">&quot;-&quot;</span><span class="i">}</span><span class="s"> </span><span class="i">#{</span>@halfmove<span class="i">}</span><span class="s"> </span><span class="i">#{</span>@fullmove<span class="i">}</span><span class="s">&quot;</span>
+    <span class="k">end</span>
 
-    def [](i : Int32) : Square; @squares[i]; end
-    def [](file : Int32, rank : Int32) : Square; @squares[rank * 8 + file]; end
+    <span class="k">def</span> <span class="m">[]</span>(i : <span class="t">Int32</span>) : <span class="t">Square</span>; @squares[i]; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">[]</span>(file : <span class="t">Int32</span>, rank : <span class="t">Int32</span>) : <span class="t">Square</span>; @squares[rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> file]; <span class="k">end</span>
 
-    def king_square(side : Side) : Int32
-      @squares.index { |s| !s.empty? &amp;&amp; s.piece.king? &amp;&amp; s.side == side } || -1
-    end
+    <span class="k">def</span> <span class="m">king_square</span>(side : <span class="t">Side</span>) : <span class="t">Int32</span>
+      @squares.index { <span class="o">|</span>s<span class="o">|</span> <span class="o">!</span>s.empty? <span class="o">&amp;&amp;</span> s.piece.king? <span class="o">&amp;&amp;</span> s.side <span class="o">==</span> side } <span class="o">||</span> <span class="n">-1</span>
+    <span class="k">end</span>
 
-    # Is `sq` attacked by `by`?
-    def attacked?(sq : Int32, by : Side) : Bool
-      f = sq % 8; r = sq // 8
-      # pawns
-      dir = by.white? ? -1 : 1 # a white pawn attacks upward, so look one rank below the target
-      [-1, 1].each do |df|
-        ff = f + df; rr = r + dir
-        if (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
-          s = @squares[rr * 8 + ff]
-          return true if !s.empty? &amp;&amp; s.side == by &amp;&amp; s.piece.pawn?
-        end
-      end
-      # knights
-      KNIGHT.each do |(df, dr)|
-        ff = f + df; rr = r + dr
-        next unless (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
-        s = @squares[rr * 8 + ff]
-        return true if !s.empty? &amp;&amp; s.side == by &amp;&amp; s.piece.knight?
-      end
-      # king
-      KING.each do |(df, dr)|
-        ff = f + df; rr = r + dr
-        next unless (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
-        s = @squares[rr * 8 + ff]
-        return true if !s.empty? &amp;&amp; s.side == by &amp;&amp; s.piece.king?
-      end
-      # sliders
-      slide_attack?(f, r, by, ROOK_DIRS, Piece::Rook) || slide_attack?(f, r, by, BISHOP_DIRS, Piece::Bishop)
-    end
+    <span class="c"># Is `sq` attacked by `by`?</span>
+    <span class="k">def</span> <span class="m">attacked?</span>(sq : <span class="t">Int32</span>, by : <span class="t">Side</span>) : <span class="t">Bool</span>
+      f <span class="o">=</span> sq <span class="o">%</span> <span class="n">8</span>; r <span class="o">=</span> sq <span class="o">//</span> <span class="n">8</span>
+      <span class="c"># pawns</span>
+      dir <span class="o">=</span> by.white? ? <span class="n">-1</span> : <span class="n">1</span> <span class="c"># a white pawn attacks upward, so look one rank below the target</span>
+      [<span class="n">-1</span>, <span class="n">1</span>].each <span class="k">do</span> <span class="o">|</span>df<span class="o">|</span>
+        ff <span class="o">=</span> f <span class="o">+</span> df; rr <span class="o">=</span> r <span class="o">+</span> dir
+        <span class="k">if</span> (<span class="n">0</span> <span class="o">&lt;=</span> ff <span class="o">&lt;=</span> <span class="n">7</span>) <span class="o">&amp;&amp;</span> (<span class="n">0</span> <span class="o">&lt;=</span> rr <span class="o">&lt;=</span> <span class="n">7</span>)
+          s <span class="o">=</span> @squares[rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> ff]
+          <span class="k">return</span> <span class="n">true</span> <span class="k">if</span> <span class="o">!</span>s.empty? <span class="o">&amp;&amp;</span> s.side <span class="o">==</span> by <span class="o">&amp;&amp;</span> s.piece.pawn?
+        <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="c"># knights</span>
+      <span class="t">KNIGHT</span>.each <span class="k">do</span> <span class="o">|</span>(df, dr)<span class="o">|</span>
+        ff <span class="o">=</span> f <span class="o">+</span> df; rr <span class="o">=</span> r <span class="o">+</span> dr
+        <span class="k">next</span> <span class="k">unless</span> (<span class="n">0</span> <span class="o">&lt;=</span> ff <span class="o">&lt;=</span> <span class="n">7</span>) <span class="o">&amp;&amp;</span> (<span class="n">0</span> <span class="o">&lt;=</span> rr <span class="o">&lt;=</span> <span class="n">7</span>)
+        s <span class="o">=</span> @squares[rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> ff]
+        <span class="k">return</span> <span class="n">true</span> <span class="k">if</span> <span class="o">!</span>s.empty? <span class="o">&amp;&amp;</span> s.side <span class="o">==</span> by <span class="o">&amp;&amp;</span> s.piece.knight?
+      <span class="k">end</span>
+      <span class="c"># king</span>
+      <span class="t">KING</span>.each <span class="k">do</span> <span class="o">|</span>(df, dr)<span class="o">|</span>
+        ff <span class="o">=</span> f <span class="o">+</span> df; rr <span class="o">=</span> r <span class="o">+</span> dr
+        <span class="k">next</span> <span class="k">unless</span> (<span class="n">0</span> <span class="o">&lt;=</span> ff <span class="o">&lt;=</span> <span class="n">7</span>) <span class="o">&amp;&amp;</span> (<span class="n">0</span> <span class="o">&lt;=</span> rr <span class="o">&lt;=</span> <span class="n">7</span>)
+        s <span class="o">=</span> @squares[rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> ff]
+        <span class="k">return</span> <span class="n">true</span> <span class="k">if</span> <span class="o">!</span>s.empty? <span class="o">&amp;&amp;</span> s.side <span class="o">==</span> by <span class="o">&amp;&amp;</span> s.piece.king?
+      <span class="k">end</span>
+      <span class="c"># sliders</span>
+      slide_attack?(f, r, by, <span class="t">ROOK_DIRS</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Rook</span>) <span class="o">||</span> slide_attack?(f, r, by, <span class="t">BISHOP_DIRS</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Bishop</span>)
+    <span class="k">end</span>
 
-    private def slide_attack?(f, r, by, dirs, piece) : Bool
-      dirs.each do |(df, dr)|
-        ff = f + df; rr = r + dr
-        while (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
-          s = @squares[rr * 8 + ff]
-          unless s.empty?
-            return true if s.side == by &amp;&amp; (s.piece == piece || s.piece.queen?)
-            break
-          end
-          ff += df; rr += dr
-        end
-      end
-      false
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">slide_attack?</span>(f, r, by, dirs, piece) : <span class="t">Bool</span>
+      dirs.each <span class="k">do</span> <span class="o">|</span>(df, dr)<span class="o">|</span>
+        ff <span class="o">=</span> f <span class="o">+</span> df; rr <span class="o">=</span> r <span class="o">+</span> dr
+        <span class="k">while</span> (<span class="n">0</span> <span class="o">&lt;=</span> ff <span class="o">&lt;=</span> <span class="n">7</span>) <span class="o">&amp;&amp;</span> (<span class="n">0</span> <span class="o">&lt;=</span> rr <span class="o">&lt;=</span> <span class="n">7</span>)
+          s <span class="o">=</span> @squares[rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> ff]
+          <span class="k">unless</span> s.empty?
+            <span class="k">return</span> <span class="n">true</span> <span class="k">if</span> s.side <span class="o">==</span> by <span class="o">&amp;&amp;</span> (s.piece <span class="o">==</span> piece <span class="o">||</span> s.piece.queen?)
+            <span class="k">break</span>
+          <span class="k">end</span>
+          ff <span class="o">+=</span> df; rr <span class="o">+=</span> dr
+        <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="n">false</span>
+    <span class="k">end</span>
 
-    def in_check?(side : Side = @turn) : Bool
-      k = king_square(side)
-      k &gt;= 0 &amp;&amp; attacked?(k, side.other)
-    end
+    <span class="k">def</span> <span class="m">in_check?</span>(side : <span class="t">Side</span> <span class="o">=</span> @turn) : <span class="t">Bool</span>
+      k <span class="o">=</span> king_square(side)
+      k <span class="o">&gt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> attacked?(k, side.other)
+    <span class="k">end</span>
 
-    KNIGHT = [{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}]
-    KING = [{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}]
-    ROOK_DIRS = [{1, 0}, {-1, 0}, {0, 1}, {0, -1}]
-    BISHOP_DIRS = [{1, 1}, {1, -1}, {-1, 1}, {-1, -1}]
+    <span class="t">KNIGHT</span> <span class="o">=</span> [{<span class="n">1</span>, <span class="n">2</span>}, {<span class="n">2</span>, <span class="n">1</span>}, {<span class="n">2</span>, <span class="n">-1</span>}, {<span class="n">1</span>, <span class="n">-2</span>}, {<span class="n">-1</span>, <span class="n">-2</span>}, {<span class="n">-2</span>, <span class="n">-1</span>}, {<span class="n">-2</span>, <span class="n">1</span>}, {<span class="n">-1</span>, <span class="n">2</span>}]
+    <span class="t">KING</span> <span class="o">=</span> [{<span class="n">1</span>, <span class="n">0</span>}, {<span class="n">1</span>, <span class="n">1</span>}, {<span class="n">0</span>, <span class="n">1</span>}, {<span class="n">-1</span>, <span class="n">1</span>}, {<span class="n">-1</span>, <span class="n">0</span>}, {<span class="n">-1</span>, <span class="n">-1</span>}, {<span class="n">0</span>, <span class="n">-1</span>}, {<span class="n">1</span>, <span class="n">-1</span>}]
+    <span class="t">ROOK_DIRS</span> <span class="o">=</span> [{<span class="n">1</span>, <span class="n">0</span>}, {<span class="n">-1</span>, <span class="n">0</span>}, {<span class="n">0</span>, <span class="n">1</span>}, {<span class="n">0</span>, <span class="n">-1</span>}]
+    <span class="t">BISHOP_DIRS</span> <span class="o">=</span> [{<span class="n">1</span>, <span class="n">1</span>}, {<span class="n">1</span>, <span class="n">-1</span>}, {<span class="n">-1</span>, <span class="n">1</span>}, {<span class="n">-1</span>, <span class="n">-1</span>}]
 
-    # Pseudo-legal moves for the side to move (may leave the king in check).
-    def pseudo_moves : Array(Move)
-      moves = [] of Move
-      64.times do |i|
-        s = @squares[i]
-        next if s.empty? || s.side != @turn
+    <span class="c"># Pseudo-legal moves for the side to move (may leave the king in check).</span>
+    <span class="k">def</span> <span class="m">pseudo_moves</span> : <span class="t">Array</span>(<span class="t">Move</span>)
+      moves <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Move</span>
+      <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+        s <span class="o">=</span> @squares[i]
+        <span class="k">next</span> <span class="k">if</span> s.empty? <span class="o">||</span> s.side <span class="o">!=</span> @turn
         gen_piece(i, s, moves)
-      end
+      <span class="k">end</span>
       moves
-    end
+    <span class="k">end</span>
 
-    private def add(moves, from, to)
-      moves &lt;&lt; Move.new(from, to)
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">add</span>(moves, from, to)
+      moves <span class="o">&lt;&lt;</span> <span class="t">Move</span>.new(from, to)
+    <span class="k">end</span>
 
-    private def gen_piece(i, s, moves)
-      f = i % 8; r = i // 8
-      case s.piece
-      when .pawn?
-        dir = s.side.white? ? 1 : -1
-        start = s.side.white? ? 1 : 6
-        last = s.side.white? ? 7 : 0
-        rr = r + dir
-        if (0 &lt;= rr &lt;= 7) &amp;&amp; @squares[rr * 8 + f].empty?
-          push_pawn(moves, i, rr * 8 + f, rr == last)
-          if r == start &amp;&amp; @squares[(rr + dir) * 8 + f].empty?
-            add(moves, i, (rr + dir) * 8 + f)
-          end
-        end
-        [-1, 1].each do |df|
-          ff = f + df
-          next unless (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
-          t = rr * 8 + ff
-          target = @squares[t]
-          if !target.empty? &amp;&amp; target.side != s.side
-            push_pawn(moves, i, t, rr == last)
-          elsif t == @en_passant
-            moves &lt;&lt; Move.new(i, t, en_passant: true)
-          end
-        end
-      when .knight?
-        KNIGHT.each { |(df, dr)| step(moves, i, f + df, r + dr, s.side) }
-      when .king?
-        KING.each { |(df, dr)| step(moves, i, f + df, r + dr, s.side) }
+    <span class="k">private</span> <span class="k">def</span> <span class="m">gen_piece</span>(i, s, moves)
+      f <span class="o">=</span> i <span class="o">%</span> <span class="n">8</span>; r <span class="o">=</span> i <span class="o">//</span> <span class="n">8</span>
+      <span class="k">case</span> s.piece
+      <span class="k">when</span> .pawn?
+        dir <span class="o">=</span> s.side.white? ? <span class="n">1</span> : <span class="n">-1</span>
+        start <span class="o">=</span> s.side.white? ? <span class="n">1</span> : <span class="n">6</span>
+        last <span class="o">=</span> s.side.white? ? <span class="n">7</span> : <span class="n">0</span>
+        rr <span class="o">=</span> r <span class="o">+</span> dir
+        <span class="k">if</span> (<span class="n">0</span> <span class="o">&lt;=</span> rr <span class="o">&lt;=</span> <span class="n">7</span>) <span class="o">&amp;&amp;</span> @squares[rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> f].empty?
+          push_pawn(moves, i, rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> f, rr <span class="o">==</span> last)
+          <span class="k">if</span> r <span class="o">==</span> start <span class="o">&amp;&amp;</span> @squares[(rr <span class="o">+</span> dir) <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> f].empty?
+            add(moves, i, (rr <span class="o">+</span> dir) <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> f)
+          <span class="k">end</span>
+        <span class="k">end</span>
+        [<span class="n">-1</span>, <span class="n">1</span>].each <span class="k">do</span> <span class="o">|</span>df<span class="o">|</span>
+          ff <span class="o">=</span> f <span class="o">+</span> df
+          <span class="k">next</span> <span class="k">unless</span> (<span class="n">0</span> <span class="o">&lt;=</span> ff <span class="o">&lt;=</span> <span class="n">7</span>) <span class="o">&amp;&amp;</span> (<span class="n">0</span> <span class="o">&lt;=</span> rr <span class="o">&lt;=</span> <span class="n">7</span>)
+          t <span class="o">=</span> rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> ff
+          target <span class="o">=</span> @squares[t]
+          <span class="k">if</span> <span class="o">!</span>target.empty? <span class="o">&amp;&amp;</span> target.side <span class="o">!=</span> s.side
+            push_pawn(moves, i, t, rr <span class="o">==</span> last)
+          <span class="k">elsif</span> t <span class="o">==</span> @en_passant
+            moves <span class="o">&lt;&lt;</span> <span class="t">Move</span>.new(i, t, en_passant: <span class="n">true</span>)
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">when</span> .knight?
+        <span class="t">KNIGHT</span>.each { <span class="o">|</span>(df, dr)<span class="o">|</span> step(moves, i, f <span class="o">+</span> df, r <span class="o">+</span> dr, s.side) }
+      <span class="k">when</span> .king?
+        <span class="t">KING</span>.each { <span class="o">|</span>(df, dr)<span class="o">|</span> step(moves, i, f <span class="o">+</span> df, r <span class="o">+</span> dr, s.side) }
         gen_castling(i, s.side, moves)
-      when .rook? then slide(moves, i, f, r, s.side, ROOK_DIRS)
-      when .bishop? then slide(moves, i, f, r, s.side, BISHOP_DIRS)
-      when .queen? then slide(moves, i, f, r, s.side, ROOK_DIRS + BISHOP_DIRS)
-      end
-    end
+      <span class="k">when</span> .rook? <span class="k">then</span> slide(moves, i, f, r, s.side, <span class="t">ROOK_DIRS</span>)
+      <span class="k">when</span> .bishop? <span class="k">then</span> slide(moves, i, f, r, s.side, <span class="t">BISHOP_DIRS</span>)
+      <span class="k">when</span> .queen? <span class="k">then</span> slide(moves, i, f, r, s.side, <span class="t">ROOK_DIRS</span> <span class="o">+</span> <span class="t">BISHOP_DIRS</span>)
+      <span class="k">end</span>
+    <span class="k">end</span>
 
-    private def push_pawn(moves, from, to, promote)
-      if promote
-        [Piece::Queen, Piece::Rook, Piece::Bishop, Piece::Knight].each { |p| moves &lt;&lt; Move.new(from, to, p) }
-      else
+    <span class="k">private</span> <span class="k">def</span> <span class="m">push_pawn</span>(moves, from, to, promote)
+      <span class="k">if</span> promote
+        [<span class="t">Piece</span><span class="t">::</span><span class="t">Queen</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Rook</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Bishop</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Knight</span>].each { <span class="o">|</span>p<span class="o">|</span> moves <span class="o">&lt;&lt;</span> <span class="t">Move</span>.new(from, to, p) }
+      <span class="k">else</span>
         add(moves, from, to)
-      end
-    end
+      <span class="k">end</span>
+    <span class="k">end</span>
 
-    private def step(moves, from, ff, rr, side)
-      return unless (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
-      t = @squares[rr * 8 + ff]
-      add(moves, from, rr * 8 + ff) if t.empty? || t.side != side
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">step</span>(moves, from, ff, rr, side)
+      <span class="k">return</span> <span class="k">unless</span> (<span class="n">0</span> <span class="o">&lt;=</span> ff <span class="o">&lt;=</span> <span class="n">7</span>) <span class="o">&amp;&amp;</span> (<span class="n">0</span> <span class="o">&lt;=</span> rr <span class="o">&lt;=</span> <span class="n">7</span>)
+      t <span class="o">=</span> @squares[rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> ff]
+      add(moves, from, rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> ff) <span class="k">if</span> t.empty? <span class="o">||</span> t.side <span class="o">!=</span> side
+    <span class="k">end</span>
 
-    private def slide(moves, from, f, r, side, dirs)
-      dirs.each do |(df, dr)|
-        ff = f + df; rr = r + dr
-        while (0 &lt;= ff &lt;= 7) &amp;&amp; (0 &lt;= rr &lt;= 7)
-          t = @squares[rr * 8 + ff]
-          if t.empty?
-            add(moves, from, rr * 8 + ff)
-          else
-            add(moves, from, rr * 8 + ff) if t.side != side
-            break
-          end
-          ff += df; rr += dr
-        end
-      end
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">slide</span>(moves, from, f, r, side, dirs)
+      dirs.each <span class="k">do</span> <span class="o">|</span>(df, dr)<span class="o">|</span>
+        ff <span class="o">=</span> f <span class="o">+</span> df; rr <span class="o">=</span> r <span class="o">+</span> dr
+        <span class="k">while</span> (<span class="n">0</span> <span class="o">&lt;=</span> ff <span class="o">&lt;=</span> <span class="n">7</span>) <span class="o">&amp;&amp;</span> (<span class="n">0</span> <span class="o">&lt;=</span> rr <span class="o">&lt;=</span> <span class="n">7</span>)
+          t <span class="o">=</span> @squares[rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> ff]
+          <span class="k">if</span> t.empty?
+            add(moves, from, rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> ff)
+          <span class="k">else</span>
+            add(moves, from, rr <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> ff) <span class="k">if</span> t.side <span class="o">!=</span> side
+            <span class="k">break</span>
+          <span class="k">end</span>
+          ff <span class="o">+=</span> df; rr <span class="o">+=</span> dr
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
 
-    private def gen_castling(i, side, moves)
-      rank = side.white? ? 0 : 7
-      return unless i == rank * 8 + 4
-      return if attacked?(i, side.other)
-      ks = side.white? ? @castling[0] : @castling[2]
-      qs = side.white? ? @castling[1] : @castling[3]
-      if ks &amp;&amp; @squares[rank * 8 + 5].empty? &amp;&amp; @squares[rank * 8 + 6].empty? &amp;&amp; rook_at?(rank * 8 + 7, side) &amp;&amp;
-         !attacked?(rank * 8 + 5, side.other) &amp;&amp; !attacked?(rank * 8 + 6, side.other)
-        moves &lt;&lt; Move.new(i, rank * 8 + 6, castle: true)
-      end
-      if qs &amp;&amp; @squares[rank * 8 + 3].empty? &amp;&amp; @squares[rank * 8 + 2].empty? &amp;&amp; @squares[rank * 8 + 1].empty? &amp;&amp; rook_at?(rank * 8, side) &amp;&amp;
-         !attacked?(rank * 8 + 3, side.other) &amp;&amp; !attacked?(rank * 8 + 2, side.other)
-        moves &lt;&lt; Move.new(i, rank * 8 + 2, castle: true)
-      end
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">gen_castling</span>(i, side, moves)
+      rank <span class="o">=</span> side.white? ? <span class="n">0</span> : <span class="n">7</span>
+      <span class="k">return</span> <span class="k">unless</span> i <span class="o">==</span> rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">4</span>
+      <span class="k">return</span> <span class="k">if</span> attacked?(i, side.other)
+      ks <span class="o">=</span> side.white? ? @castling[<span class="n">0</span>] : @castling[<span class="n">2</span>]
+      qs <span class="o">=</span> side.white? ? @castling[<span class="n">1</span>] : @castling[<span class="n">3</span>]
+      <span class="k">if</span> ks <span class="o">&amp;&amp;</span> @squares[rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">5</span>].empty? <span class="o">&amp;&amp;</span> @squares[rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">6</span>].empty? <span class="o">&amp;&amp;</span> rook_at?(rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">7</span>, side) <span class="o">&amp;&amp;</span>
+         <span class="o">!</span>attacked?(rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">5</span>, side.other) <span class="o">&amp;&amp;</span> <span class="o">!</span>attacked?(rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">6</span>, side.other)
+        moves <span class="o">&lt;&lt;</span> <span class="t">Move</span>.new(i, rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">6</span>, castle: <span class="n">true</span>)
+      <span class="k">end</span>
+      <span class="k">if</span> qs <span class="o">&amp;&amp;</span> @squares[rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">3</span>].empty? <span class="o">&amp;&amp;</span> @squares[rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">2</span>].empty? <span class="o">&amp;&amp;</span> @squares[rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">1</span>].empty? <span class="o">&amp;&amp;</span> rook_at?(rank <span class="o">*</span> <span class="n">8</span>, side) <span class="o">&amp;&amp;</span>
+         <span class="o">!</span>attacked?(rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">3</span>, side.other) <span class="o">&amp;&amp;</span> <span class="o">!</span>attacked?(rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">2</span>, side.other)
+        moves <span class="o">&lt;&lt;</span> <span class="t">Move</span>.new(i, rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">2</span>, castle: <span class="n">true</span>)
+      <span class="k">end</span>
+    <span class="k">end</span>
 
-    private def rook_at?(i, side)
-      s = @squares[i]
-      !s.empty? &amp;&amp; s.piece.rook? &amp;&amp; s.side == side
-    end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">rook_at?</span>(i, side)
+      s <span class="o">=</span> @squares[i]
+      <span class="o">!</span>s.empty? <span class="o">&amp;&amp;</span> s.piece.rook? <span class="o">&amp;&amp;</span> s.side <span class="o">==</span> side
+    <span class="k">end</span>
 
-    # Fully legal moves.
-    def legal_moves : Array(Move)
-      pseudo_moves.select { |m| legal?(m) }
-    end
+    <span class="c"># Fully legal moves.</span>
+    <span class="k">def</span> <span class="m">legal_moves</span> : <span class="t">Array</span>(<span class="t">Move</span>)
+      pseudo_moves.<span class="k">select</span> { <span class="o">|</span>m<span class="o">|</span> legal?(m) }
+    <span class="k">end</span>
 
-    def legal?(m : Move) : Bool
-      b = clone
+    <span class="k">def</span> <span class="m">legal?</span>(m : <span class="t">Move</span>) : <span class="t">Bool</span>
+      b <span class="o">=</span> clone
       b.apply(m)
-      !b.in_check?(@turn)
-    end
+      <span class="o">!</span>b.in_check?(@turn)
+    <span class="k">end</span>
 
-    def legal_moves_from(sq : Int32) : Array(Move)
-      legal_moves.select { |m| m.from == sq }
-    end
+    <span class="k">def</span> <span class="m">legal_moves_from</span>(sq : <span class="t">Int32</span>) : <span class="t">Array</span>(<span class="t">Move</span>)
+      legal_moves.<span class="k">select</span> { <span class="o">|</span>m<span class="o">|</span> m.from <span class="o">==</span> sq }
+    <span class="k">end</span>
 
-    # Apply a move without legality checks (used internally and by AI).
-    def apply(m : Move) : Nil
-      s = @squares[m.from]
-      target = @squares[m.to]
-      @captured &lt;&lt; (m.en_passant? ? Square.of(Piece::Pawn, @turn.other) : target)
-      @halfmove = (s.piece.pawn? || !target.empty?) ? 0 : @halfmove + 1
-      @squares[m.to] = m.promotion.none? ? s : Square.of(m.promotion, s.side)
-      @squares[m.from] = Square.new
-      if m.en_passant?
-        cap = m.to + (s.side.white? ? -8 : 8)
-        @squares[cap] = Square.new
-      end
-      if m.castle?
-        rank = m.from // 8
-        if m.to % 8 == 6
-          @squares[rank * 8 + 5] = @squares[rank * 8 + 7]; @squares[rank * 8 + 7] = Square.new
-        else
-          @squares[rank * 8 + 3] = @squares[rank * 8]; @squares[rank * 8] = Square.new
-        end
-      end
-      # castling rights
-      if s.piece.king?
-        if s.side.white?
-          @castling[0] = @castling[1] = false
-        else
-          @castling[2] = @castling[3] = false
-        end
-      end
-      [{0, 1, 7, 0}, {56, 3, 63, 2}].each do |(qsq, qi, ksq, ki)|
-        @castling[qi] = false if m.from == qsq || m.to == qsq
-        @castling[ki] = false if m.from == ksq || m.to == ksq
-      end
-      # en passant target
-      @en_passant = -1
-      if s.piece.pawn? &amp;&amp; (m.to - m.from).abs == 16
-        @en_passant = (m.from + m.to) // 2
-      end
-      @fullmove += 1 if @turn.black?
-      @turn = @turn.other
-      @history &lt;&lt; m
-    end
+    <span class="c"># Apply a move without legality checks (used internally and by AI).</span>
+    <span class="k">def</span> <span class="m">apply</span>(m : <span class="t">Move</span>) : <span class="t">Nil</span>
+      s <span class="o">=</span> @squares[m.from]
+      target <span class="o">=</span> @squares[m.to]
+      @captured <span class="o">&lt;&lt;</span> (m.en_passant? ? <span class="t">Square</span>.<span class="k">of</span>(<span class="t">Piece</span><span class="t">::</span><span class="t">Pawn</span>, @turn.other) : target)
+      @halfmove <span class="o">=</span> (s.piece.pawn? <span class="o">||</span> <span class="o">!</span>target.empty?) ? <span class="n">0</span> : @halfmove <span class="o">+</span> <span class="n">1</span>
+      @squares[m.to] <span class="o">=</span> m.promotion.none? ? s : <span class="t">Square</span>.<span class="k">of</span>(m.promotion, s.side)
+      @squares[m.from] <span class="o">=</span> <span class="t">Square</span>.new
+      <span class="k">if</span> m.en_passant?
+        cap <span class="o">=</span> m.to <span class="o">+</span> (s.side.white? ? <span class="n">-8</span> : <span class="n">8</span>)
+        @squares[cap] <span class="o">=</span> <span class="t">Square</span>.new
+      <span class="k">end</span>
+      <span class="k">if</span> m.castle?
+        rank <span class="o">=</span> m.from <span class="o">//</span> <span class="n">8</span>
+        <span class="k">if</span> m.to <span class="o">%</span> <span class="n">8</span> <span class="o">==</span> <span class="n">6</span>
+          @squares[rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">5</span>] <span class="o">=</span> @squares[rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">7</span>]; @squares[rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">7</span>] <span class="o">=</span> <span class="t">Square</span>.new
+        <span class="k">else</span>
+          @squares[rank <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">3</span>] <span class="o">=</span> @squares[rank <span class="o">*</span> <span class="n">8</span>]; @squares[rank <span class="o">*</span> <span class="n">8</span>] <span class="o">=</span> <span class="t">Square</span>.new
+        <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="c"># castling rights</span>
+      <span class="k">if</span> s.piece.king?
+        <span class="k">if</span> s.side.white?
+          @castling[<span class="n">0</span>] <span class="o">=</span> @castling[<span class="n">1</span>] <span class="o">=</span> <span class="n">false</span>
+        <span class="k">else</span>
+          @castling[<span class="n">2</span>] <span class="o">=</span> @castling[<span class="n">3</span>] <span class="o">=</span> <span class="n">false</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+      [{<span class="n">0</span>, <span class="n">1</span>, <span class="n">7</span>, <span class="n">0</span>}, {<span class="n">56</span>, <span class="n">3</span>, <span class="n">63</span>, <span class="n">2</span>}].each <span class="k">do</span> <span class="o">|</span>(qsq, qi, ksq, ki)<span class="o">|</span>
+        @castling[qi] <span class="o">=</span> <span class="n">false</span> <span class="k">if</span> m.from <span class="o">==</span> qsq <span class="o">||</span> m.to <span class="o">==</span> qsq
+        @castling[ki] <span class="o">=</span> <span class="n">false</span> <span class="k">if</span> m.from <span class="o">==</span> ksq <span class="o">||</span> m.to <span class="o">==</span> ksq
+      <span class="k">end</span>
+      <span class="c"># en passant target</span>
+      @en_passant <span class="o">=</span> <span class="n">-1</span>
+      <span class="k">if</span> s.piece.pawn? <span class="o">&amp;&amp;</span> (m.to <span class="o">-</span> m.from).abs <span class="o">==</span> <span class="n">16</span>
+        @en_passant <span class="o">=</span> (m.from <span class="o">+</span> m.to) <span class="o">//</span> <span class="n">2</span>
+      <span class="k">end</span>
+      @fullmove <span class="o">+=</span> <span class="n">1</span> <span class="k">if</span> @turn.black?
+      @turn <span class="o">=</span> @turn.other
+      @history <span class="o">&lt;&lt;</span> m
+    <span class="k">end</span>
 
-    # Play a legal move; returns false if illegal.
-    def play(m : Move) : Bool
-      return false unless legal_moves.any? { |lm| lm == m }
-      real = legal_moves.find { |lm| lm == m }.not_nil!
+    <span class="c"># Play a legal move; returns false if illegal.</span>
+    <span class="k">def</span> <span class="m">play</span>(m : <span class="t">Move</span>) : <span class="t">Bool</span>
+      <span class="k">return</span> <span class="n">false</span> <span class="k">unless</span> legal_moves.any? { <span class="o">|</span>lm<span class="o">|</span> lm <span class="o">==</span> m }
+      real <span class="o">=</span> legal_moves.find { <span class="o">|</span>lm<span class="o">|</span> lm <span class="o">==</span> m }.not_nil!
       apply(real)
-      true
-    end
+      <span class="n">true</span>
+    <span class="k">end</span>
 
-    def play(from : String, to : String, promotion : Piece = Piece::None) : Bool
-      play(Move.new(Chess.square_index(from), Chess.square_index(to), promotion))
-    end
+    <span class="k">def</span> <span class="m">play</span>(from : <span class="t">String</span>, to : <span class="t">String</span>, promotion : <span class="t">Piece</span> <span class="o">=</span> <span class="t">Piece</span><span class="t">::</span><span class="t">None</span>) : <span class="t">Bool</span>
+      play(<span class="t">Move</span>.new(<span class="t">Chess</span>.square_index(from), <span class="t">Chess</span>.square_index(to), promotion))
+    <span class="k">end</span>
 
-    def status : Status
-      moves = legal_moves
-      check = in_check?
-      if moves.empty?
-        return check ? Status::Checkmate : Status::Stalemate
-      end
-      return Status::Draw if @halfmove &gt;= 100 || insufficient_material?
-      check ? Status::Check : Status::Playing
-    end
+    <span class="k">def</span> <span class="m">status</span> : <span class="t">Status</span>
+      moves <span class="o">=</span> legal_moves
+      check <span class="o">=</span> in_check?
+      <span class="k">if</span> moves.empty?
+        <span class="k">return</span> check ? <span class="t">Status</span><span class="t">::</span><span class="t">Checkmate</span> : <span class="t">Status</span><span class="t">::</span><span class="t">Stalemate</span>
+      <span class="k">end</span>
+      <span class="k">return</span> <span class="t">Status</span><span class="t">::</span><span class="t">Draw</span> <span class="k">if</span> @halfmove <span class="o">&gt;=</span> <span class="n">100</span> <span class="o">||</span> insufficient_material?
+      check ? <span class="t">Status</span><span class="t">::</span><span class="t">Check</span> : <span class="t">Status</span><span class="t">::</span><span class="t">Playing</span>
+    <span class="k">end</span>
 
-    def game_over? : Bool
-      st = status
-      st.checkmate? || st.stalemate? || st.draw?
-    end
+    <span class="k">def</span> <span class="m">game_over?</span> : <span class="t">Bool</span>
+      st <span class="o">=</span> status
+      st.checkmate? <span class="o">||</span> st.stalemate? <span class="o">||</span> st.draw?
+    <span class="k">end</span>
 
-    def insufficient_material? : Bool
-      pieces = @squares.reject(&amp;.empty?).map(&amp;.piece).reject(&amp;.king?)
-      return true if pieces.empty?
-      pieces.size == 1 &amp;&amp; (pieces[0].bishop? || pieces[0].knight?)
-    end
+    <span class="k">def</span> <span class="m">insufficient_material?</span> : <span class="t">Bool</span>
+      pieces <span class="o">=</span> @squares.reject(<span class="o">&amp;</span>.empty?).map(<span class="o">&amp;</span>.piece).reject(<span class="o">&amp;</span>.king?)
+      <span class="k">return</span> <span class="n">true</span> <span class="k">if</span> pieces.empty?
+      pieces.size <span class="o">==</span> <span class="n">1</span> <span class="o">&amp;&amp;</span> (pieces[<span class="n">0</span>].bishop? <span class="o">||</span> pieces[<span class="n">0</span>].knight?)
+    <span class="k">end</span>
 
-    # Number of leaf nodes at `depth` (perft) — used to validate move generation.
-    def perft(depth : Int32) : Int64
-      return 1_i64 if depth == 0
-      total = 0_i64
-      legal_moves.each do |m|
-        b = clone
+    <span class="c"># Number of leaf nodes at `depth` (perft), used to validate move generation.</span>
+    <span class="k">def</span> <span class="m">perft</span>(depth : <span class="t">Int32</span>) : <span class="t">Int64</span>
+      <span class="k">return</span> <span class="n">1_i64</span> <span class="k">if</span> depth <span class="o">==</span> <span class="n">0</span>
+      total <span class="o">=</span> <span class="n">0_i64</span>
+      legal_moves.each <span class="k">do</span> <span class="o">|</span>m<span class="o">|</span>
+        b <span class="o">=</span> clone
         b.apply(m)
-        total += b.perft(depth - 1)
-      end
+        total <span class="o">+=</span> b.perft(depth <span class="o">-</span> <span class="n">1</span>)
+      <span class="k">end</span>
       total
-    end
+    <span class="k">end</span>
 
-    def to_s(io : IO) : Nil
-      7.downto(0) do |r|
-        8.times { |f| io &lt;&lt; @squares[r * 8 + f].to_s &lt;&lt; &quot; &quot; }
-        io &lt;&lt; &quot;\n&quot;
-      end
-    end
-  end
+    <span class="k">def</span> <span class="m">to_s</span>(io : <span class="t">IO</span>) : <span class="t">Nil</span>
+      <span class="n">7</span>.downto(<span class="n">0</span>) <span class="k">do</span> <span class="o">|</span>r<span class="o">|</span>
+        <span class="n">8</span>.times { <span class="o">|</span>f<span class="o">|</span> io <span class="o">&lt;&lt;</span> @squares[r <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> f].to_s <span class="o">&lt;&lt;</span> <span class="s">&quot; &quot;</span> }
+        io <span class="o">&lt;&lt;</span> <span class="s">&quot;\n&quot;</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  # Alpha-beta search with material + piece-square evaluation.
-  class AI
-    VALUES = {Piece::Pawn =&gt; 100, Piece::Knight =&gt; 320, Piece::Bishop =&gt; 330, Piece::Rook =&gt; 500, Piece::Queen =&gt; 900, Piece::King =&gt; 0, Piece::None =&gt; 0}
-    # Piece-square bonus: encourage centre control and development (from white&#39;s view, rank 0 = bottom).
-    PST = {
-      Piece::Pawn =&gt; [0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 10, -20, -20, 10, 10, 5, 5, -5, -10, 0, 0, -10, -5, 5, 0, 0, 0, 20, 20, 0, 0, 0, 5, 5, 10, 25, 25, 10, 5, 5, 10, 10, 20, 30, 30, 20, 10, 10, 50, 50, 50, 50, 50, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0],
-      Piece::Knight =&gt; [-50, -40, -30, -30, -30, -30, -40, -50, -40, -20, 0, 5, 5, 0, -20, -40, -30, 5, 10, 15, 15, 10, 5, -30, -30, 0, 15, 20, 20, 15, 0, -30, -30, 5, 15, 20, 20, 15, 5, -30, -30, 0, 10, 15, 15, 10, 0, -30, -40, -20, 0, 0, 0, 0, -20, -40, -50, -40, -30, -30, -30, -30, -40, -50],
-      Piece::Bishop =&gt; [-20, -10, -10, -10, -10, -10, -10, -20, -10, 5, 0, 0, 0, 0, 5, -10, -10, 10, 10, 10, 10, 10, 10, -10, -10, 0, 10, 10, 10, 10, 0, -10, -10, 5, 5, 10, 10, 5, 5, -10, -10, 0, 5, 10, 10, 5, 0, -10, -10, 0, 0, 0, 0, 0, 0, -10, -20, -10, -10, -10, -10, -10, -10, -20],
-      Piece::Rook =&gt; [0, 0, 0, 5, 5, 0, 0, 0, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, 5, 10, 10, 10, 10, 10, 10, 5, 0, 0, 0, 0, 0, 0, 0, 0],
-      Piece::Queen =&gt; [-20, -10, -10, -5, -5, -10, -10, -20, -10, 0, 5, 0, 0, 0, 0, -10, -10, 5, 5, 5, 5, 5, 0, -10, 0, 0, 5, 5, 5, 5, 0, -5, -5, 0, 5, 5, 5, 5, 0, -5, -10, 0, 5, 5, 5, 5, 0, -10, -10, 0, 0, 0, 0, 0, 0, -10, -20, -10, -10, -5, -5, -10, -10, -20],
-      Piece::King =&gt; [20, 30, 10, 0, 0, 10, 30, 20, 20, 20, 0, 0, 0, 0, 20, 20, -10, -20, -20, -20, -20, -20, -20, -10, -20, -30, -30, -40, -40, -30, -30, -20, -30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30],
+  <span class="c"># Alpha-beta search with material + piece-square evaluation.</span>
+  <span class="k">class</span> <span class="t">AI</span>
+    <span class="t">VALUES</span> <span class="o">=</span> {<span class="t">Piece</span><span class="t">::</span><span class="t">Pawn</span> <span class="o">=&gt;</span> <span class="n">100</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Knight</span> <span class="o">=&gt;</span> <span class="n">320</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Bishop</span> <span class="o">=&gt;</span> <span class="n">330</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Rook</span> <span class="o">=&gt;</span> <span class="n">500</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">Queen</span> <span class="o">=&gt;</span> <span class="n">900</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">King</span> <span class="o">=&gt;</span> <span class="n">0</span>, <span class="t">Piece</span><span class="t">::</span><span class="t">None</span> <span class="o">=&gt;</span> <span class="n">0</span>}
+    <span class="c"># Piece-square bonus: encourage centre control and development (from white&#39;s view, rank 0 = bottom).</span>
+    <span class="t">PST</span> <span class="o">=</span> {
+      <span class="t">Piece</span><span class="t">::</span><span class="t">Pawn</span> <span class="o">=&gt;</span> [<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">5</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">-20</span>, <span class="n">-20</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">-5</span>, <span class="n">-10</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-10</span>, <span class="n">-5</span>, <span class="n">5</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">20</span>, <span class="n">20</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">10</span>, <span class="n">25</span>, <span class="n">25</span>, <span class="n">10</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>, <span class="n">30</span>, <span class="n">20</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">50</span>, <span class="n">50</span>, <span class="n">50</span>, <span class="n">50</span>, <span class="n">50</span>, <span class="n">50</span>, <span class="n">50</span>, <span class="n">50</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>],
+      <span class="t">Piece</span><span class="t">::</span><span class="t">Knight</span> <span class="o">=&gt;</span> [<span class="n">-50</span>, <span class="n">-40</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">-40</span>, <span class="n">-50</span>, <span class="n">-40</span>, <span class="n">-20</span>, <span class="n">0</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">0</span>, <span class="n">-20</span>, <span class="n">-40</span>, <span class="n">-30</span>, <span class="n">5</span>, <span class="n">10</span>, <span class="n">15</span>, <span class="n">15</span>, <span class="n">10</span>, <span class="n">5</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">0</span>, <span class="n">15</span>, <span class="n">20</span>, <span class="n">20</span>, <span class="n">15</span>, <span class="n">0</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">5</span>, <span class="n">15</span>, <span class="n">20</span>, <span class="n">20</span>, <span class="n">15</span>, <span class="n">5</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">0</span>, <span class="n">10</span>, <span class="n">15</span>, <span class="n">15</span>, <span class="n">10</span>, <span class="n">0</span>, <span class="n">-30</span>, <span class="n">-40</span>, <span class="n">-20</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-20</span>, <span class="n">-40</span>, <span class="n">-50</span>, <span class="n">-40</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">-40</span>, <span class="n">-50</span>],
+      <span class="t">Piece</span><span class="t">::</span><span class="t">Bishop</span> <span class="o">=&gt;</span> [<span class="n">-20</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-20</span>, <span class="n">-10</span>, <span class="n">5</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">5</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">0</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">0</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">0</span>, <span class="n">5</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">5</span>, <span class="n">0</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-10</span>, <span class="n">-20</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-20</span>],
+      <span class="t">Piece</span><span class="t">::</span><span class="t">Rook</span> <span class="o">=&gt;</span> [<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-5</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-5</span>, <span class="n">-5</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-5</span>, <span class="n">-5</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-5</span>, <span class="n">-5</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-5</span>, <span class="n">-5</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-5</span>, <span class="n">5</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="n">5</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>],
+      <span class="t">Piece</span><span class="t">::</span><span class="t">Queen</span> <span class="o">=&gt;</span> [<span class="n">-20</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-5</span>, <span class="n">-5</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-20</span>, <span class="n">-10</span>, <span class="n">0</span>, <span class="n">5</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">0</span>, <span class="n">-10</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">0</span>, <span class="n">-5</span>, <span class="n">-5</span>, <span class="n">0</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">0</span>, <span class="n">-5</span>, <span class="n">-10</span>, <span class="n">0</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">5</span>, <span class="n">0</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-10</span>, <span class="n">-20</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-5</span>, <span class="n">-5</span>, <span class="n">-10</span>, <span class="n">-10</span>, <span class="n">-20</span>],
+      <span class="t">Piece</span><span class="t">::</span><span class="t">King</span> <span class="o">=&gt;</span> [<span class="n">20</span>, <span class="n">30</span>, <span class="n">10</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">10</span>, <span class="n">30</span>, <span class="n">20</span>, <span class="n">20</span>, <span class="n">20</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">20</span>, <span class="n">20</span>, <span class="n">-10</span>, <span class="n">-20</span>, <span class="n">-20</span>, <span class="n">-20</span>, <span class="n">-20</span>, <span class="n">-20</span>, <span class="n">-20</span>, <span class="n">-10</span>, <span class="n">-20</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">-40</span>, <span class="n">-40</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">-20</span>, <span class="n">-30</span>, <span class="n">-40</span>, <span class="n">-40</span>, <span class="n">-50</span>, <span class="n">-50</span>, <span class="n">-40</span>, <span class="n">-40</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">-40</span>, <span class="n">-40</span>, <span class="n">-50</span>, <span class="n">-50</span>, <span class="n">-40</span>, <span class="n">-40</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">-40</span>, <span class="n">-40</span>, <span class="n">-50</span>, <span class="n">-50</span>, <span class="n">-40</span>, <span class="n">-40</span>, <span class="n">-30</span>, <span class="n">-30</span>, <span class="n">-40</span>, <span class="n">-40</span>, <span class="n">-50</span>, <span class="n">-50</span>, <span class="n">-40</span>, <span class="n">-40</span>, <span class="n">-30</span>],
     }
 
-    getter nodes = 0
-    property depth : Int32
+    getter nodes <span class="o">=</span> <span class="n">0</span>
+    property depth : <span class="t">Int32</span>
 
-    def initialize(@depth : Int32 = 3); end
+    <span class="k">def</span> <span class="m">initialize</span>(@depth : <span class="t">Int32</span> <span class="o">=</span> <span class="n">3</span>); <span class="k">end</span>
 
-    # Static evaluation from the point of view of the side to move.
-    def evaluate(b : Board) : Int32
-      score = 0
-      64.times do |i|
-        s = b[i]
-        next if s.empty?
-        idx = s.side.white? ? i : (7 - i // 8) * 8 + i % 8
-        v = VALUES[s.piece] + PST[s.piece][idx]
-        score += s.side.white? ? v : -v
-      end
-      b.turn.white? ? score : -score
-    end
+    <span class="c"># Static evaluation from the point of view of the side to move.</span>
+    <span class="k">def</span> <span class="m">evaluate</span>(b : <span class="t">Board</span>) : <span class="t">Int32</span>
+      score <span class="o">=</span> <span class="n">0</span>
+      <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+        s <span class="o">=</span> b[i]
+        <span class="k">next</span> <span class="k">if</span> s.empty?
+        idx <span class="o">=</span> s.side.white? ? i : (<span class="n">7</span> <span class="o">-</span> i <span class="o">//</span> <span class="n">8</span>) <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> i <span class="o">%</span> <span class="n">8</span>
+        v <span class="o">=</span> <span class="t">VALUES</span>[s.piece] <span class="o">+</span> <span class="t">PST</span>[s.piece][idx]
+        score <span class="o">+=</span> s.side.white? ? v : <span class="o">-</span>v
+      <span class="k">end</span>
+      b.turn.white? ? score : <span class="o">-</span>score
+    <span class="k">end</span>
 
-    def best_move(b : Board) : Move?
-      @nodes = 0
-      moves = order(b, b.legal_moves)
-      return nil if moves.empty?
-      best = moves[0]; best_score = Int32::MIN
-      alpha = -1_000_000; beta = 1_000_000
-      moves.each do |m|
-        c = b.clone; c.apply(m)
-        score = -search(c, @depth - 1, -beta, -alpha)
-        if score &gt; best_score
-          best_score = score; best = m
-        end
-        alpha = Math.max(alpha, score)
-      end
+    <span class="k">def</span> <span class="m">best_move</span>(b : <span class="t">Board</span>) : <span class="t">Move</span>?
+      @nodes <span class="o">=</span> <span class="n">0</span>
+      moves <span class="o">=</span> order(b, b.legal_moves)
+      <span class="k">return</span> <span class="n">nil</span> <span class="k">if</span> moves.empty?
+      best <span class="o">=</span> moves[<span class="n">0</span>]; best_score <span class="o">=</span> <span class="t">Int32</span><span class="t">::</span><span class="t">MIN</span>
+      alpha <span class="o">=</span> <span class="n">-1_000_000</span>; beta <span class="o">=</span> <span class="n">1_000_000</span>
+      moves.each <span class="k">do</span> <span class="o">|</span>m<span class="o">|</span>
+        c <span class="o">=</span> b.clone; c.apply(m)
+        score <span class="o">=</span> <span class="o">-</span>search(c, @depth <span class="o">-</span> <span class="n">1</span>, <span class="o">-</span>beta, <span class="o">-</span>alpha)
+        <span class="k">if</span> score <span class="o">&gt;</span> best_score
+          best_score <span class="o">=</span> score; best <span class="o">=</span> m
+        <span class="k">end</span>
+        alpha <span class="o">=</span> <span class="t">Math</span>.max(alpha, score)
+      <span class="k">end</span>
       best
-    end
+    <span class="k">end</span>
 
-    private def search(b : Board, depth : Int32, alpha : Int32, beta : Int32) : Int32
-      @nodes += 1
-      moves = b.legal_moves
-      if moves.empty?
-        return b.in_check? ? -100_000 - depth : 0
-      end
-      return evaluate(b) if depth &lt;= 0
-      order(b, moves).each do |m|
-        c = b.clone; c.apply(m)
-        score = -search(c, depth - 1, -beta, -alpha)
-        return beta if score &gt;= beta
-        alpha = Math.max(alpha, score)
-      end
+    <span class="k">private</span> <span class="k">def</span> <span class="m">search</span>(b : <span class="t">Board</span>, depth : <span class="t">Int32</span>, alpha : <span class="t">Int32</span>, beta : <span class="t">Int32</span>) : <span class="t">Int32</span>
+      @nodes <span class="o">+=</span> <span class="n">1</span>
+      moves <span class="o">=</span> b.legal_moves
+      <span class="k">if</span> moves.empty?
+        <span class="k">return</span> b.in_check? ? <span class="n">-100_000</span> <span class="o">-</span> depth : <span class="n">0</span>
+      <span class="k">end</span>
+      <span class="k">return</span> evaluate(b) <span class="k">if</span> depth <span class="o">&lt;=</span> <span class="n">0</span>
+      order(b, moves).each <span class="k">do</span> <span class="o">|</span>m<span class="o">|</span>
+        c <span class="o">=</span> b.clone; c.apply(m)
+        score <span class="o">=</span> <span class="o">-</span>search(c, depth <span class="o">-</span> <span class="n">1</span>, <span class="o">-</span>beta, <span class="o">-</span>alpha)
+        <span class="k">return</span> beta <span class="k">if</span> score <span class="o">&gt;=</span> beta
+        alpha <span class="o">=</span> <span class="t">Math</span>.max(alpha, score)
+      <span class="k">end</span>
       alpha
-    end
+    <span class="k">end</span>
 
-    # Captures and promotions first (MVV-LVA).
-    private def order(b : Board, moves : Array(Move)) : Array(Move)
-      moves.sort_by do |m|
-        victim = b[m.to]
-        v = victim.empty? ? 0 : VALUES[victim.piece] * 10 - VALUES[b[m.from].piece] // 10
-        v += 800 unless m.promotion.none?
-        -v
-      end
-    end
-  end
-end
-</code></pre></details></div>
+    <span class="c"># Captures and promotions first (MVV-LVA).</span>
+    <span class="k">private</span> <span class="k">def</span> <span class="m">order</span>(b : <span class="t">Board</span>, moves : <span class="t">Array</span>(<span class="t">Move</span>)) : <span class="t">Array</span>(<span class="t">Move</span>)
+      moves.sort_by <span class="k">do</span> <span class="o">|</span>m<span class="o">|</span>
+        victim <span class="o">=</span> b[m.to]
+        v <span class="o">=</span> victim.empty? ? <span class="n">0</span> : <span class="t">VALUES</span>[victim.piece] <span class="o">*</span> <span class="n">10</span> <span class="o">-</span> <span class="t">VALUES</span>[b[m.from].piece] <span class="o">//</span> <span class="n">10</span>
+        v <span class="o">+=</span> <span class="n">800</span> <span class="k">unless</span> m.promotion.none?
+        <span class="o">-</span>v
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./chess.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

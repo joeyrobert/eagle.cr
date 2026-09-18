@@ -1,36 +1,41 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Smoke test · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>Smoke test</h1><p class="lead">Shapes, sprites, lines and text: the first thing Eagle ever rendered.</p><canvas id="eagle"></canvas><p class="controls"></p>
-<details><summary>Source — examples/smoke/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>Smoke test</h1><p class="lead">Shapes, sprites, lines and text: the first thing Eagle ever rendered.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
 
-# Minimal smoke test: draws shapes, sprites and text. Run with
-#   EAGLE_FRAMES=5 EAGLE_SCREENSHOT=smoke.png crystal run examples/smoke/main.cr
-class Smoke &lt; Eagle::App
-  @tex : Eagle::Texture? = nil
+<details><summary>Source: <code>examples/smoke/main.cr</code></summary><h3>examples/smoke/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
 
-  def load
-    @tex = Eagle::Texture.new(Eagle::Image.checkerboard(64, 64, 8, Eagle::Color::YELLOW, Eagle::Color::MAGENTA))
-  end
+<span class="c"># Minimal smoke test: draws shapes, sprites and text. Run with</span>
+<span class="c">#   EAGLE_FRAMES=5 EAGLE_SCREENSHOT=smoke.png crystal run examples/smoke/main.cr</span>
+<span class="k">class</span> <span class="t">Smoke</span> <span class="o">&lt;</span> <span class="t">Eagle</span><span class="t">::</span><span class="t">App</span>
+  @tex : <span class="t">Eagle</span><span class="t">::</span><span class="t">Texture</span>? <span class="o">=</span> <span class="n">nil</span>
 
-  def draw(g : Eagle::Graphics)
-    g.rect(20, 20, 200, 120, color: Eagle::Color::RED)
-    g.rect_line(20, 20, 200, 120, color: Eagle::Color::WHITE)
-    g.circle(400, 100, 60, color: Eagle::Color::GREEN)
-    g.circle(400, 100, 60, Eagle::DrawMode::Line, color: Eagle::Color::BLACK)
-    g.line(0, 300, 640, 340, Eagle::Color::CYAN, 4)
-    g.polygon([v2(500, 250), v2(600, 280), v2(560, 350), v2(520, 320), v2(480, 340)], color: Eagle::Color::ORANGE)
-    g.draw(@tex.not_nil!, 250, 200, rotation: Eagle::Clock.elapsed * 0.5, sx: 2, ox: 32, oy: 32)
-    g.print(&quot;Hello, Eagle! FPS #{Eagle::Clock.fps.round}&quot;, 20, 400, Eagle::Color::WHITE)
-    g.print(&quot;draw calls: #{g.draw_calls}&quot;, 20, 430, Eagle::Color::GRAY)
-  end
-end
+  <span class="k">def</span> <span class="m">load</span>
+    @tex <span class="o">=</span> <span class="t">Eagle</span><span class="t">::</span><span class="t">Texture</span>.new(<span class="t">Eagle</span><span class="t">::</span><span class="t">Image</span>.checkerboard(<span class="n">64</span>, <span class="n">64</span>, <span class="n">8</span>, <span class="t">Eagle</span><span class="t">::</span><span class="t">Color</span><span class="t">::</span><span class="t">YELLOW</span>, <span class="t">Eagle</span><span class="t">::</span><span class="t">Color</span><span class="t">::</span><span class="t">MAGENTA</span>))
+  <span class="k">end</span>
 
-Eagle.run(Smoke.new, title: &quot;Eagle smoke&quot;, width: 640, height: 480)
-</code></pre></details></div>
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Eagle</span><span class="t">::</span><span class="t">Graphics</span>)
+    g.rect(<span class="n">20</span>, <span class="n">20</span>, <span class="n">200</span>, <span class="n">120</span>, color: <span class="t">Eagle</span><span class="t">::</span><span class="t">Color</span><span class="t">::</span><span class="t">RED</span>)
+    g.rect_line(<span class="n">20</span>, <span class="n">20</span>, <span class="n">200</span>, <span class="n">120</span>, color: <span class="t">Eagle</span><span class="t">::</span><span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.circle(<span class="n">400</span>, <span class="n">100</span>, <span class="n">60</span>, color: <span class="t">Eagle</span><span class="t">::</span><span class="t">Color</span><span class="t">::</span><span class="t">GREEN</span>)
+    g.circle(<span class="n">400</span>, <span class="n">100</span>, <span class="n">60</span>, <span class="t">Eagle</span><span class="t">::</span><span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, color: <span class="t">Eagle</span><span class="t">::</span><span class="t">Color</span><span class="t">::</span><span class="t">BLACK</span>)
+    g.line(<span class="n">0</span>, <span class="n">300</span>, <span class="n">640</span>, <span class="n">340</span>, <span class="t">Eagle</span><span class="t">::</span><span class="t">Color</span><span class="t">::</span><span class="t">CYAN</span>, <span class="n">4</span>)
+    g.polygon([v2(<span class="n">500</span>, <span class="n">250</span>), v2(<span class="n">600</span>, <span class="n">280</span>), v2(<span class="n">560</span>, <span class="n">350</span>), v2(<span class="n">520</span>, <span class="n">320</span>), v2(<span class="n">480</span>, <span class="n">340</span>)], color: <span class="t">Eagle</span><span class="t">::</span><span class="t">Color</span><span class="t">::</span><span class="t">ORANGE</span>)
+    g.draw(@tex.not_nil!, <span class="n">250</span>, <span class="n">200</span>, rotation: <span class="t">Eagle</span><span class="t">::</span><span class="t">Clock</span>.elapsed <span class="o">*</span> <span class="n">0.5</span>, sx: <span class="n">2</span>, ox: <span class="n">32</span>, oy: <span class="n">32</span>)
+    g.print(<span class="s">&quot;Hello, Eagle! FPS </span><span class="i">#{</span><span class="t">Eagle</span><span class="t">::</span><span class="t">Clock</span>.fps.round<span class="i">}</span><span class="s">&quot;</span>, <span class="n">20</span>, <span class="n">400</span>, <span class="t">Eagle</span><span class="t">::</span><span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.print(<span class="s">&quot;draw calls: </span><span class="i">#{</span>g.draw_calls<span class="i">}</span><span class="s">&quot;</span>, <span class="n">20</span>, <span class="n">430</span>, <span class="t">Eagle</span><span class="t">::</span><span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>)
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="t">Eagle</span>.run(<span class="t">Smoke</span>.new, title: <span class="s">&quot;Eagle smoke&quot;</span>, width: <span class="n">640</span>, height: <span class="n">480</span>)
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./smoke.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

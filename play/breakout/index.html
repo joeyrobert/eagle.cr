@@ -1,172 +1,177 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Breakout · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>Breakout</h1><p class="lead">Paddle, ball, bricks with hit points, particles, camera shake and synthesized sounds.</p><canvas id="eagle"></canvas><p class="controls">Mouse or arrows move · Space launches</p>
-<details><summary>Source — examples/breakout/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
-include Eagle
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>Breakout</h1><p class="lead">Paddle, ball, bricks with hit points, particles, camera shake and synthesized sounds.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Mouse or arrows move · Space launches</p>
+<details><summary>Source: <code>examples/breakout/main.cr</code></summary><h3>examples/breakout/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-# Breakout: move the paddle with the mouse or arrow keys / gamepad. Space launches.
-class Breakout &lt; App
-  W = 800; H = 600
-  record Brick, rect : Rect, color : Color, hp : Int32
+<span class="c"># Breakout: move the paddle with the mouse or arrow keys / gamepad. Space launches.</span>
+<span class="k">class</span> <span class="t">Breakout</span> <span class="o">&lt;</span> <span class="t">App</span>
+  <span class="t">W</span> <span class="o">=</span> <span class="n">800</span>; <span class="t">H</span> <span class="o">=</span> <span class="n">600</span>
+  record <span class="t">Brick</span>, rect : <span class="t">Rect</span>, color : <span class="t">Color</span>, hp : <span class="t">Int32</span>
 
-  @paddle : Rect = Rect.new(350, 560, 100, 14)
-  @ball : Vec2 = Vec2.new(400, 540)
-  @vel = Vec2::ZERO
-  @radius = 7_f32
-  @bricks = [] of Brick
-  @score = 0
-  @lives = 3
-  @level = 1
-  @launched = false
-  @fx = Particles2D.new(amount: 0)
-  @snd_hit : Sound? = nil
-  @snd_break : Sound? = nil
-  @snd_lose : Sound? = nil
-  @shake = Camera2D.new(current: true)
-  @game_over = false
+  @paddle : <span class="t">Rect</span> <span class="o">=</span> <span class="t">Rect</span>.new(<span class="n">350</span>, <span class="n">560</span>, <span class="n">100</span>, <span class="n">14</span>)
+  @ball : <span class="t">Vec2</span> <span class="o">=</span> <span class="t">Vec2</span>.new(<span class="n">400</span>, <span class="n">540</span>)
+  @vel <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+  @radius <span class="o">=</span> <span class="n">7_f32</span>
+  @bricks <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Brick</span>
+  @score <span class="o">=</span> <span class="n">0</span>
+  @lives <span class="o">=</span> <span class="n">3</span>
+  @level <span class="o">=</span> <span class="n">1</span>
+  @launched <span class="o">=</span> <span class="n">false</span>
+  @fx <span class="o">=</span> <span class="t">Particles2D</span>.new(amount: <span class="n">0</span>)
+  @snd_hit : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @snd_break : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @snd_lose : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @shake <span class="o">=</span> <span class="t">Camera2D</span>.new(current: <span class="n">true</span>)
+  @game_over <span class="o">=</span> <span class="n">false</span>
 
-  def load
-    Input.map &quot;left&quot;, Key::Left, Key::A, Input.axis(GamepadAxis::LeftX, -1)
-    Input.map &quot;right&quot;, Key::Right, Key::D, Input.axis(GamepadAxis::LeftX, 1)
-    Input.map &quot;launch&quot;, Key::Space, GamepadButton::A, MouseButton::Left
-    @snd_hit = Sound.tone(600, 0.04, Sound::Wave::Square, 0.25)
-    @snd_break = Sound.tone(300, 0.08, Sound::Wave::Saw, 0.3)
-    @snd_lose = Sound.tone(120, 0.4, Sound::Wave::Triangle, 0.4)
-    @fx.lifetime = 0.5; @fx.speed = 60..220; @fx.spread = Math::PI; @fx.gravity = v2(0, 500)
-    @fx.scale_start = 0.4; @fx.scale_end = 0.0; @fx.blend = GPU::BlendMode::Additive
-    @shake.position = v2(W / 2, H / 2)
-    SceneTree.root.add(@shake, @fx)
+  <span class="k">def</span> <span class="m">load</span>
+    <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Right</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;launch&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Space</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">A</span>, <span class="t">MouseButton</span><span class="t">::</span><span class="t">Left</span>
+    @snd_hit <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">600</span>, <span class="n">0.04</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Square</span>, <span class="n">0.25</span>)
+    @snd_break <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">300</span>, <span class="n">0.08</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Saw</span>, <span class="n">0.3</span>)
+    @snd_lose <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">120</span>, <span class="n">0.4</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Triangle</span>, <span class="n">0.4</span>)
+    @fx.lifetime <span class="o">=</span> <span class="n">0.5</span>; @fx.speed <span class="o">=</span> <span class="n">60</span>..<span class="n">220</span>; @fx.spread <span class="o">=</span> <span class="t">Math</span><span class="t">::</span><span class="t">PI</span>; @fx.gravity <span class="o">=</span> v2(<span class="n">0</span>, <span class="n">500</span>)
+    @fx.scale_start <span class="o">=</span> <span class="n">0.4</span>; @fx.scale_end <span class="o">=</span> <span class="n">0.0</span>; @fx.blend <span class="o">=</span> <span class="t">GPU</span><span class="t">::</span><span class="t">BlendMode</span><span class="t">::</span><span class="t">Additive</span>
+    @shake.position <span class="o">=</span> v2(<span class="t">W</span> <span class="o">/</span> <span class="n">2</span>, <span class="t">H</span> <span class="o">/</span> <span class="n">2</span>)
+    <span class="t">SceneTree</span>.root.add(@shake, @fx)
     build_level
-  end
+  <span class="k">end</span>
 
-  def build_level
+  <span class="k">def</span> <span class="m">build_level</span>
     @bricks.clear
-    cols = 10; rows = 4 + @level
-    bw = (W - 40) / cols; bh = 22
-    rows.times do |r|
-      cols.times do |c|
-        next if @level &gt; 1 &amp;&amp; (r + c) % 7 == 0
-        hp = r &lt; 2 &amp;&amp; @level &gt; 1 ? 2 : 1
-        @bricks &lt;&lt; Brick.new(Rect.new(20 + c * bw + 2, 60 + r * (bh + 4), bw - 4, bh), Color.hsv(r * 30 + @level * 40, 0.75, 1), hp)
-      end
-    end
+    cols <span class="o">=</span> <span class="n">10</span>; rows <span class="o">=</span> <span class="n">4</span> <span class="o">+</span> @level
+    bw <span class="o">=</span> (<span class="t">W</span> <span class="o">-</span> <span class="n">40</span>) <span class="o">/</span> cols; bh <span class="o">=</span> <span class="n">22</span>
+    rows.times <span class="k">do</span> <span class="o">|</span>r<span class="o">|</span>
+      cols.times <span class="k">do</span> <span class="o">|</span>c<span class="o">|</span>
+        <span class="k">next</span> <span class="k">if</span> @level <span class="o">&gt;</span> <span class="n">1</span> <span class="o">&amp;&amp;</span> (r <span class="o">+</span> c) <span class="o">%</span> <span class="n">7</span> <span class="o">==</span> <span class="n">0</span>
+        hp <span class="o">=</span> r <span class="o">&lt;</span> <span class="n">2</span> <span class="o">&amp;&amp;</span> @level <span class="o">&gt;</span> <span class="n">1</span> ? <span class="n">2</span> : <span class="n">1</span>
+        @bricks <span class="o">&lt;&lt;</span> <span class="t">Brick</span>.new(<span class="t">Rect</span>.new(<span class="n">20</span> <span class="o">+</span> c <span class="o">*</span> bw <span class="o">+</span> <span class="n">2</span>, <span class="n">60</span> <span class="o">+</span> r <span class="o">*</span> (bh <span class="o">+</span> <span class="n">4</span>), bw <span class="o">-</span> <span class="n">4</span>, bh), <span class="t">Color</span>.hsv(r <span class="o">*</span> <span class="n">30</span> <span class="o">+</span> @level <span class="o">*</span> <span class="n">40</span>, <span class="n">0.75</span>, <span class="n">1</span>), hp)
+      <span class="k">end</span>
+    <span class="k">end</span>
     reset_ball
-  end
+  <span class="k">end</span>
 
-  def reset_ball
-    @launched = false
-    @vel = Vec2::ZERO
-    @ball = v2(@paddle.center.x, @paddle.y - @radius - 1)
-  end
+  <span class="k">def</span> <span class="m">reset_ball</span>
+    @launched <span class="o">=</span> <span class="n">false</span>
+    @vel <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+    @ball <span class="o">=</span> v2(@paddle.center.x, @paddle.y <span class="o">-</span> @radius <span class="o">-</span> <span class="n">1</span>)
+  <span class="k">end</span>
 
-  def update(dt : Float32)
-    return if @game_over
-    px = @paddle.x
-    px += Input.axis(&quot;left&quot;, &quot;right&quot;) * 520 * dt
-    px = Input.mouse.x - @paddle.w / 2 if Input.mouse_delta != Vec2::ZERO
-    @paddle = Rect.new(px.clamp(0_f32, W - @paddle.w), @paddle.y, @paddle.w, @paddle.h)
-    if !@launched
-      @ball = v2(@paddle.center.x, @paddle.y - @radius - 1)
-      if Input.pressed?(&quot;launch&quot;)
-        @launched = true
-        @vel = Vec2.from_angle(-Math::PI / 2 + (rand - 0.5), 330 + @level * 30)
-      end
-      return
-    end
-    steps = 4
-    steps.times { step(dt / steps) }
-    if @bricks.empty?
-      @level += 1
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    <span class="k">return</span> <span class="k">if</span> @game_over
+    px <span class="o">=</span> @paddle.x
+    px <span class="o">+=</span> <span class="t">Input</span>.axis(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>) <span class="o">*</span> <span class="n">520</span> <span class="o">*</span> dt
+    px <span class="o">=</span> <span class="t">Input</span>.mouse.x <span class="o">-</span> @paddle.w <span class="o">/</span> <span class="n">2</span> <span class="k">if</span> <span class="t">Input</span>.mouse_delta <span class="o">!=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+    @paddle <span class="o">=</span> <span class="t">Rect</span>.new(px.clamp(<span class="n">0_f32</span>, <span class="t">W</span> <span class="o">-</span> @paddle.w), @paddle.y, @paddle.w, @paddle.h)
+    <span class="k">if</span> <span class="o">!</span>@launched
+      @ball <span class="o">=</span> v2(@paddle.center.x, @paddle.y <span class="o">-</span> @radius <span class="o">-</span> <span class="n">1</span>)
+      <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;launch&quot;</span>)
+        @launched <span class="o">=</span> <span class="n">true</span>
+        @vel <span class="o">=</span> <span class="t">Vec2</span>.from_angle(<span class="o">-</span><span class="t">Math</span><span class="t">::</span><span class="t">PI</span> <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> (rand <span class="o">-</span> <span class="n">0.5</span>), <span class="n">330</span> <span class="o">+</span> @level <span class="o">*</span> <span class="n">30</span>)
+      <span class="k">end</span>
+      <span class="k">return</span>
+    <span class="k">end</span>
+    steps <span class="o">=</span> <span class="n">4</span>
+    steps.times { step(dt <span class="o">/</span> steps) }
+    <span class="k">if</span> @bricks.empty?
+      @level <span class="o">+=</span> <span class="n">1</span>
       build_level
-    end
-  end
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  private def step(dt)
-    @ball += @vel * dt
-    if @ball.x - @radius &lt; 0 || @ball.x + @radius &gt; W
-      @vel = v2(-@vel.x, @vel.y); @ball = v2(@ball.x.clamp(@radius, W - @radius), @ball.y); @snd_hit.try(&amp;.play(pitch: 1.5))
-    end
-    if @ball.y - @radius &lt; 40
-      @vel = v2(@vel.x, -@vel.y); @ball = v2(@ball.x, 40 + @radius); @snd_hit.try(&amp;.play(pitch: 1.5))
-    end
-    if @ball.y &gt; H + 20
-      @lives -= 1
-      @snd_lose.try(&amp;.play)
-      @shake.shake(8, 0.3)
-      if @lives &lt;= 0
-        @game_over = true
-      else
+  <span class="k">private</span> <span class="k">def</span> <span class="m">step</span>(dt)
+    @ball <span class="o">+=</span> @vel <span class="o">*</span> dt
+    <span class="k">if</span> @ball.x <span class="o">-</span> @radius <span class="o">&lt;</span> <span class="n">0</span> <span class="o">||</span> @ball.x <span class="o">+</span> @radius <span class="o">&gt;</span> <span class="t">W</span>
+      @vel <span class="o">=</span> v2(<span class="o">-</span>@vel.x, @vel.y); @ball <span class="o">=</span> v2(@ball.x.clamp(@radius, <span class="t">W</span> <span class="o">-</span> @radius), @ball.y); @snd_hit.try(<span class="o">&amp;</span>.play(pitch: <span class="n">1.5</span>))
+    <span class="k">end</span>
+    <span class="k">if</span> @ball.y <span class="o">-</span> @radius <span class="o">&lt;</span> <span class="n">40</span>
+      @vel <span class="o">=</span> v2(@vel.x, <span class="o">-</span>@vel.y); @ball <span class="o">=</span> v2(@ball.x, <span class="n">40</span> <span class="o">+</span> @radius); @snd_hit.try(<span class="o">&amp;</span>.play(pitch: <span class="n">1.5</span>))
+    <span class="k">end</span>
+    <span class="k">if</span> @ball.y <span class="o">&gt;</span> <span class="t">H</span> <span class="o">+</span> <span class="n">20</span>
+      @lives <span class="o">-=</span> <span class="n">1</span>
+      @snd_lose.try(<span class="o">&amp;</span>.play)
+      @shake.shake(<span class="n">8</span>, <span class="n">0.3</span>)
+      <span class="k">if</span> @lives <span class="o">&lt;=</span> <span class="n">0</span>
+        @game_over <span class="o">=</span> <span class="n">true</span>
+      <span class="k">else</span>
         reset_ball
-      end
-      return
-    end
-    # paddle
-    if @vel.y &gt; 0 &amp;&amp; circle_rect?(@ball, @radius, @paddle)
-      t = ((@ball.x - @paddle.center.x) / (@paddle.w / 2)).clamp(-1_f32, 1_f32)
-      speed = @vel.length * 1.01
-      @vel = Vec2.from_angle(-Math::PI / 2 + t * 1.1, speed)
-      @ball = v2(@ball.x, @paddle.y - @radius - 0.5)
-      @snd_hit.try(&amp;.play)
-    end
-    # bricks
-    @bricks.each_with_index do |b, i|
-      next unless circle_rect?(@ball, @radius, b.rect)
-      # decide bounce axis by penetration
-      dx = @ball.x - b.rect.center.x; dy = @ball.y - b.rect.center.y
-      px = b.rect.w / 2 + @radius - dx.abs; py = b.rect.h / 2 + @radius - dy.abs
-      if px &lt; py
-        @vel = v2(-@vel.x, @vel.y); @ball += v2(Mathf.sign(dx) * px, 0)
-      else
-        @vel = v2(@vel.x, -@vel.y); @ball += v2(0, Mathf.sign(dy) * py)
-      end
-      if b.hp &gt; 1
-        @bricks[i] = Brick.new(b.rect, b.color.darken(0.4), b.hp - 1)
-        @snd_hit.try(&amp;.play(pitch: 0.8))
-      else
+      <span class="k">end</span>
+      <span class="k">return</span>
+    <span class="k">end</span>
+    <span class="c"># paddle</span>
+    <span class="k">if</span> @vel.y <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> circle_rect?(@ball, @radius, @paddle)
+      t <span class="o">=</span> ((@ball.x <span class="o">-</span> @paddle.center.x) <span class="o">/</span> (@paddle.w <span class="o">/</span> <span class="n">2</span>)).clamp(<span class="n">-1_f32</span>, <span class="n">1_f32</span>)
+      speed <span class="o">=</span> @vel.length <span class="o">*</span> <span class="n">1.01</span>
+      @vel <span class="o">=</span> <span class="t">Vec2</span>.from_angle(<span class="o">-</span><span class="t">Math</span><span class="t">::</span><span class="t">PI</span> <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> t <span class="o">*</span> <span class="n">1.1</span>, speed)
+      @ball <span class="o">=</span> v2(@ball.x, @paddle.y <span class="o">-</span> @radius <span class="o">-</span> <span class="n">0.5</span>)
+      @snd_hit.try(<span class="o">&amp;</span>.play)
+    <span class="k">end</span>
+    <span class="c"># bricks</span>
+    @bricks.each_with_index <span class="k">do</span> <span class="o">|</span>b, i<span class="o">|</span>
+      <span class="k">next</span> <span class="k">unless</span> circle_rect?(@ball, @radius, b.rect)
+      <span class="c"># decide bounce axis by penetration</span>
+      dx <span class="o">=</span> @ball.x <span class="o">-</span> b.rect.center.x; dy <span class="o">=</span> @ball.y <span class="o">-</span> b.rect.center.y
+      px <span class="o">=</span> b.rect.w <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> @radius <span class="o">-</span> dx.abs; py <span class="o">=</span> b.rect.h <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> @radius <span class="o">-</span> dy.abs
+      <span class="k">if</span> px <span class="o">&lt;</span> py
+        @vel <span class="o">=</span> v2(<span class="o">-</span>@vel.x, @vel.y); @ball <span class="o">+=</span> v2(<span class="t">Mathf</span>.sign(dx) <span class="o">*</span> px, <span class="n">0</span>)
+      <span class="k">else</span>
+        @vel <span class="o">=</span> v2(@vel.x, <span class="o">-</span>@vel.y); @ball <span class="o">+=</span> v2(<span class="n">0</span>, <span class="t">Mathf</span>.sign(dy) <span class="o">*</span> py)
+      <span class="k">end</span>
+      <span class="k">if</span> b.hp <span class="o">&gt;</span> <span class="n">1</span>
+        @bricks[i] <span class="o">=</span> <span class="t">Brick</span>.new(b.rect, b.color.darken(<span class="n">0.4</span>), b.hp <span class="o">-</span> <span class="n">1</span>)
+        @snd_hit.try(<span class="o">&amp;</span>.play(pitch: <span class="n">0.8</span>))
+      <span class="k">else</span>
         @bricks.delete_at(i)
-        @score += 10 * @level
-        @snd_break.try(&amp;.play)
-        @fx.position = b.rect.center
-        @fx.color_over_life = [b.color, b.color.with_alpha(0)]
-        @fx.emit(25)
-        @shake.shake(2, 0.1)
-      end
-      break
-    end
-  end
+        @score <span class="o">+=</span> <span class="n">10</span> <span class="o">*</span> @level
+        @snd_break.try(<span class="o">&amp;</span>.play)
+        @fx.position <span class="o">=</span> b.rect.center
+        @fx.color_over_life <span class="o">=</span> [b.color, b.color.with_alpha(<span class="n">0</span>)]
+        @fx.emit(<span class="n">25</span>)
+        @shake.shake(<span class="n">2</span>, <span class="n">0.1</span>)
+      <span class="k">end</span>
+      <span class="k">break</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  private def circle_rect?(c : Vec2, r : Float32, rect : Rect) : Bool
-    cx = c.x.clamp(rect.x, rect.right); cy = c.y.clamp(rect.y, rect.bottom)
-    (c - v2(cx, cy)).length_squared &lt;= r * r
-  end
+  <span class="k">private</span> <span class="k">def</span> <span class="m">circle_rect?</span>(c : <span class="t">Vec2</span>, r : <span class="t">Float32</span>, rect : <span class="t">Rect</span>) : <span class="t">Bool</span>
+    cx <span class="o">=</span> c.x.clamp(rect.x, rect.right); cy <span class="o">=</span> c.y.clamp(rect.y, rect.bottom)
+    (c <span class="o">-</span> v2(cx, cy)).length_squared <span class="o">&lt;=</span> r <span class="o">*</span> r
+  <span class="k">end</span>
 
-  def input(e : Event)
-    if e.is_a?(KeyEvent) &amp;&amp; e.pressed? &amp;&amp; e.key == Key::R &amp;&amp; @game_over
-      @score = 0; @lives = 3; @level = 1; @game_over = false
+  <span class="k">def</span> <span class="m">input</span>(e : <span class="t">Event</span>)
+    <span class="k">if</span> e.<span class="k">is_a?</span>(<span class="t">KeyEvent</span>) <span class="o">&amp;&amp;</span> e.pressed? <span class="o">&amp;&amp;</span> e.key <span class="o">==</span> <span class="t">Key</span><span class="t">::</span><span class="t">R</span> <span class="o">&amp;&amp;</span> @game_over
+      @score <span class="o">=</span> <span class="n">0</span>; @lives <span class="o">=</span> <span class="n">3</span>; @level <span class="o">=</span> <span class="n">1</span>; @game_over <span class="o">=</span> <span class="n">false</span>
       build_level
-    end
-  end
+    <span class="k">end</span>
+  <span class="k">end</span>
 
-  def draw(g : Graphics)
-    g.rect(0, 40, W, 2, color: Color::GRAY)
-    @bricks.each do |b|
-      g.rounded_rect(b.rect.x, b.rect.y, b.rect.w, b.rect.h, 4, color: b.color)
-      g.rounded_rect(b.rect.x, b.rect.y, b.rect.w, b.rect.h / 2, 4, color: Color::WHITE.with_alpha(0.15))
-    end
-    g.rounded_rect(@paddle.x, @paddle.y, @paddle.w, @paddle.h, 6, color: Color.hex(&quot;#4fd1c5&quot;))
-    g.circle(@ball, @radius, color: Color::WHITE)
-    g.print(&quot;score #{@score}   lives #{@lives}   level #{@level}&quot;, 12, 10, Color::WHITE)
-    g.print(&quot;press space / click to launch&quot;, W / 2, 300, Color::GRAY, align: TextAlign::Center) unless @launched || @game_over
-    g.print(&quot;GAME OVER — R to restart&quot;, W / 2, 300, Color::RED, align: TextAlign::Center) if @game_over
-  end
-end
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    g.rect(<span class="n">0</span>, <span class="n">40</span>, <span class="t">W</span>, <span class="n">2</span>, color: <span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>)
+    @bricks.each <span class="k">do</span> <span class="o">|</span>b<span class="o">|</span>
+      g.rounded_rect(b.rect.x, b.rect.y, b.rect.w, b.rect.h, <span class="n">4</span>, color: b.color)
+      g.rounded_rect(b.rect.x, b.rect.y, b.rect.w, b.rect.h <span class="o">/</span> <span class="n">2</span>, <span class="n">4</span>, color: <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>.with_alpha(<span class="n">0.15</span>))
+    <span class="k">end</span>
+    g.rounded_rect(@paddle.x, @paddle.y, @paddle.w, @paddle.h, <span class="n">6</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#4fd1c5&quot;</span>))
+    g.circle(@ball, @radius, color: <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.print(<span class="s">&quot;score </span><span class="i">#{</span>@score<span class="i">}</span><span class="s">   lives </span><span class="i">#{</span>@lives<span class="i">}</span><span class="s">   level </span><span class="i">#{</span>@level<span class="i">}</span><span class="s">&quot;</span>, <span class="n">12</span>, <span class="n">10</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.print(<span class="s">&quot;press space / click to launch&quot;</span>, <span class="t">W</span> <span class="o">/</span> <span class="n">2</span>, <span class="n">300</span>, <span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>) <span class="k">unless</span> @launched <span class="o">||</span> @game_over
+    g.print(<span class="s">&quot;GAME OVER. R to restart&quot;</span>, <span class="t">W</span> <span class="o">/</span> <span class="n">2</span>, <span class="n">300</span>, <span class="t">Color</span><span class="t">::</span><span class="t">RED</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>) <span class="k">if</span> @game_over
+  <span class="k">end</span>
+<span class="k">end</span>
 
-Eagle.run(Breakout, title: &quot;Eagle Breakout&quot;, width: Breakout::W, height: Breakout::H)
-</code></pre></details></div>
+<span class="t">Eagle</span>.run(<span class="t">Breakout</span>, title: <span class="s">&quot;Eagle Breakout&quot;</span>, width: <span class="t">Breakout</span><span class="t">::</span><span class="t">W</span>, height: <span class="t">Breakout</span><span class="t">::</span><span class="t">H</span>)
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./breakout.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>

@@ -18,6 +18,7 @@
   <script type="text/javascript">
   CrystalDocs.base_path = "";
   </script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap"><link rel="icon" href="../../assets/favicon.svg">
 </head>
 <body>
 
@@ -42,7 +43,7 @@
         <a href="index.html">
           eagle
         </a>
-      </h1>
+      </h1><a class="site-link" href="../../index.html">Back to the Eagle site</a>
 
       <span class="project-version">
         main-dev
@@ -1272,8 +1273,11 @@
 compiling to a single executable. Inspired by LÖVE (immediate-mode drawing,
 <code>load/update/draw</code>) and Godot (scene tree, nodes, signals, action map).</p>
 <p>Only two native dependencies: <strong>SDL2</strong> and the platform's <strong>OpenGL 3.3</strong>.
-Everything else — PNG/QOI/BMP/WAV codecs, TrueType fonts, audio mixer,
-physics, particles, UI, 3D renderer with shadows — is written in Crystal.</p>
+Everything else (PNG/QOI/BMP/WAV codecs, TrueType fonts, audio mixer,
+physics, particles, UI, 3D renderer with shadows) is written in Crystal.</p>
+<p><img src="../../assets/screenshots/flythrough3d.png" alt="The 3D fly-through example" /></p>
+<p>See it running in the browser, along with every other example, at
+<a href="https://joeyrobert.github.io/eagle.cr/">joeyrobert.github.io/eagle.cr</a>.</p>
 <pre><code class="language-crystal"><span class="k">require</span> <span class="s">&quot;eagle&quot;</span>
 <span class="k">include</span> <span class="t">Eagle</span>
 
@@ -1301,23 +1305,7 @@ physics, particles, UI, 3D renderer with shadows — is written in Crystal.</p>
     <use href="#octicon-link"/>
   </svg>
 </a>Features</h2>
-<p>| Area | What you get |
-|------|--------------|
-| Core | <code>App</code> callbacks, fixed + variable timestep, <code>Clock</code>, logging, headless/screenshot runs for CI |
-| Scene tree | <code>Node</code>, <code>Node2D</code>, <code>Node3D</code>, <code>SceneTree</code>, groups, deferred calls, pause modes, <code><a href="toplevel.html#signal%28decl%29-macro">signal</a></code> macro |
-| 2D | Batched <code>Graphics</code> (sprites, shapes, thick lines, concave polygons, text), <code>Camera2D</code>, <code>CanvasLayer</code>, <code>Canvas</code> render targets, blend modes, scissor, custom shaders (LÖVE-style <code>effect</code>) |
-| Nodes | <code>Sprite2D</code>, <code>AnimatedSprite2D</code>, <code>Label</code>, <code>Timer</code>, <code>TileMap</code>, <code>Polygon2D</code>, <code>Line2D</code>, <code>Particles2D</code>, <code>AudioPlayer(2D)</code> |
-| Input | Keyboard, mouse, gamepads (SDL GameController), action map with analog strengths, text input |
-| Audio | Float32 mixer, WAV + Ogg Vorbis (Crystal decoder), procedural tones, voices with pitch/pan/fade, buses, streams |
-| Physics 2D | Circles/boxes/polygons, SAT, impulse solver, spatial hash, raycasts, layers, sensors, <code>RigidBody2D</code>, <code>StaticBody2D</code>, <code>KinematicBody2D</code> (<code>move_and_slide</code>), <code>Area2D</code>, <code>RayCast2D</code> |
-| Physics 3D | Spheres and oriented boxes, SAT manifolds, impulse solver, raycasts, <code>RigidBody3D</code>, <code>StaticBody3D</code>, <code>KinematicBody3D</code>, <code>Area3D</code>, <code>RayCast3D</code> |
-| Web | <code>wasm32-wasi</code> build with a WebGL2/WebAudio/DOM runtime (<code>web/eagle.js</code>); every example runs in the browser |
-| Export | Single executable with compile-time embedded assets, web bundle, macOS app |
-| Fonts | Built-in pixel font, TrueType parser + anti-aliased rasteriser, glyph atlases, kerning |
-| UI | <code>Control</code>, <code>Panel</code>, <code>Label</code>, <code>Button</code>, <code>CheckBox</code>, <code>Slider</code>, <code>ProgressBar</code>, <code>TextInput</code>, <code>VBox</code>/<code>HBox</code>/<code>GridContainer</code>, themes, focus &amp; keyboard navigation |
-| 3D | `Mesh` primitives + OBJ, `Material` (Blinn-Phong, textures, transparency, wireframe, custom shaders), `Camera3D`, directional/point/spot lights, PCF shadow maps, procedural sky, fog |
-| Tween | `Tween.to/value/after/sequence` with 17 easings |
-| Tools | `eagle new/run/build/view/examples` CLI; viewers for images, OBJ, TTF, WAV, GLSL (hot reload) |</p>
+<table><tr><th>Area</th><th>What you get</th></tr><tr><td>Core</td><td><code>App</code> callbacks, fixed + variable timestep, <code>Clock</code>, logging, headless/screenshot runs for CI</td></tr><tr><td>Scene tree</td><td><code>Node</code>, <code>Node2D</code>, <code>Node3D</code>, <code>SceneTree</code>, groups, deferred calls, pause modes, <code><a href="toplevel.html#signal%28decl%29-macro">signal</a></code> macro</td></tr><tr><td>2D</td><td>Batched <code>Graphics</code> (sprites, shapes, thick lines, concave polygons, text), <code>Camera2D</code>, <code>CanvasLayer</code>, <code>Canvas</code> render targets, blend modes, scissor, custom shaders (LÖVE-style <code>effect</code>)</td></tr><tr><td>Nodes</td><td><code>Sprite2D</code>, <code>AnimatedSprite2D</code>, <code>Label</code>, <code>Timer</code>, <code>TileMap</code>, <code>Polygon2D</code>, <code>Line2D</code>, <code>Particles2D</code>, <code>AudioPlayer(2D)</code></td></tr><tr><td>Input</td><td>Keyboard, mouse, gamepads (SDL GameController), action map with analog strengths, text input</td></tr><tr><td>Audio</td><td>Float32 mixer, WAV + Ogg Vorbis (Crystal decoder), procedural tones, voices with pitch/pan/fade, buses, streams</td></tr><tr><td>Physics 2D</td><td>Circles/boxes/polygons, SAT, impulse solver, spatial hash, raycasts, layers, sensors, <code>RigidBody2D</code>, <code>StaticBody2D</code>, <code>KinematicBody2D</code> (<code>move_and_slide</code>), <code>Area2D</code>, <code>RayCast2D</code></td></tr><tr><td>Physics 3D</td><td>Spheres and oriented boxes, SAT manifolds, impulse solver, raycasts, <code>RigidBody3D</code>, <code>StaticBody3D</code>, <code>KinematicBody3D</code>, <code>Area3D</code>, <code>RayCast3D</code></td></tr><tr><td>Web</td><td><code>wasm32-wasi</code> build with a WebGL2/WebAudio/DOM runtime (<code>web/eagle.js</code>); every example runs in the browser</td></tr><tr><td>Export</td><td>Single executable with compile-time embedded assets, web bundle, macOS app</td></tr><tr><td>Fonts</td><td>Built-in pixel font, TrueType parser + anti-aliased rasteriser, glyph atlases, kerning</td></tr><tr><td>UI</td><td><code>Control</code>, <code>Panel</code>, <code>Label</code>, <code>Button</code>, <code>CheckBox</code>, <code>Slider</code>, <code>ProgressBar</code>, <code>TextInput</code>, <code>VBox</code>/<code>HBox</code>/<code>GridContainer</code>, themes, focus &amp; keyboard navigation</td></tr><tr><td>3D</td><td><code>Mesh</code> primitives + OBJ, <code>Material</code> (Blinn-Phong, textures, transparency, wireframe, custom shaders), <code>Camera3D</code>, directional/point/spot lights, PCF shadow maps, procedural sky, fog</td></tr><tr><td>Tween</td><td><code>Tween.to/value/after/sequence</code> with 17 easings</td></tr><tr><td>Tools</td><td><code>eagle new/run/build/view/examples</code> CLI; viewers for images, OBJ, TTF, WAV, GLSL (hot reload)</td></tr></table>
 <h2><a id="getting-started" class="anchor" href="#getting-started">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
@@ -1368,9 +1356,9 @@ EAGLE_NO_GPU=1 crystal spec  # skip GPU specs (CI without a display)</code></pre
   </svg>
 </a>Documentation</h2>
 <ul>
-<li><code>docs/guide.md</code> — concepts and API tour</li>
-<li><code>docs/plans/</code> — architecture, roadmap, findings</li>
-<li><code>crystal docs</code> — API reference</li>
+<li><code>docs/guide.md</code>: concepts and API tour</li>
+<li><code>docs/plans/</code>: architecture, roadmap, findings</li>
+<li><code>crystal docs</code>: API reference</li>
 </ul>
 <h2><a id="license" class="anchor" href="#license">
   <svg class="octicon-link" aria-hidden="true">

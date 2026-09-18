@@ -1,36 +1,41 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Embedded assets · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""> Eagle <span class="ver">v0.1.0</span></a><nav><a href="../../index.html">Home</a><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></header>
-<main><div class="play-wrap"><h1>Embedded assets</h1><p class="lead">A game whose PNG, WAV and shader are baked into the binary at compile time.</p><canvas id="eagle"></canvas><p class="controls">Nothing to press — it just works with no files</p>
-<details><summary>Source — examples/embedded/main.cr</summary><pre><code class="lang-crystal">require &quot;../../src/eagle&quot;
-include Eagle
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><div class="play"><h1>Embedded assets</h1><p class="lead">A game whose PNG, WAV and shader are baked into the binary at compile time.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Nothing to press. It runs with no files at all</p>
+<details><summary>Source: <code>examples/embedded/main.cr</code></summary><h3>examples/embedded/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-# All assets live inside the executable: `Eagle.embed_assets` bakes the
-# `assets/` folder in at compile time, so this game ships as one file.
-Eagle.embed_assets(&quot;examples/embedded/assets&quot;)
+<span class="c"># All assets live inside the executable: `Eagle.embed_assets` bakes the</span>
+<span class="c"># `assets/` folder in at compile time, so this game ships as one file.</span>
+<span class="t">Eagle</span>.embed_assets(<span class="s">&quot;examples/embedded/assets&quot;</span>)
 
-class EmbeddedDemo &lt; App
-  @tex : Texture? = nil
-  @fx : Shader? = nil
+<span class="k">class</span> <span class="t">EmbeddedDemo</span> <span class="o">&lt;</span> <span class="t">App</span>
+  @tex : <span class="t">Texture</span>? <span class="o">=</span> <span class="n">nil</span>
+  @fx : <span class="t">Shader</span>? <span class="o">=</span> <span class="n">nil</span>
 
-  def load
-    @tex = Texture.load(&quot;res://tile.png&quot;, GPU::Filter::Nearest, GPU::Wrap::Repeat)
-    @fx = Shader.load(&quot;res://shader.glsl&quot;)
-    Sound.load(&quot;res://blip.wav&quot;).play
-  end
+  <span class="k">def</span> <span class="m">load</span>
+    @tex <span class="o">=</span> <span class="t">Texture</span>.load(<span class="s">&quot;res://tile.png&quot;</span>, <span class="t">GPU</span><span class="t">::</span><span class="t">Filter</span><span class="t">::</span><span class="t">Nearest</span>, <span class="t">GPU</span><span class="t">::</span><span class="t">Wrap</span><span class="t">::</span><span class="t">Repeat</span>)
+    @fx <span class="o">=</span> <span class="t">Shader</span>.load(<span class="s">&quot;res://shader.glsl&quot;</span>)
+    <span class="t">Sound</span>.load(<span class="s">&quot;res://blip.wav&quot;</span>).play
+  <span class="k">end</span>
 
-  def draw(g : Graphics)
-    g.with_shader(@fx) { g.draw_tiled(@tex.not_nil!, Rect.new(40, 60, Window.width - 80, Window.height - 120), v2(Clock.elapsed * 30, 0)) }
-    g.print(&quot;embedded assets: #{Assets.embedded_paths.join(&quot;, &quot;)}&quot;, 10, 10)
-    g.print(&quot;no files are read from disk — try moving the executable anywhere&quot;, 10, Window.height - 26, Color::GRAY)
-  end
-end
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    g.with_shader(@fx) { g.draw_tiled(@tex.not_nil!, <span class="t">Rect</span>.new(<span class="n">40</span>, <span class="n">60</span>, <span class="t">Window</span>.width <span class="o">-</span> <span class="n">80</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">120</span>), v2(<span class="t">Clock</span>.elapsed <span class="o">*</span> <span class="n">30</span>, <span class="n">0</span>)) }
+    g.print(<span class="s">&quot;embedded assets: </span><span class="i">#{</span><span class="t">Assets</span>.embedded_paths.join(<span class="s">&quot;, &quot;</span>)<span class="i">}</span><span class="s">&quot;</span>, <span class="n">10</span>, <span class="n">10</span>)
+    g.print(<span class="s">&quot;no files are read from disk; try moving the executable anywhere&quot;</span>, <span class="n">10</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">26</span>, <span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>)
+  <span class="k">end</span>
+<span class="k">end</span>
 
-Eagle.run(EmbeddedDemo, title: &quot;Eagle embedded assets&quot;, width: 640, height: 400)
-</code></pre></details></div>
+<span class="t">Eagle</span>.run(<span class="t">EmbeddedDemo</span>, title: <span class="s">&quot;Eagle embedded assets&quot;</span>, width: <span class="n">640</span>, height: <span class="n">400</span>)
+</code></pre>
+</details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./embedded.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
-<footer>Eagle is LGPL licensed · built with Crystal · <a href="https://github.com/joeyrobert/eagle.cr">source on GitHub</a></footer>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
 </body></html>
