@@ -1,6 +1,10 @@
 #!/bin/sh
 # wasm-ld wrapper: adds Eagle's exports/memory settings (Crystal has no per-target link flags).
-REAL="${EAGLE_WASM_LD:-/opt/homebrew/opt/lld/bin/wasm-ld}"
-[ -x "$REAL" ] || REAL="$(ls /usr/lib/llvm-*/bin/wasm-ld 2>/dev/null | head -1)"
+REAL="${EAGLE_WASM_LD:-}"
+for c in /opt/homebrew/opt/lld/bin/wasm-ld /usr/local/opt/lld/bin/wasm-ld $(ls -r /usr/lib/llvm-*/bin/wasm-ld 2>/dev/null) /usr/bin/wasm-ld; do
+  [ -n "$REAL" ] && break
+  [ -x "$c" ] && REAL="$c"
+done
+[ -n "$REAL" ] || { echo "wasm-ld not found: install lld (brew install lld, apt install lld) or set EAGLE_WASM_LD" >&2; exit 1; }
 LIBS="${EAGLE_WASM_LIBS:-$(cd "$(dirname "$0")/../.." && pwd)/.wasm-toolchain/libs}"
 exec "$REAL" -L"$LIBS" --export=eagle_frame -z stack-size=8388608 --initial-memory=67108864 "$@"

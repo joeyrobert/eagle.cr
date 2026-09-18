@@ -6,7 +6,7 @@
 /screenshots/
 *.log
 .DS_Store
-/.wasm-toolchain/
+/.wasm-toolchain
 /dist/
 /site/
 /.doccheck/
