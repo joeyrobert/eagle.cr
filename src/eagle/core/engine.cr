@@ -341,12 +341,13 @@ module Eagle
   end
 
   # Runs exactly one frame: input, fixed updates, update, tweens, audio and drawing.
-  # `run` calls this in a loop. Call it yourself after `init` to drive the engine from tests.
-  def self.step : Nil
+  # `run` calls this in a loop. Call it yourself after `init` to drive the engine from tests;
+  # pass *dt* (seconds) to advance the clock by a fixed amount instead of wall-clock time.
+  def self.step(dt : Number? = nil) : Nil
     pf = platform
     app = self.app
     now = pf.now
-    Clock.advance(now - @@last_time)
+    Clock.advance(dt ? dt.to_f64 : now - @@last_time)
     @@last_time = now
 
     Input.begin_frame
