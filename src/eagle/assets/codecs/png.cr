@@ -1,16 +1,26 @@
 require "./zlib"
 
 module Eagle
+  # Pure-Crystal file format encoders and decoders. `Image.decode`, `Image#save`,
+  # `Sound.load` and `Mesh.load` pick the right one for you. Use a codec directly when
+  # you need bytes in memory rather than a file.
+  #
+  # ```
+  # png = Codecs::PNG.encode(Image.circle(16))
+  # img = Codecs::PNG.decode(png)
+  # ```
   module Codecs
-    # Pure Crystal PNG decoder/encoder. Decodes all standard color types and bit
-    # depths (incl. 16-bit, palette, tRNS, Adam7 interlace) into RGBA8.
+    # PNG decoding and encoding. Decodes every standard color type and bit depth, palettes
+    # and Adam7 interlacing. Encodes 8-bit RGBA.
     module PNG
       SIGNATURE = Bytes[137, 80, 78, 71, 13, 10, 26, 10]
 
+      # True when *data* starts with the PNG signature.
       def self.png?(data : Bytes) : Bool
         data.size >= 8 && data[0, 8] == SIGNATURE
       end
 
+      # Decodes PNG bytes into an RGBA image. Raises `AssetError` on corrupt or unsupported data.
       def self.decode(data : Bytes) : Image
         raise AssetError.new("Not a PNG") unless png?(data)
         io = IO::Memory.new(data)
@@ -184,7 +194,7 @@ module Eagle
         end
       end
 
-      # Encodes RGBA8 with per-row adaptive (Sub/Up/None) filtering.
+      # Encodes an image as an RGBA PNG. *level* is the zlib compression level from 0 to 9.
       def self.encode(img : Image, level : Int32 = 6) : Bytes
         buf_out = IO::Memory.new
         buf_out.write(SIGNATURE)
@@ -243,6 +253,7 @@ module Eagle
         t
       end
 
+      # CRC-32 as used by PNG chunks.
       def self.crc32(data : Bytes, crc : UInt32 = 0_u32) : UInt32
         c = crc ^ 0xFFFFFFFF_u32
         data.each { |b| c = CRC_TABLE[(c ^ b) & 0xFF] ^ (c >> 8) }

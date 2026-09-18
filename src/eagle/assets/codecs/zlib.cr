@@ -1,9 +1,8 @@
 module Eagle
   module Codecs
-    # Pure Crystal zlib/DEFLATE (RFC 1950/1951): full inflate; deflate with LZ77
-    # hash chains and fixed Huffman codes. Used by the PNG codec so Eagle needs
-    # no libz, including on WebAssembly.
+    # Pure-Crystal DEFLATE and zlib, so PNG works everywhere without `libz`, including WebAssembly.
     module Zlib
+      # Raised when compressed data is corrupt.
       class Error < AssetError; end
 
       # --- inflate -------------------------------------------------------------
@@ -92,7 +91,7 @@ module Eagle
         {lit, dist}
       end
 
-      # Inflate raw DEFLATE data.
+      # Decompresses raw DEFLATE data. *expected_size* preallocates the output when you know it.
       def self.inflate(data : Bytes, expected_size : Int32 = 0) : Bytes
         out_ = IO::Memory.new(expected_size > 0 ? expected_size : data.size * 4)
         r = BitReader.new(data)
@@ -172,7 +171,7 @@ module Eagle
         {Huffman.new(lengths[0, nlen]), Huffman.new(lengths[nlen, ndist])}
       end
 
-      # Decompress a zlib stream (2-byte header, DEFLATE, Adler-32 trailer).
+      # Decompresses zlib-wrapped data and verifies its checksum.
       def self.decompress(data : Bytes, expected_size : Int32 = 0) : Bytes
         raise Error.new("zlib stream too short") if data.size < 6
         cmf = data[0]; flg = data[1]
@@ -183,6 +182,7 @@ module Eagle
       end
 
       # --- deflate -------------------------------------------------------------
+      # The Adler-32 checksum used by zlib.
       def self.adler32(data : Bytes) : UInt32
         a = 1_u32; b = 0_u32
         i = 0
@@ -240,7 +240,7 @@ module Eagle
         end
       end
 
-      # Compress with LZ77 (hash chains) + fixed Huffman codes. `level` 0 stores.
+      # Compresses to raw DEFLATE. *level* 0 stores without compression.
       def self.deflate(data : Bytes, level : Int32 = 6) : Bytes
         w = BitWriter.new
         if level <= 0 || data.size < 4
@@ -322,7 +322,7 @@ module Eagle
         w.io.to_slice
       end
 
-      # zlib-wrapped deflate.
+      # Compresses to zlib-wrapped data.
       def self.compress(data : Bytes, level : Int32 = 6) : Bytes
         io = IO::Memory.new
         io.write_byte(0x78_u8)

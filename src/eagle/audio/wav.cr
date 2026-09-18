@@ -1,11 +1,13 @@
 module Eagle
   module Codecs
-    # RIFF WAVE reader/writer: PCM 8/16/24/32-bit and IEEE float 32/64.
+    # WAV decoding (8, 16, 24 and 32-bit PCM, 32 and 64-bit float) and encoding (16-bit PCM).
     module WAV
+      # True when *data* starts with a RIFF/WAVE header.
       def self.wav?(data : Bytes) : Bool
         data.size >= 12 && data[0, 4] == "RIFF".to_slice && data[8, 4] == "WAVE".to_slice
       end
 
+      # Decodes WAV bytes into an `AudioBuffer`.
       def self.decode(data : Bytes) : AudioBuffer
         raise AssetError.new("Not a WAV file") unless wav?(data)
         le = IO::ByteFormat::LittleEndian
@@ -58,7 +60,7 @@ module Eagle
         AudioBuffer.new(rate, channels, samples)
       end
 
-      # Writes 16-bit PCM.
+      # Encodes an `AudioBuffer` as 16-bit PCM WAV, for saving generated sounds.
       def self.encode(buf : AudioBuffer) : Bytes
         le = IO::ByteFormat::LittleEndian
         data_size = buf.samples.size * 2

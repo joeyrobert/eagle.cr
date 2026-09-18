@@ -1,9 +1,11 @@
 module Eagle
   module Codecs
-    # QOI (Quite OK Image): tiny lossless format, fast to decode.
+    # QOI ("Quite OK Image") decoding and encoding. Lossless like PNG, but much faster to
+    # encode and decode, which makes it good for screenshots and caches.
     module QOI
       MAGIC = Bytes[0x71, 0x6f, 0x69, 0x66] # "qoif"
 
+      # True when *data* starts with the QOI magic.
       def self.qoi?(data : Bytes) : Bool
         data.size >= 14 && data[0, 4] == MAGIC
       end
@@ -13,6 +15,7 @@ module Eagle
         (r.to_i * 3 + g.to_i * 5 + b.to_i * 7 + a.to_i * 11) % 64
       end
 
+      # Decodes QOI bytes into an image.
       def self.decode(data : Bytes) : Image
         raise AssetError.new("Not a QOI") unless qoi?(data)
         w = IO::ByteFormat::BigEndian.decode(UInt32, data[4, 4]).to_i
@@ -60,6 +63,7 @@ module Eagle
         img
       end
 
+      # Encodes an image as QOI.
       def self.encode(img : Image) : Bytes
         buf_out = IO::Memory.new
         buf_out.write(MAGIC)

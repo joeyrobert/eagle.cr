@@ -1,11 +1,13 @@
 module Eagle
   module Codecs
-    # Uncompressed 24/32-bit BMP.
+    # Windows BMP decoding (24- and 32-bit, uncompressed or bitfields) and encoding.
     module BMP
+      # True when *data* starts with the BMP signature.
       def self.bmp?(data : Bytes) : Bool
         data.size >= 26 && data[0] == 'B'.ord && data[1] == 'M'.ord
       end
 
+      # Decodes BMP bytes into an image.
       def self.decode(data : Bytes) : Image
         le = IO::ByteFormat::LittleEndian
         offset = le.decode(UInt32, data[10, 4]).to_i
@@ -32,6 +34,7 @@ module Eagle
         img
       end
 
+      # Encodes an image as a 32-bit BMP.
       def self.encode(img : Image) : Bytes
         le = IO::ByteFormat::LittleEndian
         row_size = img.width * 4

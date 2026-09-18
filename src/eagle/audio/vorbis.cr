@@ -1,14 +1,18 @@
 module Eagle
   module Codecs
-    # Ogg container + Vorbis I decoder in pure Crystal (floor type 1, residues 0/1/2).
+    # Ogg Vorbis decoding in pure Crystal, used by `Sound.load` for `.ogg` files.
+    # Output matches libvorbis bit for bit on the test fixtures.
     module Vorbis
+      # True when *data* starts with an Ogg page header.
       def self.ogg?(data : Bytes) : Bool
         data.size >= 4 && data[0, 4] == "OggS".to_slice
       end
 
+      # Raised when a Vorbis stream is corrupt or uses a feature the decoder doesn't support.
       class DecodeError < AssetError; end
 
       # --- Ogg pages -> packets -------------------------------------------------
+      # :nodoc:
       def self.packets(data : Bytes) : {Array(Bytes), Int64}
         packets = [] of Bytes
         current = IO::Memory.new
@@ -34,7 +38,7 @@ module Eagle
         {packets, granule}
       end
 
-      # LSB-first bit reader.
+      # :nodoc:
       class BitReader
         @data : Bytes
         @pos = 0
@@ -66,6 +70,7 @@ module Eagle
         def eof? : Bool; @pos >= @data.size; end
       end
 
+      # :nodoc:
       def self.ilog(x : Int) : Int32
         n = 0
         while x > 0
@@ -74,6 +79,7 @@ module Eagle
         n
       end
 
+      # :nodoc:
       def self.float32_unpack(x : UInt32) : Float32
         mantissa = (x & 0x1fffff).to_f64
         sign = x & 0x80000000
@@ -82,6 +88,7 @@ module Eagle
         (mantissa * (2.0 ** (exponent - 788))).to_f32
       end
 
+      # :nodoc:
       def self.lookup1_values(entries : Int32, dims : Int32) : Int32
         r = (entries.to_f64 ** (1.0 / dims)).floor.to_i
         while (r + 1).to_f64 ** dims <= entries
@@ -93,6 +100,7 @@ module Eagle
         r
       end
 
+      # :nodoc:
       class Codebook
         getter dims : Int32
         getter entries : Int32
@@ -225,6 +233,7 @@ module Eagle
         def info : String; "dims=#{@dims} entries=#{@entries} lookup=#{@lookup_type} seq=#{@sequence_p}"; end
       end
 
+      # :nodoc:
       class Floor1
         getter partitions : Int32
         getter partition_classes : Array(Int32)
@@ -376,6 +385,7 @@ module Eagle
         end
       end
 
+      # :nodoc:
       class Residue
         getter type : Int32
         getter begin_ : Int32
@@ -464,9 +474,12 @@ module Eagle
         end
       end
 
+      # :nodoc:
       record Mapping, submaps : Int32, coupling : Array({Int32, Int32}), mux : Array(Int32), submap_floor : Array(Int32), submap_residue : Array(Int32)
+      # :nodoc:
       record Mode, blockflag : Bool, mapping : Int32
 
+      # :nodoc:
       class Decoder
         getter channels : Int32
         getter sample_rate : Int32
@@ -676,8 +689,7 @@ module Eagle
         end
       end
 
-      # Inverse MDCT: N/2 coefficients -> N samples. Computed as a DCT-IV of size
-      # n = N/2 (via an n/2-point complex FFT) followed by the IMDCT symmetry.
+      # :nodoc:
       class IMDCT
         getter n : Int32
         @pre_c : Slice(Float32)
@@ -746,7 +758,7 @@ module Eagle
         end
       end
 
-      # Iterative radix-2 complex FFT.
+      # :nodoc:
       class FFT
         @n : Int32
         @rev : Array(Int32)
@@ -794,7 +806,7 @@ module Eagle
         end
       end
 
-      # Decode a whole Ogg Vorbis file into an AudioBuffer.
+      # Decodes a whole Ogg Vorbis file into an `AudioBuffer`.
       def self.decode(data : Bytes) : AudioBuffer
         packets, granule = packets(data)
         raise DecodeError.new("Not enough Vorbis headers") if packets.size < 3
