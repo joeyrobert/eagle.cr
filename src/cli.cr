@@ -6,7 +6,7 @@ module Eagle::CLI
   extend self
 
   USAGE = <<-TXT
-    eagle — Crystal-native game engine
+    eagle: Crystal-native game engine
 
     Usage:
       eagle new NAME            create a new game project in ./NAME
@@ -73,7 +73,7 @@ module Eagle::CLI
         end
 
         def draw(g : Graphics)
-          g.print("#{name} — move with WASD  fps \#{Clock.fps.round}", 10, 10)
+          g.print("#{name}: move with WASD  fps \#{Clock.fps.round}", 10, 10)
         end
       end
 
@@ -109,7 +109,7 @@ module Eagle::CLI
       puts "exported #{out_dir}/#{name} (#{File.size("#{out_dir}/#{name}") // 1024} KB). Assets: embed with Eagle.embed_assets or ship an assets/ folder next to it."
     when "web"
       run_cmd(["sh", File.join(root, "script", "build-web.sh"), file, "dist/web/#{name}"])
-      puts "exported dist/web/#{name}/ — serve the folder over HTTP (e.g. python3 -m http.server)."
+      puts "exported dist/web/#{name}/. Serve the folder over HTTP (e.g. python3 -m http.server)."
     when "app"
       {% if flag?(:darwin) %}
         app = "dist/#{name}.app/Contents/MacOS"
@@ -164,7 +164,7 @@ module Eagle::CLI
           when ".glsl" then ShaderViewer.new(path)
           else abort "don't know how to view #{ext}"
           end
-    Eagle.run(app, title: "eagle view — #{File.basename(path)}", width: 1000, height: 700)
+    Eagle.run(app, title: "eagle view: #{File.basename(path)}", width: 1000, height: 700)
   end
 
   class ImageViewer < App
@@ -272,7 +272,7 @@ module Eagle::CLI
         g.print("The quick brown fox jumps over the lazy dog 0123456789 (#{f.as(TrueTypeFont).size.to_i}px)", 10, y, Color::WHITE, f)
         y += f.height + 10
       end
-      g.print("AVAW Ta fi ﬁ — kerning & ligature test", 10, y + 10, Color.gray(0.8), @fonts[3])
+      g.print("AVAW Ta fi ﬁ: kerning & ligature test", 10, y + 10, Color.gray(0.8), @fonts[3])
       Eagle.quit if Input.pressed?(Key::Escape)
     end
   end

@@ -1,6 +1,6 @@
 module Eagle
   module Codecs
-    # QOI (Quite OK Image) — tiny lossless format, fast to decode.
+    # QOI (Quite OK Image): tiny lossless format, fast to decode.
     module QOI
       MAGIC = Bytes[0x71, 0x6f, 0x69, 0x66] # "qoif"
 

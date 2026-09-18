@@ -12,7 +12,8 @@ if [ "$1" != "--no-wasm" ]; then
     fi
   done
 fi
+rm -rf site
 mkdir -p site/docs
 crystal docs src/eagle.cr -o site/docs/api > /dev/null 2>&1
 crystal run script/site_gen.cr
-echo "open site/index.html (or: cd site && python3 -m http.server)"
+echo "preview: cd site && python3 -m http.server   publish: script/publish-site.sh"

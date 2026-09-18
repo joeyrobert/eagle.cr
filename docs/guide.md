@@ -16,7 +16,7 @@ available anywhere.
 
 ## Two styles, one engine
 
-**Immediate (LÖVE-style)** — draw everything yourself in `draw`:
+**Immediate (LÖVE-style):** draw everything yourself in `draw`:
 
 ```crystal
 def draw(g : Graphics)
@@ -26,7 +26,7 @@ def draw(g : Graphics)
 end
 ```
 
-**Scene tree (Godot-style)** — build nodes and let them run:
+**Scene tree (Godot-style):** build nodes and let them run:
 
 ```crystal
 class Player < Sprite2D
@@ -48,7 +48,7 @@ Mix freely: nodes draw first, then `App#draw` on top (HUD).
 `EAGLE_ASSETS`, `Config#assets_dir`, `assets/` next to the executable, or
 `assets/` in the working directory. Loaded assets are cached.
 
-Images: PNG (all bit depths, palettes, interlace), QOI, BMP — decode *and*
+Images: PNG (all bit depths, palettes, interlace), QOI, BMP. Decode *and*
 encode (`Image#save`). Audio: WAV (PCM 8/16/24/32, float). Models: OBJ.
 
 ## Input
@@ -138,15 +138,16 @@ for GL errors after every 3D stage.
 ## Backends
 
 `Platform::Base` (window/input/audio/gamepads) and `GPU::Device` (rendering)
-are abstract; `Platform::SDL` + `GPU::GL33` are the desktop implementations.
-A WebGL2/WebAudio backend for `wasm32` is designed for but not yet implemented —
-shaders and formats are already restricted to the WebGL2 subset.
+are abstract. `Platform::SDL` + `GPU::GL33` are the desktop implementations.
+`Platform::Web` targets `wasm32-wasi` and drives WebGL2, WebAudio and DOM input
+through `web/eagle.js`. Shaders and formats stay within the WebGL2 subset so the
+same code renders identically on both.
 
 ## Exporting
 
 ```sh
-eagle export exe examples/snake/main.cr   # dist/snake/snake — release build; add Eagle.embed_assets("assets") for a true single file
-eagle export web examples/snake/main.cr   # dist/web/snake/ — index.html + eagle.js + snake.wasm, serve over HTTP
+eagle export exe examples/snake/main.cr   # dist/snake/snake: release build; add Eagle.embed_assets("assets") for a true single file
+eagle export web examples/snake/main.cr   # dist/web/snake/: index.html + eagle.js + snake.wasm, serve over HTTP
 eagle export app examples/snake/main.cr   # dist/snake.app (macOS bundle)
 ```
 
@@ -155,3 +156,4 @@ Web builds need `lld` (`brew install lld`); the script downloads Crystal's wasm 
 ## Site
 
 `script/build-site.sh` compiles every example to WebAssembly, generates the API reference with `crystal docs`, and writes the marketing + docs site to `site/`.
+Screenshots shown on the site come from `docs/screenshots/`. `script/publish-site.sh` pushes the built `site/` to the `gh-pages` branch, which GitHub Pages serves at https://joeyrobert.github.io/eagle.cr/.

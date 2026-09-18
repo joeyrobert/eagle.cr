@@ -125,7 +125,7 @@ class CheckersGame < App
               when .red_wins? then "Red wins!"
               when .black_wins? then "Black wins!"
               when .draw? then "Draw"
-              else "#{@board.turn.red? ? "Red" : "Black"} to move#{@board.legal_moves.first?.try(&.capture?) ? " — must capture" : ""}"
+              else "#{@board.turn.red? ? "Red" : "Black"} to move#{@board.legal_moves.first?.try(&.capture?) ? ", must capture" : ""}"
               end
   end
 

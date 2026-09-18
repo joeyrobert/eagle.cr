@@ -119,7 +119,7 @@ class ChessGame < App
               when .checkmate? then "Checkmate! #{@board.turn.other.white? ? "White" : "Black"} wins"
               when .stalemate? then "Stalemate"
               when .draw? then "Draw"
-              when .check? then "#{who} to move — check!"
+              when .check? then "#{who} to move, check!"
               else "#{who} to move"
               end
     @status += "   (vs AI depth #{@ai.depth})" if @vs_ai

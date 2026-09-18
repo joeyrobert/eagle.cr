@@ -40,6 +40,6 @@ require "./eagle/nodes/nodes"
 require "./eagle/ui/ui"
 require "./eagle/core/engine"
 
-# Eagle — a Crystal-native 2D/3D game engine.
+# Eagle: a Crystal-native 2D/3D game engine.
 module Eagle
 end

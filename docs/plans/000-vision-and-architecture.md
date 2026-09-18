@@ -1,4 +1,4 @@
-# Eagle — Vision & Architecture
+# Eagle: Vision & Architecture
 
 Eagle is a Crystal-native game engine. Goals, in priority order:
 
@@ -16,8 +16,8 @@ Eagle is a Crystal-native game engine. Goals, in priority order:
 
 ## Inspirations
 
-* **LÖVE** — immediate-mode `love.graphics` style API, callbacks `load/update/draw`.
-* **Godot** — node/scene tree, signals, `_ready/_process/_physics_process`,
+* **LÖVE**: immediate-mode `love.graphics` style API, callbacks `load/update/draw`.
+* **Godot**: node/scene tree, signals, `_ready/_process/_physics_process`,
   Node2D/Node3D families, input action map, `res://` asset paths, one-file shaders.
 
 ## Layers
@@ -80,7 +80,7 @@ docs/plans/               plans and progress logs (this folder)
 
 ## Roadmap (phases)
 
-See `010-roadmap.md` — updated as work lands.
+See `010-roadmap.md`, updated as work lands.
 
 ## Modular backends (added 2026-09-18 after user request for WASM/WebGL)
 

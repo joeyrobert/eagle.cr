@@ -18,7 +18,7 @@ class EmbeddedDemo < App
   def draw(g : Graphics)
     g.with_shader(@fx) { g.draw_tiled(@tex.not_nil!, Rect.new(40, 60, Window.width - 80, Window.height - 120), v2(Clock.elapsed * 30, 0)) }
     g.print("embedded assets: #{Assets.embedded_paths.join(", ")}", 10, 10)
-    g.print("no files are read from disk — try moving the executable anywhere", 10, Window.height - 26, Color::GRAY)
+    g.print("no files are read from disk; try moving the executable anywhere", 10, Window.height - 26, Color::GRAY)
   end
 end
 

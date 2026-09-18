@@ -1,4 +1,4 @@
-# Minimal SDL2 bindings — only what Eagle's SDL platform backend needs.
+# Minimal SDL2 bindings: only what Eagle's SDL platform backend needs.
 {% if flag?(:windows) %}
   @[Link("SDL2")]
 {% elsif flag?(:darwin) %}

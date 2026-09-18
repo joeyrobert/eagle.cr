@@ -151,7 +151,7 @@ module Eagle
       @width == o.width && @height == o.height && @pixels == o.pixels
     end
 
-    # Mean absolute per-channel difference (0..255) — handy for image tests.
+    # Mean absolute per-channel difference (0..255), handy for image tests.
     def difference(o : Image) : Float64
       raise ArgumentError.new("size mismatch") unless @width == o.width && @height == o.height
       return 0.0 if @pixels.empty?

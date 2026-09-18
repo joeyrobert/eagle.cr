@@ -399,7 +399,7 @@ module Chess
       pieces.size == 1 && (pieces[0].bishop? || pieces[0].knight?)
     end
 
-    # Number of leaf nodes at `depth` (perft) — used to validate move generation.
+    # Number of leaf nodes at `depth` (perft), used to validate move generation.
     def perft(depth : Int32) : Int64
       return 1_i64 if depth == 0
       total = 0_i64

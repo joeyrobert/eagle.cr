@@ -2,7 +2,7 @@ require "base64"
 
 module Eagle
   # Embed every file under `dir` (relative to the project root) into the
-  # executable at compile time. Loading then works with no files on disk —
+  # executable at compile time. Loading then works with no files on disk,
   # required for single-file exports and web builds.
   #
   #   Eagle.embed_assets("assets")

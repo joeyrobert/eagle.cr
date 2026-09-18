@@ -154,7 +154,7 @@ class Breakout < App
     g.circle(@ball, @radius, color: Color::WHITE)
     g.print("score #{@score}   lives #{@lives}   level #{@level}", 12, 10, Color::WHITE)
     g.print("press space / click to launch", W / 2, 300, Color::GRAY, align: TextAlign::Center) unless @launched || @game_over
-    g.print("GAME OVER — R to restart", W / 2, 300, Color::RED, align: TextAlign::Center) if @game_over
+    g.print("GAME OVER. R to restart", W / 2, 300, Color::RED, align: TextAlign::Center) if @game_over
   end
 end
 

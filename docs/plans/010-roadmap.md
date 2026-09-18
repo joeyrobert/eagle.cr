@@ -18,14 +18,14 @@ Requirements gathered from the project owner (2026-09-18):
 * Examples: **5 complete 2D games** (chess is one of them) and **2 3D
   examples** (a feature fly-through/test and a small 3D game). Validate all.
 
-## Phase 0 — Foundations
+## Phase 0: Foundations
 - [x] Repo, shard.yml, plan docs
 - [x] Math: Vec2/3/4, Mat3/4, Quat, Rect, AABB, Ray, Color, Transform2D, Mathf (+ specs)
 - [x] SDL2 + GL bindings, GL loader via proc addresses, Platform abstraction, GPU::Device abstraction, GL33 backend
 - [x] PNG/QOI/BMP decode/encode (+ specs), Image class, screenshot to PNG
 - [x] Frame-limited runs for automated verification (`EAGLE_FRAMES`, `EAGLE_SCREENSHOT`, `EAGLE_HEADLESS`, `EAGLE_SIZE`)
 
-## Phase 1 — 2D
+## Phase 1: 2D
 - [x] Shader (3 creation styles), Texture/TextureRegion, Canvas, Graphics batch (sprites, rects, circles, ellipses, arcs, lines with mitres, polygons incl. concave, text)
 - [x] Built-in 5x7 bitmap font, `print`/`printf`, wrapping, alignment
 - [x] Camera2D (node), CanvasLayer, transform stack, scissor, blend modes
@@ -34,27 +34,27 @@ Requirements gathered from the project owner (2026-09-18):
 - [x] Node2D, Sprite2D, AnimatedSprite2D, Label, Timer, Polygon2D, Line2D, TileMap, Tween/Ease
 - [x] Examples: smoke, sandbox2d
 
-## Phase 2 — Audio, physics, particles
+## Phase 2: Audio, physics, particles
 - [x] Audio mixer (Float32, main-thread queue), WAV codec, synth tones, Sound/Voice (pitch/pan/loop/fade), buses, streams, AudioPlayer & AudioPlayer2D nodes
 - [x] Physics2D: circle/box/polygon, SAT with clipped manifolds, manifold-level Jacobi impulse solver with Baumgarte bias, spatial hash, raycast, point/rect/shape queries, layers/masks, sensors, contact signals; StaticBody2D/RigidBody2D/KinematicBody2D(CharacterBody2D)/Area2D/CollisionShape2D/RayCast2D; move_and_slide with substeps + floor snap
 - [x] Particles2D (rate/burst/one-shot, gravity, damping, scale & colour over life, emission shapes, blend modes)
 - [x] Specs for all of the above; physics example verified visually
 
-## Phase 3 — Fonts & UI
+## Phase 3: Fonts & UI
 - [x] TrueType parser (cmap 0/4/6/12, glyf simple+composite, hmtx, kern, name, TTC) + font-rs style signed-area rasteriser, glyph atlases, `Font.load(path, size)`
 - [x] UI: Control (anchors, margins, focus, hover, mouse/keyboard), Panel, Label, Button (toggle/icon), CheckBox, Slider, ProgressBar, TextInput, ImageControl, VBox/HBox/GridContainer/Spacer, Theme (dark/light)
 - [x] Specs; UI example verified with Arial TTF
 - [!] CFF/OpenType outlines unsupported (glyf only). No GPOS kerning.
 
-## Phase 4 — 3D
+## Phase 4: 3D
 - [x] Mesh (P/N/UV/Color), primitives (quad, plane, box, sphere, cylinder, cone, capsule, torus, grid, axes), OBJ import/export, normals, flat shading, append/transform
 - [x] Material (Blinn-Phong + metallic tint, unlit, textures, transparency, wireframe, custom shaders/uniforms), Camera3D (perspective/ortho, rays, projection, fly controls), Directional/Point/Spot lights, procedural sky, fog, PCF shadow map (directional)
 - [x] Node3D, MeshInstance3D, Scene3D collector, Renderer3D (sorted opaque/transparent passes)
 - [x] Specs incl. pixel checks for lighting and cast shadows; fly-through example verified
 - [ ] Physics3D basics (AABB/sphere/raycast helpers exist in math; a simple world is TODO)
 
-## Phase 5 — Games & polish
-- [x] 2D games: Chess (full rules, perft-verified move generator, alpha-beta AI), Checkers (1/2 players, forced captures, multi-jumps, kings, AI), Breakout, Asteroids, Platformer, Snake — all self-contained (procedural assets & sounds)
+## Phase 5: Games & polish
+- [x] 2D games: Chess (full rules, perft-verified move generator, alpha-beta AI), Checkers (1/2 players, forced captures, multi-jumps, kings, AI), Breakout, Asteroids, Platformer, Snake, all self-contained (procedural assets & sounds)
 - [x] 3D: feature fly-through (`flythrough3d`), Coin Rush game (`coinrush3d`)
 - [x] CLI: `eagle new/run/build/view/examples`; viewers for PNG/QOI/BMP, OBJ, TTF, WAV, GLSL (hot reload)
 - [x] README + docs/guide.md
@@ -64,7 +64,7 @@ Requirements gathered from the project owner (2026-09-18):
 
 ## Known gaps / next steps
 - Physics3D: spheres + oriented boxes only (no capsules/meshes/joints); no sleeping.
-- Audio: WAV + Ogg Vorbis (Crystal decoder, bit-exact vs ffmpeg on libvorbis streams; ffmpeg's *experimental* built-in encoder's coupled stereo decodes with a wrong angle channel — likely an encoder quirk, unresolved); no MP3; no reverb/effects.
+- Audio: WAV + Ogg Vorbis (Crystal decoder, bit-exact vs ffmpeg on libvorbis streams; ffmpeg's *experimental* built-in encoder's coupled stereo decodes with a wrong angle channel, likely an encoder quirk, unresolved); no MP3; no reverb/effects.
 - Fonts: TrueType `glyf` only (no CFF/OpenType, no GPOS kerning, no colour emoji).
 - 3D: no skeletal animation, no cubemaps/IBL/PBR, single directional shadow cascade, no post-processing stack.
 - UI: no scroll containers, drop-downs, or rich text.
@@ -73,7 +73,7 @@ Requirements gathered from the project owner (2026-09-18):
 - Windows/Linux: objects cross-compile but no full link/run test on those OSes.
 - Web: no file system, clipboard or threads; wireframe is emulated with edge lines; text input uses keydown (no IME); audio starts after the first click (browser policy).
 
-## Phase 6 — Completeness pass (2026-09-18)
+## Phase 6: Completeness pass (2026-09-18)
 - [x] Event injection (`Eagle.inject`) + `Script` scheduler; loop-driven integration specs; Tab focus navigation; interactions demo
 - [x] Cross-compile check (Windows MSVC, Linux x86_64/aarch64 objects build)
 - [x] Physics3D world + nodes + specs + example

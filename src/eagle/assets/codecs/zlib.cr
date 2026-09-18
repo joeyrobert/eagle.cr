@@ -2,7 +2,7 @@ module Eagle
   module Codecs
     # Pure Crystal zlib/DEFLATE (RFC 1950/1951): full inflate; deflate with LZ77
     # hash chains and fixed Huffman codes. Used by the PNG codec so Eagle needs
-    # no libz — including on WebAssembly.
+    # no libz, including on WebAssembly.
     module Zlib
       class Error < AssetError; end
 

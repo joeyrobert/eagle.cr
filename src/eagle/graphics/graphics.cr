@@ -498,7 +498,7 @@ module Eagle
       push_quad_indices(base)
     end
 
-    # Push raw triangles (positions, uvs, colors, indices) — for meshes, particles.
+    # Push raw triangles (positions, uvs, colors, indices) for meshes, particles.
     def triangles(tex : Texture, positions : Array(Vec2), uvs : Array(Vec2), colors : Array(Color), indices : Array(Int32)) : Nil
       set_texture(tex)
       ensure_space(positions.size, indices.size)

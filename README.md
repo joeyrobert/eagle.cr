@@ -5,8 +5,13 @@ compiling to a single executable. Inspired by LÖVE (immediate-mode drawing,
 `load/update/draw`) and Godot (scene tree, nodes, signals, action map).
 
 Only two native dependencies: **SDL2** and the platform's **OpenGL 3.3**.
-Everything else — PNG/QOI/BMP/WAV codecs, TrueType fonts, audio mixer,
-physics, particles, UI, 3D renderer with shadows — is written in Crystal.
+Everything else (PNG/QOI/BMP/WAV codecs, TrueType fonts, audio mixer,
+physics, particles, UI, 3D renderer with shadows) is written in Crystal.
+
+![The 3D fly-through example](docs/screenshots/flythrough3d.png)
+
+See it running in the browser, along with every other example, at
+[joeyrobert.github.io/eagle.cr](https://joeyrobert.github.io/eagle.cr/).
 
 ```crystal
 require "eagle"
@@ -102,9 +107,9 @@ EAGLE_NO_GPU=1 crystal spec  # skip GPU specs (CI without a display)
 
 ## Documentation
 
-* `docs/guide.md` — concepts and API tour
-* `docs/plans/` — architecture, roadmap, findings
-* `crystal docs` — API reference
+* `docs/guide.md`: concepts and API tour
+* `docs/plans/`: architecture, roadmap, findings
+* `crystal docs`: API reference
 
 ## License
 

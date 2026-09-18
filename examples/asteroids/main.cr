@@ -185,7 +185,7 @@ class AsteroidsGame < App
 
   def draw(g : Graphics)
     g.print("score #{@score}   lives #{@lives}   wave #{@wave}", 12, 10, Color::WHITE)
-    g.print("GAME OVER — R to restart", Window.width / 2, Window.height / 2, Color::RED, align: TextAlign::Center) if @over
+    g.print("GAME OVER. R to restart", Window.width / 2, Window.height / 2, Color::RED, align: TextAlign::Center) if @over
   end
 end
 

@@ -112,7 +112,7 @@ module Eagle
       m
     end
 
-    # Euler angles (pitch, yaw, roll) — approximate inverse of from_euler.
+    # Euler angles (pitch, yaw, roll): approximate inverse of from_euler.
     def to_euler : Vec3
       sinp = 2 * (@w * @x - @y * @z)
       pitch = sinp.abs >= 1 ? Math.copysign(Math::PI / 2, sinp) : Math.asin(sinp)
