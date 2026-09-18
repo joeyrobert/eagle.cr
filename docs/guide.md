@@ -19,10 +19,15 @@ available anywhere.
 **Immediate (LÖVE-style):** draw everything yourself in `draw`:
 
 ```crystal
-def draw(g : Graphics)
-  g.circle(400, 300, 40, color: Color::RED)
-  g.draw(texture, 100, 100, rotation: Clock.elapsed, ox: 16, oy: 16)
-  g.print("score #{@score}", 10, 10)
+class Game < App
+  @texture = Texture.new(Image.circle(32, Color::WHITE))
+  @score = 0
+
+  def draw(g : Graphics) : Nil
+    g.circle(400, 300, 40, color: Color::RED)
+    g.draw(@texture, 100, 100, rotation: Clock.elapsed, ox: 16, oy: 16)
+    g.print("score #{@score}", 10, 10)
+  end
 end
 ```
 
@@ -31,11 +36,16 @@ end
 ```crystal
 class Player < Sprite2D
   signal died
-  def ready; texture = Texture.load("res://player.png"); end
-  def process(dt : Float32)
-    position += Input.vector("left", "right", "up", "down") * 200 * dt
+
+  def ready : Nil
+    self.texture = Texture.load("res://player.png")
+  end
+
+  def process(dt : Float32) : Nil
+    self.position += Input.vector("left", "right", "up", "down") * 200 * dt
   end
 end
+
 SceneTree.root.add(Player.new)
 ```
 
@@ -60,7 +70,8 @@ Input.pressed?("jump")          # this frame
 Input.down?(Key::LShift)        # held
 Input.axis("left", "right")     # -1..1 (analog on sticks)
 Input.vector("left", "right", "up", "down")
-Input.mouse, Input.mouse_delta, Input.wheel, Input.gamepad.try(&.rumble)
+Input.mouse                     # also mouse_delta and wheel
+Input.gamepad.try(&.rumble)
 ```
 
 Raw events (`KeyEvent`, `MouseButtonEvent`, `TextEvent`, `GamepadAxisEvent`, …)
@@ -74,9 +85,11 @@ class Enemy < Node2D
   signal hit(damage : Int32)
   signal died
 end
-enemy.on_hit { |d| ... }        # or enemy.hit.connect { }
-enemy.emit_hit(3)               # or enemy.hit.emit(3)
-enemy.died.once { ... }
+
+enemy = Enemy.new
+enemy.on_hit { |d| puts "took #{d}" } # or enemy.hit.connect { |d| ... }
+enemy.emit_hit(3)                      # or enemy.hit.emit(3)
+enemy.died.once { puts "gone" }
 ```
 
 ## Physics 2D
@@ -85,13 +98,19 @@ enemy.died.once { ... }
 ground = StaticBody2D.new(position: v2(400, 580)).box(800, 40)
 ball = RigidBody2D.new(position: v2(400, 0)).circle(16)
 ball.restitution = 0.6
-ball.on_body_entered { |other| ... }
-player = KinematicBody2D.new(position: v2(100, 100)).box(24, 40)
-# each physics_process:
-player.velocity += v2(0, 1400 * dt)
-player.move_and_slide(dt)
-player.on_floor?
-Physics2D.world.raycast(from, dir, 100)
+ball.on_body_entered { |other| puts "bounce" }
+
+class Player < KinematicBody2D
+  def physics_process(dt : Float32) : Nil
+    self.velocity += v2(0, 1400 * dt)
+    move_and_slide(dt)
+    puts "grounded" if on_floor?
+  end
+end
+
+player = Player.new(position: v2(100, 100)).box(24, 40)
+SceneTree.root.add(ground, ball, player)
+Physics2D.world.raycast(player.position, v2(1, 0), 100)
 ```
 
 Units are pixels and seconds; default gravity 980 px/s². Layers/masks are bit
@@ -104,7 +123,7 @@ any body draws its shapes.
 hud = CanvasLayer.new
 panel = Panel.new(size: v2(300, 0)).tap(&.anchor = Anchor::Center).tap(&.fit_content = true)
 box = VBox.new(size: v2(280, 0)).tap(&.position = v2(10, 10)).tap(&.fit_content = true)
-box.add(Label.new("Settings"), Slider.new(0, 100, 50), CheckBox.new("Music", true), Button.new("OK") { close })
+box.add(Label.new("Settings"), Slider.new(0, 100, 50), CheckBox.new("Music", true), Button.new("OK") { panel.visible = false })
 panel.add(box); hud.add(panel); SceneTree.root.add(hud)
 Theme.default.font = Font.load("res://Inter.ttf", 18)
 ```
@@ -116,12 +135,15 @@ size children by `effective_min_size` and `size_flags`.
 ## 3D
 
 ```crystal
-root.add(Camera3D.new(position: v3(0, 3, 8)).tap(&.look_at(Vec3::ZERO)))
-root.add(DirectionalLight3D.new(v3(-0.5, -1, -0.3)))
-root.add(MeshInstance3D.new(Mesh.cube, Material.new(Color::RED), position: v3(0, 0.5, 0)))
+root = SceneTree.root
+cam = Camera3D.new(position: v3(0, 3, 8)).tap(&.look_at(Vec3::ZERO))
+cube = MeshInstance3D.new(Mesh.cube, Material.new(Color::RED), position: v3(0, 0.5, 0))
+root.add(cam, DirectionalLight3D.new(v3(-0.5, -1, -0.3)), cube)
 Scene3D.environment.fog(20, 80)
 Scene3D.environment.shadows = true
-cam.screen_to_ray(Input.mouse).intersect_aabb(mesh_instance.global_bounds)
+if box = cube.global_bounds
+  cam.screen_to_ray(Input.mouse).intersect_aabb(box) # distance to the cube under the mouse, or nil
+end
 ```
 
 Shaders use the GLSL 330 / 300 es common subset; `Material#shader` accepts a

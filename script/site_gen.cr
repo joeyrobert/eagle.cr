@@ -301,88 +301,113 @@ CODE_SAMPLES = {
 
   class Game < App
     @player = Sprite2D.new(Texture.load("res://player.png"), Window.center)
+    @score = 0
 
-    def load
+    def load : Nil
       Input.map "left", Key::A, Key::Left, Input.axis(GamepadAxis::LeftX, -1)
       Input.map "right", Key::D, Key::Right, Input.axis(GamepadAxis::LeftX, 1)
       SceneTree.root.add(@player)
     end
 
-    def update(dt : Float32)
+    def update(dt : Float32) : Nil
       @player.x += Input.axis("left", "right") * 250 * dt
+      @score += 1 if Input.pressed?(Key::Space)
     end
 
-    def draw(g : Graphics)
-      g.print("score \#{@score}", 10, 10)
+    def draw(g : Graphics) : Nil
+      g.print("score \#{@score}", 10, 10, scale: 2)
     end
   end
 
   Eagle.run(Game, title: "My Game", width: 960, height: 540)
   CR
   "Scene tree & signals" => <<-CR,
+  class Bullet < Area2D
+  end
+
   class Enemy < Area2D
     signal died(points : Int32)
 
-    def initialize(pos : Vec2)
-      super("Enemy", pos)
+    def initialize(position : Vec2)
+      super("Enemy", position)
       circle(12)
-      add(AnimatedSprite2D.new.tap { |s| s.add_animation("idle", sheet.frames(32, 32), fps: 8) })
+      add(Sprite2D.new(Texture.new(Image.circle(24, Color::RED))))
       on_body_entered { |other| hit if other.is_a?(Bullet) }
     end
 
-    def hit
+    def hit : Nil
       emit_died(100)
-      Tween.value(1.0, 0.0, 0.2) { |a| modulate = Color::WHITE.with_alpha(a) }.on_complete { queue_free }
+      Tween.value(Color::WHITE, Color::TRANSPARENT, 0.2) { |c| self.modulate = c }
+        .on_complete { queue_free }
     end
   end
 
+  score = 0
+  boom = Sound.tone(90, 0.3, Sound::Wave::Noise)
   enemy = Enemy.new(v2(300, 200))
-  enemy.on_died { |points| @score += points; Sounds.explode.play }
+  enemy.on_died { |points| score += points; boom.play }
   SceneTree.root.add(enemy)
   CR
   "2D physics" => <<-CR,
-  ground = StaticBody2D.new(position: v2(400, 580)).box(800, 40)
-  ball   = RigidBody2D.new(position: v2(400, 0)).circle(16)
-  ball.restitution = 0.6
-  ball.on_body_entered { |other| Sounds.bounce.play }
-
-  player = KinematicBody2D.new(position: v2(100, 100)).box(24, 40)
-
-  def physics_process(dt : Float32)
-    player.velocity += v2(0, 1400 * dt)                    # gravity
-    player.velocity = v2(Input.axis("left", "right") * 220, player.velocity.y)
-    player.velocity = v2(player.velocity.x, -520) if Input.pressed?("jump") && player.on_floor?
-    player.move_and_slide(dt)
+  class Player < KinematicBody2D
+    def physics_process(dt : Float32) : Nil
+      self.velocity += v2(0, 1400 * dt) # gravity
+      self.velocity = v2(Input.axis("left", "right") * 220, velocity.y)
+      self.velocity = v2(velocity.x, -520) if Input.pressed?("jump") && on_floor?
+      move_and_slide(dt)
+    end
   end
 
-  hit = Physics2D.world.raycast(player.position, v2(1, 0), 200)
+  ground = StaticBody2D.new(position: v2(400, 580)).box(800, 40)
+  ball = RigidBody2D.new(position: v2(400, 0)).circle(16)
+  ball.restitution = 0.6
+  bounce = Sound.tone(440, 0.08)
+  ball.on_body_entered { |other| bounce.play }
+  player = Player.new(position: v2(100, 100)).box(24, 40)
+  SceneTree.root.add(ground, ball, player)
+
+  if hit = Physics2D.world.raycast(player.position, v2(1, 0), 200)
+    puts "wall \#{hit.distance} px ahead"
+  end
   CR
   "3D scene" => <<-CR,
   root = SceneTree.root
-  root.add(Camera3D.new(position: v3(0, 3, 8)).tap(&.look_at(Vec3::ZERO)))
-  root.add(DirectionalLight3D.new(v3(-0.5, -1, -0.3)))          # casts PCF shadows
-  root.add(MeshInstance3D.new(Mesh.plane(40, 40), Material.new(texture: Texture.load("res://grass.png"))))
+  cam = Camera3D.new(position: v3(0, 3, 8))
+  cam.look_at(Vec3::ZERO)
+  root.add(cam)
+  root.add(DirectionalLight3D.new(v3(-0.5, -1, -0.3))) # casts PCF shadows
+
+  grass = Texture.new(Image.checkerboard(64, 64, 8, Color.hex("#4a7a3a"), Color.hex("#3d6630")), wrap: GPU::Wrap::Repeat)
+  root.add(MeshInstance3D.new(Mesh.plane(40, 40, uv_scale: 10), Material.new(texture: grass)))
   crate = MeshInstance3D.new(Mesh.cube, Material.new(Color::ORANGE, shininess: 48), position: v3(0, 0.5, 0))
   root.add(crate)
 
   Scene3D.environment.fog(20, 80)
   Scene3D.environment.sky_colors(Color.hex("#3b6fd6"), Color.hex("#b9d4f5"), Color.hex("#3a3a44"))
 
-  # picking
-  if (hit = cam.mouse_ray.intersect_aabb(crate.global_bounds.not_nil!))
+  # picking: turn the crate red while the mouse is over it
+  if (box = crate.global_bounds) && cam.mouse_ray.intersect_aabb(box)
     crate.material.albedo = Color::RED
   end
   CR
   "UI" => <<-CR,
   hud = CanvasLayer.new
-  panel = Panel.new(size: v2(320, 0)).tap { |p| p.anchor = Anchor::Center; p.fit_content = true }
-  box = VBox.new(size: v2(300, 0)).tap { |b| b.position = v2(10, 10); b.fit_content = true }
+  panel = Panel.new(size: v2(320, 0))
+  panel.anchor = Anchor::Center
+  panel.fit_content = true
+
+  box = VBox.new(size: v2(300, 0))
+  box.position = v2(10, 10)
+  box.fit_content = true
   box.add(Label.new("Settings"),
-          Slider.new(0, 100, 50).tap { |s| s.on_value_changed { |v| Audio.volume = v / 100 } },
-          CheckBox.new("Fullscreen", false).tap { |c| c.on_toggled { |on| Window.fullscreen = on } },
-          TextInput.new("", "player name").tap { |t| t.on_submitted { |name| save(name) } },
-          Button.new("Start") { SceneTree.change_scene(Level.new) })
-  panel.add(box); hud.add(panel); SceneTree.root.add(hud)
+    Slider.new(0, 100, 50).tap { |s| s.on_value_changed { |v| Audio.volume = v / 100 } },
+    CheckBox.new("Fullscreen").tap { |c| c.on_toggled { |on| Window.fullscreen = on } },
+    TextInput.new("", "player name").tap { |t| t.on_submitted { |name| puts "hi \#{name}" } },
+    Button.new("Start") { SceneTree.change_scene(Node2D.new("Level")) })
+
+  panel.add(box)
+  hud.add(panel)
+  SceneTree.root.add(hud)
   Theme.default.font = Font.load("res://Inter.ttf", 18)
   CR
   "Shaders & canvases" => <<-CR,
@@ -395,9 +420,13 @@ CODE_SAMPLES = {
     }
     GLSL
 
-  canvas = Canvas.new(320, 180)              # low-res render target
-  g.with_canvas(canvas) { draw_world(g) }
-  g.with_shader(glow) { glow["u_strength"] = 0.3; g.draw(canvas, Rect.new(0, 0, Window.width, Window.height)) }
+  canvas = Canvas.new(320, 180) # low-res render target
+  g.with_canvas(canvas) do
+    g.circle(160, 90, 40, color: Color::YELLOW)
+    g.print("pixel perfect", 110, 150)
+  end
+  glow["u_strength"] = 0.3
+  g.with_shader(glow) { g.draw(canvas, Window.rect) }
   CR
 }
 
