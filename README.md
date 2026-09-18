@@ -45,9 +45,9 @@ Eagle.run(Game, title: "My Game", width: 960, height: 540)
 | Core | `App` callbacks, fixed + variable timestep, `Clock`, logging, headless/screenshot runs for CI |
 | Scene tree | `Node`, `Node2D`, `Node3D`, `SceneTree`, groups, deferred calls, pause modes, `signal` macro |
 | 2D | Batched `Graphics` (sprites, shapes, thick lines, concave polygons, text), `Camera2D`, `CanvasLayer`, `Canvas` render targets, blend modes, scissor, custom shaders (LÖVE-style `effect`) |
-| Nodes | `Sprite2D`, `AnimatedSprite2D`, `Label`, `Timer`, `TileMap`, `Polygon2D`, `Line2D`, `Particles2D`, `AudioPlayer(2D)` |
+| Nodes | `Sprite2D`, `AnimatedSprite2D`, `Label`, `Timer`, `TileMap`, `Polygon2D`, `Line2D`, `Particles2D`, `AudioPlayer(2D/3D)` |
 | Input | Keyboard, mouse, gamepads (SDL GameController), action map with analog strengths, text input |
-| Audio | Float32 mixer, WAV + Ogg Vorbis (Crystal decoder), procedural tones, voices with pitch/pan/fade, buses, streams |
+| Audio | Float32 mixer, WAV + Ogg Vorbis (Crystal decoder), procedural tones, voices with pitch/pan/fade, buses, streams, 3D spatial audio (distance models, ITD, head shadow, doppler) |
 | Physics 2D | Circles/boxes/polygons, SAT, impulse solver, spatial hash, raycasts, layers, sensors, `RigidBody2D`, `StaticBody2D`, `KinematicBody2D` (`move_and_slide`), `Area2D`, `RayCast2D` |
 | Physics 3D | Spheres and oriented boxes, SAT manifolds, impulse solver, raycasts, `RigidBody3D`, `StaticBody3D`, `KinematicBody3D`, `Area3D`, `RayCast3D` |
 | Web | `wasm32-wasi` build with a WebGL2/WebAudio/DOM runtime (`web/eagle.js`); every example runs in the browser |
@@ -83,7 +83,7 @@ dependencies:
 
 * **Games (2D):** `chess` (full rules + alpha-beta AI), `checkers` (1 or 2 players, AI), `breakout`, `asteroids`, `platformer`, `snake`, `roguelike`
 * **Games (3D):** `coinrush3d`
-* **Feature tests:** `smoke`, `sandbox2d`, `physics`, `physics3d`, `ui`, `interactions`, `embedded`, `flythrough3d`
+* **Feature tests:** `smoke`, `sandbox2d`, `physics`, `physics3d`, `ui`, `interactions`, `embedded`, `flythrough3d`, `spatial_audio3d`
 
 Every example supports `EAGLE_FRAMES=60 EAGLE_SCREENSHOT=out.png` for automated verification.
 

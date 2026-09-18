@@ -16,6 +16,7 @@ EXAMPLES = {
   "roguelike"    => {"Roguelike", "Procedural dungeons, shadowcasting field of view, monsters that chase, items, five levels.", "Arrows/WASD/hjkl move · Space wait · Enter descends on > · R restart"},
   "coinrush3d"   => {"Coin Rush (3D)", "Roll a ball around a lit, shadowed arena collecting coins before the timer runs out.", "WASD move · Space jump · right-drag orbits the camera"},
   "flythrough3d" => {"3D fly-through", "Every 3D feature: primitives, textures, lights, shadows, fog, transparency, wireframe, picking.", "WASD/QE move · right-drag look · F wireframe · click to pick"},
+  "spatial_audio3d" => {"Spatial audio (3D)", "Looping sound sources you can fly around: panning, distance models, interaural delay, head shadow and doppler.", "WASD/QE move · right-drag look · click fires a shot · 1-3 distance model · M mute"},
   "physics"      => {"2D physics", "Rigid bodies, stacking, ramps, sensors and additive particle bursts.", "Click to spawn bodies"},
   "physics3d"    => {"3D physics", "Spheres and boxes with SAT contacts, stacking pyramid, kinematic ramp.", "Click fires spheres · Space throws a box · R resets"},
   "ui"           => {"UI toolkit", "Panels, buttons, sliders, checkboxes, text input, grids and themes.", "Click around; Tab cycles focus"},
@@ -437,7 +438,7 @@ API_GROUPS = {
   "Physics"        => %w(Eagle::Physics2D::World Eagle::Physics2D::Body Eagle::RigidBody2D Eagle::StaticBody2D Eagle::KinematicBody2D Eagle::Area2D Eagle::RayCast2D Eagle::Physics3D::World Eagle::RigidBody3D Eagle::KinematicBody3D Eagle::Area3D),
   "3D"             => %w(Eagle::Mesh Eagle::Material Eagle::Renderer3D Eagle::Environment Eagle::Camera3D Eagle::MeshInstance3D Eagle::DirectionalLight3D Eagle::PointLight3D Eagle::SpotLight3D Eagle::Scene3D),
   "UI"             => %w(Eagle::Control Eagle::Panel Eagle::Label Eagle::Button Eagle::CheckBox Eagle::Slider Eagle::ProgressBar Eagle::TextInput Eagle::VBox Eagle::HBox Eagle::GridContainer Eagle::Theme),
-  "Audio & assets" => %w(Eagle::Audio Eagle::Sound Eagle::Voice Eagle::AudioPlayer Eagle::AudioPlayer2D Eagle::Assets Eagle::Image Eagle::Codecs::PNG Eagle::Codecs::Vorbis Eagle::Codecs::Zlib),
+  "Audio & assets" => %w(Eagle::Audio Eagle::Sound Eagle::Voice Eagle::AudioPlayer Eagle::AudioPlayer2D Eagle::AudioPlayer3D Eagle::AudioListener3D Eagle::Assets Eagle::Image Eagle::Codecs::PNG Eagle::Codecs::Vorbis Eagle::Codecs::Zlib),
   "Math"           => %w(Eagle::Vec2 Eagle::Vec3 Eagle::Vec4 Eagle::Mat4 Eagle::Quat Eagle::Rect Eagle::AABB Eagle::Ray Eagle::Color Eagle::Transform2D Eagle::Mathf),
 }
 
