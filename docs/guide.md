@@ -250,6 +250,19 @@ The reusable, window-free generation and simulation are in `examples/joyride/wor
 `examples/joyride/sim.cr`; `main.cr` is the 3D presentation layer. Set
 `EAGLE_WORLD_SEED=42` to explore a different deterministic world.
 
+### First-person shooter
+
+The `fps` example (Neon Bastion) is a compact arena shooter: mouse look, a pulse rifle and
+scattergun, grunt and charger AI, Waves and Deathmatch. Combat and the procedural arena live
+in `examples/fps/game.cr` so they can be specced without a window; `main.cr` is the
+first-person view, HUD and spatial audio. Click to capture the mouse (browsers require a
+gesture for pointer lock); native builds lock it on launch.
+
+```sh
+crystal run examples/fps/main.cr
+# WASD move, Shift sprint, click/RB fire, 1/2 weapons, F1 Waves, F2 Deathmatch
+```
+
 ## Automated runs
 
 `EAGLE_FRAMES=60 EAGLE_SCREENSHOT=shot.png ./game` runs 60 frames, saves the
