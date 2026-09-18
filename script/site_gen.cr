@@ -130,10 +130,34 @@ end
 FONTS = %(<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">)
 REPO  = "https://github.com/joeyrobert/eagle.cr"
 
-def page(title : String, body : String, depth : Int32 = 0, active : String = "") : String
+alias Crumb = Tuple(String, String?)
+
+def crumbs_html(items : Array(Crumb)) : String
+  return "" if items.empty?
+  lis = String.build do |io|
+    items.each_with_index do |(name, href), i|
+      last = i == items.size - 1
+      if last || href.nil?
+        io << %(<li aria-current="page">#{HTML.escape(name)}</li>)
+      else
+        io << %(<li><a href="#{href}">#{HTML.escape(name)}</a></li>)
+      end
+    end
+  end
+  %(<nav class="crumbs" aria-label="Breadcrumb"><ol>#{lis}</ol></nav>\n)
+end
+
+def page(title : String, body : String, depth : Int32 = 0, active : String = "", crumbs : Array(Crumb) = [] of Crumb) : String
   rel = "../" * depth
   nav = [{"Play", "play/index.html", "play"}, {"Guide", "docs/guide.html", "guide"}, {"API", "docs/api/index.html", "api"}, {"GitHub", REPO, "gh"}]
   links = nav.map { |(n, h, k)| "<a href=\"#{h.starts_with?("http") ? h : rel + h}\"#{k == active ? " class=\"active\"" : ""}>#{n}</a>" }.join
+  resolved = crumbs.map do |(name, href)|
+    if href && !href.starts_with?("http") && !href.starts_with?("/")
+      {name, rel + href}
+    else
+      {name, href}
+    end
+  end
   <<-HTML
   <!doctype html>
   <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -143,7 +167,7 @@ def page(title : String, body : String, depth : Int32 = 0, active : String = "")
   <link rel="stylesheet" href="#{rel}assets/site.css">
   <link rel="icon" href="#{rel}assets/favicon.svg"></head>
   <body><header class="top"><div class="wrap"><a class="brand" href="#{rel}index.html"><img src="#{rel}assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v#{VERSION}</span></a><nav>#{links}</nav></div></header>
-  <main class="wrap">#{body}</main>
+  <main class="wrap">#{crumbs_html(resolved)}#{body}</main>
   <footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="#{REPO}">Source on GitHub</a></span></div></footer>
   </body></html>
   HTML
@@ -171,10 +195,18 @@ header.top .wrap{display:flex;align-items:center;justify-content:space-between;g
 .brand img{width:30px;height:30px;align-self:center;border-radius:6px}
 .brand span:first-of-type{font:500 28px/1 var(--serif);letter-spacing:-.01em}
 .ver{font:400 12px var(--mono);color:var(--ink2)}
-nav{display:flex;gap:26px}
-nav a{color:var(--ink);text-decoration:none;font-weight:500;font-size:15px;padding:4px 0;border-bottom:2px solid transparent}
-nav a:hover{color:var(--ink);border-bottom-color:var(--rule)}
-nav a.active{border-bottom-color:var(--gold)}
+header.top nav{display:flex;gap:26px}
+header.top nav a{color:var(--ink);text-decoration:none;font-weight:500;font-size:15px;padding:4px 0;border-bottom:2px solid transparent}
+header.top nav a:hover{color:var(--ink);border-bottom-color:var(--rule)}
+header.top nav a.active{border-bottom-color:var(--gold)}
+.crumbs{font:13px/1.45 var(--mono);color:var(--ink2);padding:22px 0 0}
+.crumbs ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center}
+.crumbs li{display:flex;align-items:center}
+.crumbs li:not(:last-child)::after{content:"/";margin:0 10px;color:var(--rule);font-weight:400}
+.crumbs a{color:var(--ink2);text-decoration:none}
+.crumbs a:hover{color:var(--link);text-decoration:underline;text-underline-offset:3px}
+.crumbs [aria-current="page"]{color:var(--ink)}
+.crumbs + .doc,.crumbs + .page-head,.crumbs + .play{padding-top:16px}
 h1,h2{font-family:var(--serif);font-weight:500;letter-spacing:-.015em}
 h3{font-weight:600}
 .hero{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center;padding:64px 0 24px}
@@ -252,7 +284,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
   .features{grid-template-columns:1fr}
   h2.section{font-size:32px}
   .doc h1,.page-head h1{font-size:40px}
-  nav{gap:18px}
+  header.top nav{gap:18px}
   .shots{grid-template-columns:1fr}
 }
 CSS
@@ -293,6 +325,13 @@ th{letter-spacing:0}
 th,td{border-bottom:1px solid var(--rule);padding:9px 14px 9px 0;text-align:left;vertical-align:top}
 th{font-weight:600}td:first-child{font-weight:600;white-space:nowrap}
 .main-content img{max-width:100%;border:1.5px solid var(--ink)}
+.crumbs{font:13px/1.45 "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--ink2);margin:4px 0 20px}
+.crumbs ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center}
+.crumbs li{display:flex;align-items:center}
+.crumbs li:not(:last-child)::after{content:"/";margin:0 10px;color:var(--rule)}
+.crumbs a{color:var(--ink2);text-decoration:none}
+.crumbs a:hover{color:var(--link);text-decoration:underline;text-underline-offset:3px}
+.crumbs [aria-current="page"]{color:var(--ink)}
 CSS
 
 FAVICON = %(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#1E1711"/><path d="M6 64 C8 44 14 26 28 18.5 C37 14 47 14.5 53 19.5 L47 30.5 C41 30.5 37 34.5 35 41 L31 64 Z" fill="#F4EFE6"/><path d="M49.5 18 C56 18.5 61.5 23.5 60.5 32 C60 35.5 58.5 38 56 39.5 C56.5 35 55 32 51.5 31 L44.5 31.5 C46.5 27 47.5 22 49.5 18 Z" fill="#E3A537"/><path d="M34.5 23 L49 19.5 L48 22.5 Z" fill="#1E1711"/><circle cx="42" cy="24.6" r="2.3" fill="#1E1711"/></svg>\n)
@@ -483,6 +522,18 @@ if Dir.exists?(api_root)
     site = "#{up}../../"
     html = html.sub("</head>", "#{FONTS}<link rel=\"icon\" href=\"#{site}assets/favicon.svg\">\n</head>")
     html = html.sub(/(<h1 class="project-name">.*?<\/h1>)/m) { "#{$1}<a class=\"site-link\" href=\"#{site}index.html\">Back to the Eagle site</a>" }
+    rel_path = Path[f].relative_to(api_root).to_s
+    is_api_index = rel_path == "index.html"
+    page_title = html.match(/<title>([^<]+)<\/title>/).try(&.[1]) || "API"
+    current = page_title.sub(/\s+-\s+eagle\b.*/i, "").strip
+    current = "API" if current.empty? || is_api_index
+    trail = [
+      {"Home", "#{site}index.html"},
+      {"Docs", "#{site}docs/index.html"},
+      {"API", is_api_index ? nil : "#{up}index.html"},
+    ] of Crumb
+    trail << {current, nil} unless is_api_index
+    html = html.sub(%(<div class="main-content">), %(<div class="main-content">#{crumbs_html(trail)}))
     html = html.gsub(/<p>(\|.*?)<\/p>/m) { |whole| pipe_table($1) || whole }
     html = html.gsub(%(src="docs/screenshots/), %(src="#{site}assets/screenshots/))
     File.write(f, html)
@@ -547,7 +598,11 @@ docs = {"guide" => {"Guide", "docs/guide.md"}, "architecture" => {"Architecture"
 docs.each do |name, (title, path)|
   md = File.read(File.join(ROOT, path)).gsub(/^!\[[^\]]*\]\([^)]*\)\n\n?/m, "")
   body = "<article class=\"doc\">" + markdown(md) + "</article>"
-  File.write(File.join(SITE, "docs/#{name}.html"), page("#{title} · Eagle", body, 1, name == "guide" ? "guide" : ""))
+  File.write(File.join(SITE, "docs/#{name}.html"), page("#{title} · Eagle", body, 1, name == "guide" ? "guide" : "", [
+    {"Home", "index.html"},
+    {"Docs", "docs/index.html"},
+    {title, nil},
+  ] of Crumb))
 end
 doc_index = <<-HTML
 <article class="doc"><h1>Documentation</h1>
@@ -560,7 +615,10 @@ doc_index = <<-HTML
 <tr><td><a href="readme.html">README</a></td><td>Install, build and run.</td></tr>
 </table></article>
 HTML
-File.write(File.join(SITE, "docs/index.html"), page("Docs · Eagle", doc_index, 1, "guide"))
+File.write(File.join(SITE, "docs/index.html"), page("Docs · Eagle", doc_index, 1, "guide", [
+  {"Home", "index.html"},
+  {"Docs", nil},
+] of Crumb))
 
 # play pages
 built = EXAMPLES.keys.select { |n| File.exists?(File.join(ROOT, "dist/web/#{n}/#{n}.wasm")) }
@@ -572,7 +630,10 @@ play_index = <<-HTML
 <div class="page-head"><h1>Playable examples</h1><p class="lead">Every example is compiled to WebAssembly and WebGL2 from the same Crystal source that runs natively. Click a canvas to focus it. Sound starts after your first click.</p></div>
 <div class="shots">#{cards}</div>
 HTML
-File.write(File.join(SITE, "play/index.html"), page("Play · Eagle", play_index, 1, "play"))
+File.write(File.join(SITE, "play/index.html"), page("Play · Eagle", play_index, 1, "play", [
+  {"Home", "index.html"},
+  {"Play", nil},
+] of Crumb))
 built.each do |n|
   t, d, controls = EXAMPLES[n]
   dir = File.join(SITE, "play", n)
@@ -588,6 +649,10 @@ built.each do |n|
   <details><summary>Source: <code>examples/#{n}/main.cr</code></summary><h3>examples/#{n}/main.cr</h3>#{code_block(src)}#{extra}</details></div>
   <script type="module">import { runEagle } from "./eagle.js"; runEagle("./#{n}.wasm", document.getElementById("eagle"), { antialias: true });</script>
   HTML
-  File.write(File.join(dir, "index.html"), page("#{t} · Eagle", body, 2, "play"))
+  File.write(File.join(dir, "index.html"), page("#{t} · Eagle", body, 2, "play", [
+    {"Home", "index.html"},
+    {"Play", "play/index.html"},
+    {t, nil},
+  ] of Crumb))
 end
 puts "site generated: #{built.size} playable examples, #{docs.size} doc pages"
