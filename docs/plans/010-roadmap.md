@@ -55,7 +55,7 @@ Requirements gathered from the project owner (2026-09-18):
 
 ## Phase 5: Games & polish
 - [x] 2D games: Chess (full rules, perft-verified move generator, alpha-beta AI), Checkers (1/2 players, forced captures, multi-jumps, kings, AI), Breakout, Asteroids, Platformer, Snake, all self-contained (procedural assets & sounds)
-- [x] 3D: feature fly-through (`flythrough3d`), Coin Rush game (`coinrush3d`)
+- [x] 3D: feature fly-through (`flythrough3d`), Coin Rush (`coinrush3d`), and streamed open-world driving (`joyride`)
 - [x] CLI: `eagle new/run/build/view/examples`; viewers for PNG/QOI/BMP, OBJ, TTF, WAV, GLSL (hot reload)
 - [x] README + docs/guide.md
 - [ ] Windows/Linux: link flags are in place (`@[Link("SDL2")]`) but untested on those platforms

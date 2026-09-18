@@ -138,6 +138,33 @@ describe Eagle::Ray do
   end
 end
 
+describe Eagle::Frustum do
+  it "classifies points and boxes against a perspective view" do
+    view = Mat4.look_at(v3(0, 0, 10), Vec3::ZERO)
+    f = Frustum.new(Mat4.perspective(Mathf.deg2rad(60), 1, 0.5, 50) * view)
+    f.contains?(Vec3::ZERO).should be_true
+    f.contains?(v3(0, 0, 20)).should be_false  # behind the camera
+    f.contains?(v3(0, 0, -45)).should be_false # beyond the far plane
+    f.contains?(v3(30, 0, 0)).should be_false  # off to the side
+    f.intersects?(AABB.new(v3(-1, -1, -1), v3(1, 1, 1))).should be_true
+    f.intersects?(AABB.new(v3(20, -1, -1), v3(22, 1, 1))).should be_false
+    # a wide box poking into the view from the side counts as visible
+    f.intersects?(AABB.new(v3(3, -1, -1), v3(40, 1, 1))).should be_true
+    # local bounds + transform: a unit cube moved off-screen, then rotated and scaled back into view
+    unit = AABB.new(v3(-0.5, -0.5, -0.5), v3(0.5, 0.5, 0.5))
+    f.intersects?(unit, Mat4.translation(0, 0, 30)).should be_false
+    f.intersects?(unit, Mat4.translation(12, 0, 0)).should be_false
+    f.intersects?(unit, Mat4.translation(12, 0, 0) * Mat4.rotation_y(0.7) * Mat4.scale(v3(12, 1, 1))).should be_true
+  end
+
+  it "works with orthographic projections" do
+    f = Frustum.new(Mat4.orthographic(-5, 5, -5, 5, 0.1, 20) * Mat4.look_at(v3(0, 10, 0), Vec3::ZERO, Vec3::BACK))
+    f.contains?(v3(4, 0, 4)).should be_true
+    f.contains?(v3(6, 0, 0)).should be_false
+    f.contains?(v3(0, -15, 0)).should be_false
+  end
+end
+
 describe Eagle::Color do
   it "parses hex" do
     Color.hex("#ff8800").should eq Color.rgb(255, 136, 0)

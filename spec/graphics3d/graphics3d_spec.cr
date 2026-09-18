@@ -243,4 +243,69 @@ describe Eagle::Renderer3D do
     Scene3D.renderer.draw_calls.should be > 5
     canvas.dispose
   end
+
+  gpu_it "culls meshes outside the camera and shadow volumes" do
+    root = SceneTree.root
+    cam = Camera3D.new(position: v3(0, 0, 5))
+    cam.look_at(Vec3::ZERO)
+    env = Scene3D.environment
+    env.sky = false
+    env.shadows = false
+    mat = Material.new(Color::WHITE)
+    root.add(cam, DirectionalLight3D.new)
+    root.add(MeshInstance3D.new(Mesh.cube, mat))
+    root.add(MeshInstance3D.new(Mesh.cube, mat, position: v3(0, 0, 20)))  # behind the camera
+    root.add(MeshInstance3D.new(Mesh.cube, mat, position: v3(40, 0, 0)))  # far off to the side
+    canvas = Canvas.new(32, 32, depth: true)
+    render = -> do
+      g = Eagle.graphics
+      g.begin_frame
+      g.with_canvas(canvas, clear: nil) { Scene3D.render(root, cam, canvas.size, flip_y: true) }
+      g.end_frame
+    end
+    render.call
+    Scene3D.renderer.draw_calls.should eq 1
+    Scene3D.renderer.stats_culled.should eq 2
+    img = canvas.to_image
+    img.average(14, 14, 4, 4).r.should be > 0.2
+    Scene3D.renderer.frustum_culling = false
+    render.call
+    Scene3D.renderer.draw_calls.should eq 3
+    Scene3D.renderer.stats_culled.should eq 0
+    Scene3D.renderer.frustum_culling = true
+    # shadow pass: only casters near the camera focus are drawn into the shadow map
+    env.shadows = true
+    env.shadow_size = 256
+    env.shadow_distance = 10
+    render.call
+    Scene3D.renderer.draw_calls.should eq 2 # one shadow caster + one visible mesh
+    env.shadow_distance = 40
+    canvas.dispose
+  end
+
+  gpu_it "honors MeshInstance3D#cast_shadows" do
+    root = SceneTree.root
+    cam = Camera3D.new(position: v3(0, 6, 0.01))
+    cam.look_at(Vec3::ZERO)
+    env = Scene3D.environment
+    env.sky = false; env.background = Color::BLACK; env.ambient = Color::BLACK
+    env.shadows = true; env.shadow_size = 512
+    env.fog(0, 0)
+    floor = MeshInstance3D.new(Mesh.plane(20, 20), Material.new(Color::WHITE, specular: 0))
+    block = MeshInstance3D.new(Mesh.cube(1), Material.new(Color::WHITE, specular: 0), position: v3(0, 1, 0))
+    sun = DirectionalLight3D.new(v3(-1, -1, 0))
+    root.add(cam, floor, block, sun)
+    canvas = Canvas.new(64, 64, depth: true)
+    shot = -> do
+      g = Eagle.graphics
+      g.begin_frame
+      g.with_canvas(canvas, clear: nil) { Scene3D.render(root, cam, canvas.size, flip_y: true) }
+      g.end_frame
+      canvas.to_image.average(39, 30, 5, 4).r
+    end
+    shot.call.should be < 0.15
+    block.cast_shadows = false
+    shot.call.should be > 0.4
+    canvas.dispose
+  end
 end

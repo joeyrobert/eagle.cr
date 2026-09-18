@@ -108,8 +108,10 @@ module Eagle
     getter material : Material
     # Its world transform.
     getter transform : Mat4
+    # Whether it goes into the shadow map (the material must allow it too).
+    getter? cast_shadows : Bool
     # Creates a draw item.
-    def initialize(@mesh, @material, @transform); end
+    def initialize(@mesh, @material, @transform, @cast_shadows = true); end
   end
 
   # The camera parameters the renderer needs.
@@ -133,6 +135,11 @@ module Eagle
     property environment : Environment
     # Draw calls in the last render.
     getter stats_draw_calls = 0
+    # Meshes skipped in the last render because they were outside the camera view.
+    getter stats_culled = 0
+    # Skip meshes whose bounds are outside the camera (and, for shadows, outside the shadow
+    # map). Turn it off if a custom vertex shader moves vertices outside the mesh bounds.
+    property? frustum_culling = true
     @depth_shader : Shader
     @sky_shader : Shader
     @sky_geom : UInt32
@@ -140,6 +147,7 @@ module Eagle
     @shadow_texture : Texture? = nil
     @light_matrix = Mat4.identity
     @draw_calls = 0
+    @culled = 0
     # Set EAGLE_GL_DEBUG=1 to check for GL errors after every stage/draw.
     @@debug : Bool = ENV["EAGLE_GL_DEBUG"]? == "1"
 
@@ -202,8 +210,15 @@ module Eagle
       dbg("sky")
       dev.blend_mode(GPU::BlendMode::None)
 
-      opaque = items.reject { |i| i.material.transparent? }
-      transparent = items.select { |i| i.material.transparent? }
+      visible = items
+      @culled = 0
+      if @frustum_culling
+        frustum = Frustum.new(camera.projection * camera.view)
+        visible = items.select { |i| frustum.intersects?(i.mesh.bounds, i.transform) }
+        @culled = items.size - visible.size
+      end
+      opaque = visible.reject { |i| i.material.transparent? }
+      transparent = visible.select { |i| i.material.transparent? }
       cam_pos = camera.position
       opaque.sort_by! { |i| {i.material.priority, i.material.effective_shader.id, (i.transform.translation - cam_pos).length_squared} }
       transparent.sort_by! { |i| {i.material.priority, -(i.transform.translation - cam_pos).length_squared} }
@@ -263,6 +278,7 @@ module Eagle
       dev.front_face_ccw(true)
       dev.blend_mode(GPU::BlendMode::Alpha)
       @stats_draw_calls = @draw_calls
+      @stats_culled = @culled
     end
 
     private def upload_lights(sh : Shader, lights : Array(LightData))
@@ -335,8 +351,10 @@ module Eagle
       dev.blend_mode(GPU::BlendMode::None)
       @depth_shader.use
       @depth_shader["u_light_matrix"] = @light_matrix
+      light_frustum = Frustum.new(@light_matrix)
       items.each do |item|
-        next unless item.material.cast_shadows? && !item.material.transparent?
+        next unless item.cast_shadows? && item.material.cast_shadows? && !item.material.transparent?
+        next if @frustum_culling && !light_frustum.intersects?(item.mesh.bounds, item.transform)
         @depth_shader["u_model"] = item.transform
         item.mesh.draw
         @draw_calls += 1

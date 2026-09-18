@@ -233,6 +233,23 @@ small interaural delay and a head-shadow low-pass so left/right and front/back
 read on headphones, and optional doppler (`doppler = true`). Parameters glide
 across each mixed buffer, so fast movers don't click.
 
+### Streaming an open world
+
+The `joyride` example keeps an effectively infinite world bounded in memory. Its seed maps
+world coordinates to deterministic road edges, zones and chunk contents, so a chunk can be
+discarded and later rebuilt exactly. The game keeps a five-by-five ring of rendered chunks
+around the player and evicts old simulation layouts. Traffic follows the generated road
+graph, pedestrians use generated sidewalks, and missions choose targets from that same graph.
+
+```sh
+crystal run examples/joyride/main.cr
+# WASD/arrows drive, Space handbrake, M starts a new mission
+```
+
+The reusable, window-free generation and simulation are in `examples/joyride/world.cr` and
+`examples/joyride/sim.cr`; `main.cr` is the 3D presentation layer. Set
+`EAGLE_WORLD_SEED=42` to explore a different deterministic world.
+
 ## Automated runs
 
 `EAGLE_FRAMES=60 EAGLE_SCREENSHOT=shot.png ./game` runs 60 frames, saves the

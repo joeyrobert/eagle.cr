@@ -3,6 +3,7 @@ require "./vec3"
 require "./mat4"
 require "./quat"
 require "./rect"
+require "./frustum"
 require "./color"
 require "./transform2d"
 

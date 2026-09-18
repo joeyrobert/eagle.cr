@@ -15,6 +15,7 @@ EXAMPLES = {
   "snake"        => {"Snake", "Grid logic with a unit-tested core and speed that ramps as you eat.", "Arrows/WASD · Space restarts"},
   "roguelike"    => {"Roguelike", "Procedural dungeons, shadowcasting field of view, monsters that chase, items, five levels.", "Arrows/WASD/hjkl move · Space wait · Enter descends on > · R restart"},
   "coinrush3d"   => {"Coin Rush (3D)", "Roll a ball around a lit, shadowed arena collecting coins before the timer runs out.", "WASD move · Space jump · right-drag orbits the camera"},
+  "joyride"       => {"Joyride", "Drive through an infinite deterministic city and countryside with traffic, police, pedestrians and delivery or race missions.", "WASD/arrows drive · Space handbrake · M new mission"},
   "flythrough3d" => {"3D fly-through", "Every 3D feature: primitives, textures, lights, shadows, fog, transparency, wireframe, picking.", "WASD/QE move · right-drag look · F wireframe · click to pick"},
   "spatial_audio3d" => {"Spatial audio (3D)", "Looping sound sources you can fly around: panning, distance models, interaural delay, head shadow and doppler.", "WASD/QE move · right-drag look · click fires a shot · 1-3 distance model · M mute"},
   "physics"      => {"2D physics", "Rigid bodies, stacking, ramps, sensors and additive particle bursts.", "Click to spawn bodies"},
@@ -494,7 +495,7 @@ def api_link(name : String, rel : String) : String?
 end
 
 # marketing page
-shots = %w(flythrough3d coinrush3d chess platformer physics3d roguelike ui interactions asteroids breakout physics checkers).select { |n| has_shot.call(n) }
+shots = %w(joyride flythrough3d coinrush3d chess platformer physics3d roguelike ui interactions asteroids breakout physics checkers).select { |n| has_shot.call(n) }
 gallery = shots.map do |n|
   t, d, _ = EXAMPLES[n]
   "<figure><a href=\"play/#{n}/index.html\"><img src=\"assets/screenshots/#{n}.png\" alt=\"#{t} screenshot\" loading=\"lazy\"></a><figcaption><b><a href=\"play/#{n}/index.html\">#{t}</a></b>#{d}</figcaption></figure>"
