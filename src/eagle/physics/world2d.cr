@@ -1,18 +1,25 @@
 module Eagle
   module Physics2D
-    # Simulation container. Units: pixels and seconds; gravity defaults to 980 px/s².
+    # A container that simulates bodies: gravity, collisions and contact resolution, plus
+    # spatial queries such as raycasts.
     class World
+      # Acceleration applied to dynamic bodies, in pixels per second squared.
       property gravity : Vec2 = Vec2.new(0, 980)
+      # Solver iterations per step. More iterations make stacks steadier but cost more time.
       property iterations : Int32 = 10
-      # Extra post-step positional correction (0 = rely on the velocity bias only).
+      # Extra positional correction after each step. 0 relies on the velocity bias alone.
       property position_correction : Float32 = 0_f32
-      # Baumgarte velocity bias factor (0..1) for resolving penetration.
+      # How aggressively overlap is corrected each step, from 0 to 1. Too high looks jittery.
       property bias_factor : Float32 = 0.2_f32
+      # Overlap, in pixels, that is allowed before correction kicks in. It prevents jitter at rest.
       property slop : Float32 = 0.05_f32
+      # Cell size of the broad-phase grid. Around twice the size of a typical body works well.
       property cell_size : Float32 = 128_f32
+      # Every body in the world.
       getter bodies = [] of Body
-      # (a, b) pairs that began/ended touching in the last step.
+      # Pairs of bodies that started touching in the last step.
       getter began = [] of {Body, Body}
+      # Pairs of bodies that stopped touching in the last step.
       getter ended = [] of {Body, Body}
       @pairs = Set({Int32, Int32}).new
       @grid = {} of {Int32, Int32} => Array(Body)
@@ -20,28 +27,33 @@ module Eagle
       signal contact_begin(a : Body, b : Body)
       signal contact_end(a : Body, b : Body)
 
+      # Adds an existing body and returns it.
       def add_body(b : Body) : Body
         @bodies << b unless @bodies.includes?(b)
         b.update_world_shapes
         b
       end
 
+      # Creates a body with one shape, adds it and returns it.
       def add(type : BodyType, position : Vec2, shape : Shape) : Body
         add_body(Body.new(type, position, shape))
       end
 
+      # Removes a body.
       def remove_body(b : Body) : Nil
         @bodies.delete(b)
         b.contacts.each { |o| o.contacts.delete(b); @pairs.delete(pair_key(b, o)) }
         b.contacts.clear
       end
 
+      # Removes every body.
       def clear : Nil
         @bodies.clear; @pairs.clear; @began.clear; @ended.clear
       end
 
       private record Contact, a : Body, b : Body, manifold : Manifold, sensor : Bool
 
+      # Advances the simulation by *dt* seconds. Use a fixed *dt* for stable results.
       def step(dt : Float32) : Nil
         return if dt <= 0
         @began.clear; @ended.clear
@@ -215,6 +227,8 @@ module Eagle
       end
 
       # --- queries -------------------------------------------------------------
+      # Casts a ray and returns the closest hit, or `nil`. *direction* doesn't need to be
+      # normalized. Pass *exclude* to ignore one body, such as the one casting.
       def raycast(origin : Vec2, direction : Vec2, max_distance : Number = 1e6, mask : UInt32 = 0xFFFFFFFF_u32, exclude : Body? = nil) : RayHit?
         dir = direction.normalized
         best : RayHit? = nil
@@ -236,15 +250,17 @@ module Eagle
         best
       end
 
+      # Every body containing the point *p*.
       def query_point(p : Vec2, mask : UInt32 = 0xFFFFFFFF_u32) : Array(Body)
         @bodies.select { |b| b.enabled? && (b.layer & mask) != 0 && b.aabb.contains?(p) && b.contains_point?(p) }
       end
 
+      # Every body whose bounds overlap *r*.
       def query_rect(r : Rect, mask : UInt32 = 0xFFFFFFFF_u32) : Array(Body)
         @bodies.select { |b| b.enabled? && (b.layer & mask) != 0 && b.aabb.intersects?(r) }
       end
 
-      # Bodies overlapping a world-space shape.
+      # Every body overlapping a world-space shape, for area attacks and placement checks.
       def query_shape(shape : Shape, mask : UInt32 = 0xFFFFFFFF_u32) : Array(Body)
         sa = shape.aabb
         @bodies.select do |b|
@@ -252,8 +268,8 @@ module Eagle
         end
       end
 
-      # Kinematic character movement: move by `motion`, sliding along
-      # obstacles. Returns the collision normals hit (empty when free).
+      # Moves a body by *motion*, sliding along obstacles. Returns the normals of the surfaces hit.
+      # `KinematicBody2D#move_and_slide` wraps this.
       def move_and_slide(body : Body, motion : Vec2, max_slides : Int32 = 4) : Array(Vec2)
         normals = [] of Vec2
         # Substep long motions so thin obstacles are not tunnelled through.
@@ -299,8 +315,8 @@ module Eagle
         normals
       end
 
-      # Probe for ground within `distance` along -up without moving the body.
-      # Returns the floor normal if found.
+      # Looks for ground within *distance* below the body without moving it. Returns the floor
+      # normal if a surface within *max_angle* of *up* is found.
       def probe_floor(body : Body, up : Vec2, distance : Float32, max_angle : Float32) : Vec2?
         start = body.position
         body.position += -up * distance

@@ -1,15 +1,21 @@
 module Eagle
   module Physics2D
-    # Result of a narrow-phase test.
+    # The result of a collision test: which way to separate, how deep the overlap is, and
+    # where the shapes touch.
     struct Manifold
+      # Unit normal pointing from shape A to shape B.
       getter normal : Vec2          # from A to B
+      # Overlap depth along the normal.
       getter penetration : Float32
+      # Contact points in world space.
       getter contacts : Array(Vec2)
       def initialize(@normal, @penetration, @contacts); end
     end
 
+    # Where a ray hit: the point, surface normal, distance, body and shape.
     struct RayHit
       getter point : Vec2
+      # Surface normal at the hit.
       getter normal : Vec2
       getter distance : Float32
       getter body : Body
@@ -17,10 +23,11 @@ module Eagle
       def initialize(@point, @normal, @distance, @body, @shape); end
     end
 
-    # Narrow-phase collision on world-space shapes.
+    # Low-level collision tests on world-space shapes. The world uses them; you rarely need them directly.
     module Collision
       extend self
 
+      # Tests two shapes and returns a manifold when they overlap.
       def test(a : Shape, b : Shape) : Manifold?
         case {a, b}
         when {Circle, Circle} then circle_circle(a.as(Circle), b.as(Circle))
@@ -33,10 +40,12 @@ module Eagle
         end
       end
 
+      # True when two shapes overlap.
       def overlaps?(a : Shape, b : Shape) : Bool
         !test(a, b).nil?
       end
 
+      # Circle against circle.
       def circle_circle(a : Circle, b : Circle) : Manifold?
         d = b.center - a.center
         dist2 = d.length_squared
@@ -47,6 +56,7 @@ module Eagle
         Manifold.new(normal, r - dist, [a.center + normal * a.radius])
       end
 
+      # Circle against polygon.
       def circle_polygon(c : Circle, p : Polygon) : Manifold?
         # find face with minimum penetration
         sep = -Float32::INFINITY
@@ -85,7 +95,7 @@ module Eagle
         end
       end
 
-      # SAT with face clipping for contact points.
+      # Polygon against polygon, using the separating axis test with face clipping.
       def polygon_polygon(a : Polygon, b : Polygon) : Manifold?
         pa, fa = axis_of_least_penetration(a, b)
         return nil if pa >= 0
@@ -151,7 +161,7 @@ module Eagle
         out_pts
       end
 
-      # Ray tests: returns {distance, normal} or nil.
+      # Ray against circle. Returns the distance and normal, or `nil`.
       def ray_circle(origin : Vec2, dir : Vec2, max : Float32, c : Circle) : {Float32, Vec2}?
         oc = origin - c.center
         b = oc.dot(dir)
@@ -164,6 +174,7 @@ module Eagle
         {t, (p - c.center).normalized}
       end
 
+      # Ray against polygon. Returns the distance and normal, or `nil`.
       def ray_polygon(origin : Vec2, dir : Vec2, max : Float32, p : Polygon) : {Float32, Vec2}?
         tmin = 0_f32; tmax = max
         normal = Vec2::ZERO

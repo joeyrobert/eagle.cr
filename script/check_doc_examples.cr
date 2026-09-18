@@ -69,7 +69,7 @@ end
 FileUtils.rm_rf(OUT)
 Dir.mkdir_p(OUT)
 examples.each_with_index do |ex, n|
-  toplevel = ex.code.lines.any? { |l| l =~ /^(abstract |private )?(class|struct|module|def|enum|macro)\b/ }
+  toplevel = ex.code.lines.any? { |l| l =~ /^(abstract |private )?(class|struct|module|def|enum|macro)\b/ || l =~ /^[A-Z][A-Z0-9_]* = / }
   wrapped = if toplevel
               "module DocExample#{n}\n  extend self\n#{ex.code}\n#{exercise(ex.code)}end\n"
             else

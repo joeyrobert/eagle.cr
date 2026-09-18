@@ -1,46 +1,77 @@
 module Eagle
-  # 3D rigid-body physics: spheres and oriented boxes, sequential impulses,
-  # raycasts and overlap queries. Units: metres and seconds.
+  # 3D rigid-body physics in pure Crystal: spheres and oriented boxes, stacking, friction,
+  # raycasts, overlap queries and kinematic character movement.
+  #
+  # It mirrors `Physics2D`. Most games use the 3D physics nodes (`RigidBody3D`,
+  # `StaticBody3D`, `KinematicBody3D`, `Area3D`, `RayCast3D`), which share `Physics3D.world`.
+  # Units are meters and seconds, and gravity defaults to 9.81 m/s² downward.
+  #
+  # ```
+  # world = Physics3D::World.new
+  # world.add(Physics3D::BodyType::Static, v3(0, -0.5, 0), Physics3D::Cuboid.new(v3(20, 1, 20)))
+  # ball = world.add(Physics3D::BodyType::Dynamic, v3(0, 5, 0), Physics3D::Sphere.new(0.5))
+  # 120.times { world.step(1_f32 / 60) }
+  # nearby = world.query_sphere(ball.position, 2)
+  # ```
   module Physics3D
+    # A 3D collision shape in a body's local space: a `Sphere` or a `Cuboid`.
     abstract class Shape
+      # Offset from the body's origin.
       property offset : Vec3 = Vec3::ZERO
+      # Volume, used for mass.
       abstract def volume : Float32
-      # Inertia tensor diagonal per unit mass (about the shape's centre).
+      # Diagonal of the inertia tensor per unit mass.
       abstract def inertia_factor : Vec3
+      # Bounds in the body's local space.
       abstract def local_aabb : AABB
     end
 
+    # A sphere collision shape.
     class Sphere < Shape
+      # Radius in meters.
       property radius : Float32
+      # Creates a sphere.
       def initialize(radius : Number, offset : Vec3 = Vec3::ZERO)
         @radius = radius.to_f32; @offset = offset
       end
+      # Volume.
       def volume : Float32; (4 / 3.0 * Math::PI * @radius ** 3).to_f32; end
+      # Inertia per unit mass.
       def inertia_factor : Vec3; Vec3.new(0.4 * @radius * @radius); end
+      # Bounds in local space.
       def local_aabb : AABB; AABB.from_center(@offset, Vec3.new(@radius)); end
     end
 
+    # A box collision shape that rotates with its body.
     class Cuboid < Shape
+      # Half the box's size along each axis.
       property half : Vec3
+      # Creates a box of full *size*.
       def initialize(size : Vec3, offset : Vec3 = Vec3::ZERO)
         @half = size / 2; @offset = offset
       end
+      # A cube with sides of *size*.
       def self.cube(size : Number) : Cuboid; new(Vec3.new(size)); end
+      # Full size along each axis.
       def size : Vec3; @half * 2; end
+      # Volume.
       def volume : Float32; @half.x * @half.y * @half.z * 8; end
+      # Inertia per unit mass.
       def inertia_factor : Vec3
         s = size
         Vec3.new((s.y * s.y + s.z * s.z) / 12, (s.x * s.x + s.z * s.z) / 12, (s.x * s.x + s.y * s.y) / 12)
       end
+      # Bounds in local space.
       def local_aabb : AABB; AABB.from_center(@offset, @half); end
     end
 
-    # World-space instance of a shape for a step.
+    # :nodoc:
     struct WorldShape
       getter shape : Shape
       getter center : Vec3
       getter rotation : Quat
       getter axes : {Vec3, Vec3, Vec3}
+      # Creates a body, optionally with a first shape.
       def initialize(@shape, @center, @rotation)
         @axes = {@rotation * Vec3::RIGHT, @rotation * Vec3::UP, @rotation * Vec3::BACK}
       end
@@ -112,21 +143,28 @@ module Eagle
       end
     end
 
+    # The result of a collision test: separation normal, depth and contact points.
     struct Manifold
+      # Unit normal pointing from A to B.
       getter normal : Vec3 # from A to B
+      # Overlap depth.
       getter penetration : Float32
+      # Contact points in world space.
       getter contacts : Array(Vec3)
       def initialize(@normal, @penetration, @contacts); end
     end
 
+    # Where a ray hit: point, normal, distance and body.
     struct RayHit
       getter point : Vec3
+      # Surface normal at the hit.
       getter normal : Vec3
       getter distance : Float32
       getter body : Body
       def initialize(@point, @normal, @distance, @body); end
     end
 
+    # :nodoc:
     module Collision
       extend self
 
@@ -298,39 +336,69 @@ module Eagle
       end
     end
 
+    # How a body moves: `Static`, `Kinematic` (moved by code) or `Dynamic` (moved by the simulation).
     enum BodyType
       Static
       Kinematic
       Dynamic
     end
 
+    # A 3D physics body: position, rotation, velocities, mass and shapes. Physics nodes create
+    # them for you.
     class Body
+      # Static, kinematic or dynamic.
       property type : BodyType
+      # World-space position.
       property position : Vec3
+      # Orientation.
       property rotation : Quat = Quat::IDENTITY
+      # Linear velocity in meters per second.
       property velocity : Vec3 = Vec3::ZERO
+      # Spin axis scaled by radians per second.
       property angular_velocity : Vec3 = Vec3::ZERO
+      # Force accumulated for the next step.
       property force : Vec3 = Vec3::ZERO
+      # Torque accumulated for the next step.
       property torque : Vec3 = Vec3::ZERO
+      # Bounciness from 0 to 1.
       property restitution : Float32 = 0_f32
+      # Surface grip.
       property friction : Float32 = 0.5_f32
+      # Multiplies gravity for this body.
       property gravity_scale : Float32 = 1_f32
+      # Drag on linear velocity.
       property linear_damping : Float32 = 0.05_f32
+      # Drag on spin.
       property angular_damping : Float32 = 0.05_f32
+      # Prevents rotation.
       property? fixed_rotation = false
+      # Sensors report overlaps but don't collide.
       property? sensor = false
+      # Layer bits. See `Physics2D::Body#layer` for how layers and masks combine.
       property layer : UInt32 = 1_u32
+      # Mask bits.
       property mask : UInt32 = 0xFFFFFFFF_u32
+      # Disabled bodies are skipped.
       property? enabled = true
+      # The node that owns this body, if any.
       property owner : Node? = nil
+      # Mass per unit volume.
       property density : Float32 = 1_f32
+      # Shapes in local space.
       getter shapes = [] of Shape
+      # Mass.
       getter mass : Float32 = 1_f32
+      # 1 / mass, or 0 for non-dynamic bodies.
       getter inv_mass : Float32 = 1_f32
+      # Inverse inertia in body space.
       getter inv_inertia_local : Vec3 = Vec3::ONE
+      # :nodoc:
       getter world_shapes = [] of WorldShape
+      # World-space bounds.
       getter aabb : AABB = AABB.new(Vec3::ZERO, Vec3::ZERO)
+      # Bodies touching this one after the last step.
       getter contacts = Set(Body).new
+      # A unique id.
       getter id : Int32
       @@next_id = 0
 
@@ -340,23 +408,30 @@ module Eagle
         update_mass
       end
 
+      # True for static bodies.
       def static? : Bool; @type.static?; end
+      # True for dynamic bodies.
       def dynamic? : Bool; @type.dynamic?; end
+      # True for kinematic bodies.
       def kinematic? : Bool; @type.kinematic?; end
 
+      # Adds a shape and recomputes mass. Returns the shape.
       def add_shape(s : Shape) : Shape
         @shapes << s
         update_mass
         s
       end
 
+      # Sets the mass directly.
       def mass=(m : Number)
         @mass = m.to_f32
         @inv_mass = dynamic? && @mass > 0 ? 1 / @mass : 0_f32
         recompute_inertia
       end
 
+      # Changes the body type.
       def type=(t : BodyType); @type = t; update_mass; end
+      # Enables or disables rotation.
       def fixed_rotation=(v : Bool); @fixed_rotation = v; recompute_inertia; end
 
       # :nodoc:
@@ -381,26 +456,31 @@ module Eagle
         end
       end
 
-      # World-space inverse inertia applied to a vector: R * diag(inv) * R^T * v
+      # Applies the world-space inverse inertia to *v*.
       def inv_inertia_apply(v : Vec3) : Vec3
         local = @rotation.inverse * v
         @rotation * (local * @inv_inertia_local)
       end
 
+      # The body's transform.
       def transform : Mat4; Mat4.trs(@position, @rotation, Vec3::ONE); end
 
+      # Adds a force for the next step, at *point* if given.
       def apply_force(f : Vec3, point : Vec3? = nil) : Nil
         @force += f
         @torque += (point - @position).cross(f) if point
       end
 
+      # Changes velocity instantly, at *point* if given.
       def apply_impulse(i : Vec3, point : Vec3? = nil) : Nil
         @velocity += i * @inv_mass
         @angular_velocity += inv_inertia_apply((point - @position).cross(i)) if point && !@fixed_rotation
       end
 
+      # Adds torque for the next step.
       def apply_torque(t : Vec3) : Nil; @torque += t; end
 
+      # Velocity of a world-space point on the body.
       def velocity_at(point : Vec3) : Vec3
         @velocity + @angular_velocity.cross(point - @position)
       end
@@ -419,20 +499,32 @@ module Eagle
         @aabb = box
       end
 
+      # True when a world-space point is inside any shape.
       def contains_point?(p : Vec3) : Bool; @world_shapes.any?(&.contains?(p)); end
+      # True when layer and mask bits allow a collision.
       def collides_with?(o : Body) : Bool; (@layer & o.mask) != 0 && (o.layer & @mask) != 0; end
       def to_s(io : IO) : Nil; io << "Body3D#" << @id << "(" << @type << " " << @position << ")"; end
     end
 
+    # A 3D physics simulation. See `Physics3D` for an example.
     class World
+      # Acceleration applied to dynamic bodies, in m/s².
       property gravity : Vec3 = Vec3.new(0, -9.81, 0)
+      # Solver iterations per step.
       property iterations : Int32 = 10
+      # How aggressively overlap is corrected, from 0 to 1.
       property bias_factor : Float32 = 0.2_f32
+      # Overlap allowed before correction, in meters.
       property slop : Float32 = 0.005_f32
+      # Broad-phase grid cell size in meters.
       property cell_size : Float32 = 4_f32
+      # Speed below which resting bodies stop being simulated. 0 disables sleeping.
       property sleep_threshold : Float32 = 0_f32
+      # Every body in the world.
       getter bodies = [] of Body
+      # Pairs of bodies that started touching in the last step.
       getter began = [] of {Body, Body}
+      # Pairs of bodies that stopped touching in the last step.
       getter ended = [] of {Body, Body}
       @pairs = Set({Int32, Int32}).new
       @grid = {} of {Int32, Int32, Int32} => Array(Body)
@@ -440,26 +532,31 @@ module Eagle
       signal contact_begin(a : Body, b : Body)
       signal contact_end(a : Body, b : Body)
 
+      # Adds an existing body and returns it.
       def add_body(b : Body) : Body
         @bodies << b unless @bodies.includes?(b)
         b.update_world_shapes
         b
       end
 
+      # Creates a body with one shape, adds it and returns it.
       def add(type : BodyType, position : Vec3, shape : Shape) : Body
         add_body(Body.new(type, position, shape))
       end
 
+      # Removes a body.
       def remove_body(b : Body) : Nil
         @bodies.delete(b)
         b.contacts.each { |o| o.contacts.delete(b); @pairs.delete(pair_key(b, o)) }
         b.contacts.clear
       end
 
+      # Removes every body.
       def clear : Nil; @bodies.clear; @pairs.clear; @began.clear; @ended.clear; end
 
       private record Contact, a : Body, b : Body, manifold : Manifold, sensor : Bool
 
+      # Advances the simulation by *dt* seconds.
       def step(dt : Float32) : Nil
         return if dt <= 0
         @began.clear; @ended.clear
@@ -606,6 +703,7 @@ module Eagle
         b.angular_velocity += b.inv_inertia_apply((point - b.position).cross(impulse)) unless b.fixed_rotation?
       end
 
+      # Casts a ray and returns the closest hit, or `nil`.
       def raycast(origin : Vec3, direction : Vec3, max_distance : Number = 1e6, mask : UInt32 = 0xFFFFFFFF_u32, exclude : Body? = nil) : RayHit?
         dir = direction.normalized
         best : RayHit? = nil
@@ -621,15 +719,17 @@ module Eagle
         best
       end
 
+      # Every body containing *p*.
       def query_point(p : Vec3, mask : UInt32 = 0xFFFFFFFF_u32) : Array(Body)
         @bodies.select { |b| b.enabled? && (b.layer & mask) != 0 && b.aabb.contains?(p) && b.contains_point?(p) }
       end
 
+      # Every body whose bounds overlap *box*.
       def query_aabb(box : AABB, mask : UInt32 = 0xFFFFFFFF_u32) : Array(Body)
         @bodies.select { |b| b.enabled? && (b.layer & mask) != 0 && b.aabb.intersects?(box) }
       end
 
-      # Sphere overlap query (world space).
+      # Every body overlapping a sphere, for explosions and proximity checks.
       def query_sphere(center : Vec3, radius : Number, mask : UInt32 = 0xFFFFFFFF_u32) : Array(Body)
         probe = WorldShape.new(Sphere.new(radius), center, Quat::IDENTITY)
         @bodies.select do |b|
@@ -637,7 +737,7 @@ module Eagle
         end
       end
 
-      # Kinematic move with sliding; returns contact normals.
+      # Moves a body by *motion*, sliding along obstacles. Returns the normals hit.
       def move_and_slide(body : Body, motion : Vec3, max_slides : Int32 = 4) : Array(Vec3)
         normals = [] of Vec3
         extent = Math.max(0.05_f32, Math.min(body.aabb.size.x, Math.min(body.aabb.size.y, body.aabb.size.z)) / 2)
@@ -676,6 +776,7 @@ module Eagle
         normals
       end
 
+      # Looks for ground below the body without moving it. Returns the floor normal if found.
       def probe_floor(body : Body, up : Vec3, distance : Float32, max_angle : Float32) : Vec3?
         start = body.position
         body.position += -up * distance
@@ -687,9 +788,13 @@ module Eagle
     end
 
     @@world = World.new
+    # The shared world used by the 3D physics nodes.
     def self.world : World; @@world; end
+    # Replaces the shared world.
     def self.world=(w : World); @@world = w; end
+    # True when the shared world has bodies.
     def self.active? : Bool; !@@world.bodies.empty?; end
+    # Replaces the shared world with an empty one.
     def self.reset : Nil; @@world = World.new; end
   end
 end
