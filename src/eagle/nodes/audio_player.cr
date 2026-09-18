@@ -1,5 +1,5 @@
 module Eagle
-  # Playback settings shared by `AudioPlayer` and `AudioPlayer2D`.
+  # Playback settings shared by `AudioPlayer`, `AudioPlayer2D` and `AudioPlayer3D`.
   module AudioPlayback
     # The sound to play.
     property sound : Sound? = nil
@@ -7,7 +7,7 @@ module Eagle
     property volume : Float32 = 1_f32
     # Playback speed: 1 is normal.
     property pitch : Float32 = 1_f32
-    # Stereo position from -1 to 1. `AudioPlayer2D` computes it from position instead.
+    # Stereo position from -1 to 1. `AudioPlayer2D` computes it from position instead, and `AudioPlayer3D` ignores it.
     property pan : Float32 = 0_f32
     # Restart from the beginning when the sound ends.
     property? loop = false
@@ -145,5 +145,155 @@ module Eagle
     def process(dt : Float32) : Nil; update_voice; end
     # Stops playback when removed.
     def exit_tree : Nil; stop; end
+  end
+end
+
+module Eagle
+  # A sound placed in a 3D scene, heard from `Audio.listener` (the current `Camera3D` unless
+  # an `AudioListener3D` takes over). It fades with distance, pans toward the ear it is
+  # closer to, reaches the far ear slightly later and duller, and sounds muffled from behind,
+  # so players can locate it on headphones.
+  #
+  # Use it for sounds attached to things in the level: an enemy's footsteps, a humming
+  # generator, a radio. Add it as a child of the object and it follows along. For one-off
+  # sounds that don't need a node, such as gunshots and explosions, use `Audio.play_at`.
+  #
+  # ```
+  # generator = AudioPlayer3D.new(Sound.tone(55, 2, Sound::Wave::Saw, volume: 0.3), position: v3(4, 1, -6), loop: true, autoplay: true)
+  # generator.max_distance = 30
+  # generator.attenuation = Attenuation::Linear
+  # SceneTree.root.add(generator)
+  #
+  # drone = Node3D.new(position: v3(0, 3, 0))
+  # buzz = AudioPlayer3D.new(Sound.tone(180, 1, Sound::Wave::Square, volume: 0.2), loop: true, autoplay: true)
+  # buzz.doppler = true # pitch rises as it flies toward the listener
+  # drone.add(buzz)
+  # SceneTree.root.add(drone)
+  # ```
+  class AudioPlayer3D < Node3D
+    include AudioPlayback
+    # The distance model. See `Attenuation`.
+    property attenuation : Attenuation = Attenuation::Inverse
+    # Distance inside which the sound plays at full volume.
+    property min_distance : Float32 = 1_f32
+    # Distance past which the sound stops getting quieter (silent there with `Attenuation::Linear`).
+    property max_distance : Float32 = 100_f32
+    # How fast the volume falls between `min_distance` and `max_distance`. 1 is natural.
+    property rolloff : Float32 = 1_f32
+    # Shifts pitch as the source moves toward or away from the listener. Off by default.
+    property? doppler = false
+    # Exaggerates (above 1) or tames (below 1) the doppler effect.
+    property doppler_scale : Float32 = 1_f32
+    # World-space velocity, measured from how the node moved since the last frame.
+    getter velocity : Vec3 = Vec3::ZERO
+    @last_global : Vec3? = nil
+
+    # Sets `min_distance` from any number.
+    def min_distance=(v : Number); @min_distance = v.to_f32; end
+    # Sets `max_distance` from any number.
+    def max_distance=(v : Number); @max_distance = v.to_f32; end
+    # Sets `rolloff` from any number.
+    def rolloff=(v : Number); @rolloff = v.to_f32; end
+    # Sets `doppler_scale` from any number.
+    def doppler_scale=(v : Number); @doppler_scale = v.to_f32; end
+
+    # Creates a 3D player.
+    def initialize(sound : Sound? = nil, position : Vec3 = Vec3::ZERO, name : String = "", volume : Number = 1, loop : Bool = false, autoplay : Bool = false,
+                   attenuation : Attenuation = Attenuation::Inverse, min_distance : Number = 1, max_distance : Number = 100)
+      super(name, position)
+      @sound = sound; @volume = volume.to_f32; @loop = loop; @autoplay = autoplay
+      @attenuation = attenuation; @min_distance = min_distance.to_f32; @max_distance = max_distance.to_f32
+    end
+
+    # Plays *sound*, or the current `sound`, positioned at this node. Returns the voice.
+    def play(sound : Sound? = nil) : Voice?
+      v = super
+      if v
+        v.spatial = Spatial3D.new(global_position)
+        update_voice
+      end
+      v
+    end
+
+    # Pushes volume, pitch, position and distance settings to the playing voice. Called every frame.
+    def update_voice : Nil
+      super
+      return unless (v = @voice) && (sp = v.spatial)
+      sp.position = global_position
+      sp.velocity = @velocity
+      sp.attenuation = @attenuation
+      sp.min_distance = @min_distance; sp.max_distance = @max_distance; sp.rolloff = @rolloff
+      sp.doppler = @doppler; sp.doppler_scale = @doppler_scale
+    end
+
+    # Starts measuring velocity from here.
+    def enter_tree : Nil; @last_global = global_position; end
+    # Starts playing if `autoplay` is set.
+    def ready : Nil; play if @autoplay; end
+
+    # Measures velocity and keeps the voice in sync. Called by the engine.
+    def process(dt : Float32) : Nil
+      gp = global_position
+      if (last = @last_global) && dt > 0
+        @velocity = (gp - last) / dt
+      end
+      @last_global = gp
+      update_voice
+    end
+
+    # Stops playback when removed.
+    def exit_tree : Nil; stop; @last_global = nil; end
+  end
+
+  # The ears for 3D audio, when they shouldn't be at the camera. While one is current,
+  # `Audio.listener` uses its position and orientation instead of the current `Camera3D`'s.
+  #
+  # Most first-person games need none: the camera already sits at the player's head. Add
+  # one for a third-person camera (put it on the character), a cutscene, or a split view.
+  # The first listener added to the tree becomes current.
+  #
+  # ```
+  # player = Node3D.new(position: v3(0, 0, 0))
+  # ears = AudioListener3D.new(position: v3(0, 1.7, 0))
+  # player.add(ears)
+  # SceneTree.root.add(player)
+  # ears.current? # => true
+  # ```
+  class AudioListener3D < Node3D
+    # True when this listener is the one 3D audio is heard from.
+    getter? current = false
+    @@current : AudioListener3D? = nil
+
+    # Creates a listener.
+    def initialize(name : String = "", position : Vec3 = Vec3::ZERO, current : Bool = false)
+      super(name, position)
+      make_current if current
+    end
+
+    # The active listener, if any.
+    def self.current : AudioListener3D?; @@current; end
+    # Switches the active listener. `nil` falls back to the current `Camera3D`.
+    def self.current=(l : AudioListener3D?)
+      @@current.try(&.clear_current)
+      @@current = l
+      l.try(&.set_current)
+    end
+    # :nodoc:
+    def self.reset; @@current = nil; end
+
+    # Makes this the active listener. Returns self.
+    def make_current : self; AudioListener3D.current = self; self; end
+    protected def set_current; @current = true; end
+    protected def clear_current; @current = false; end
+
+    # Becomes current if no other listener is.
+    def enter_tree : Nil
+      make_current if AudioListener3D.current.nil?
+    end
+
+    # Stops being current when removed.
+    def exit_tree : Nil
+      AudioListener3D.current = nil if AudioListener3D.current == self
+    end
   end
 end

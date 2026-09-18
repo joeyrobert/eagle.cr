@@ -1,5 +1,6 @@
 require "./wav"
 require "./vorbis"
+require "./spatial"
 
 module Eagle
   # Decoded audio in memory: interleaved `Float32` samples from -1 to 1.
@@ -166,6 +167,9 @@ module Eagle
     property? loop : Bool
     # The bus this voice mixes into. See `Audio.bus`.
     property bus : String
+    # 3D positioning, set by `AudioPlayer3D` and `Audio.play_at`. When present, the voice is
+    # placed around `Audio.listener` and `pan` is ignored.
+    property spatial : Spatial3D? = nil
     @playing = true
     @finished = false
     @position = 0_f64
@@ -207,6 +211,9 @@ module Eagle
     def mix(mix_buf : Slice(Float32), frames : Int32, out_rate : Int32, bus_gain : Float32) : Bool
       return false if @finished
       return true unless @playing
+      if sp = @spatial
+        return sp.mix(self, mix_buf, frames, out_rate, bus_gain)
+      end
       buf = @sound.buffer
       step = @pitch.to_f64 * buf.sample_rate / out_rate
       total = buf.frames
@@ -252,6 +259,44 @@ module Eagle
         @position += step
       end
       true
+    end
+
+    # :nodoc: Advances one output frame for the spatial mixer. Returns the mono sample times
+    # volume, or nil when the voice ends.
+    def next_sample(out_rate : Int32, pitch_scale : Float32) : Float32?
+      buf = @sound.buffer
+      total = buf.frames
+      if @position >= total
+        if @loop && total > 0
+          @position %= total
+        else
+          @finished = true; @playing = false
+          return nil
+        end
+      end
+      if (ft = @fade_to)
+        fade_per_frame = @fade_rate / out_rate
+        @volume += fade_per_frame
+        if (fade_per_frame >= 0 && @volume >= ft) || (fade_per_frame < 0 && @volume <= ft)
+          @volume = ft
+          @fade_to = nil
+          if ft <= 0
+            @finished = true; @playing = false
+            return nil
+          end
+        end
+      end
+      f0 = @position.to_i
+      frac = (@position - f0).to_f32
+      f1 = f0 + 1
+      f1 = @loop ? f1 % total : Math.min(f1, total - 1)
+      s = buf.at(f0, 0) * (1 - frac) + buf.at(f1, 0) * frac
+      if buf.channels > 1
+        r = buf.at(f0, 1) * (1 - frac) + buf.at(f1, 1) * frac
+        s = (s + r) * 0.5_f32
+      end
+      @position += @pitch.to_f64 * pitch_scale * buf.sample_rate / out_rate
+      s * @volume
     end
   end
 
@@ -404,6 +449,12 @@ module Eagle
       buf = @@mix[0, needed]
       buf.fill(0_f32)
       master_gain = master.gain
+      lis = nil
+      @@voices.each do |v|
+        if sp = v.spatial
+          sp.update(lis ||= listener, @@sample_rate)
+        end
+      end
       @@voices.reject! do |v|
         gain = (v.bus == "master" ? 1_f32 : bus(v.bus).gain) * master_gain
         alive = v.mix(buf, frames, @@sample_rate, gain)
@@ -430,6 +481,7 @@ module Eagle
     # :nodoc: Called once per frame by the engine.
     def self.update : Nil
       return unless @@enabled
+      track_listener(Clock.delta)
       pf = @@platform
       return unless pf
       target = (TARGET_LATENCY * @@sample_rate).to_i
@@ -455,6 +507,9 @@ module Eagle
       @@streams.clear
       @@buses = {"master" => Bus.new}
       @@sample_rate = SAMPLE_RATE
+      @@speed_of_sound = 343_f32
+      @@listener_last = nil
+      @@listener_velocity = Vec3::ZERO
     end
   end
 end
