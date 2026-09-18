@@ -1,8 +1,8 @@
 module Eagle
   # A 2D affine transform: translation, rotation and scale packed into a 3x2 matrix.
   #
-  # Most code never builds one by hand, because `Node2D` has `position`, `rotation`
-  # and `scale` and composes them for you. Reach for `Transform2D` when you need the
+  # Most code never builds one by hand, because `Node2D#position`, `Node2D#rotation`
+  # and `Node2D#scale` are composed for you. Reach for `Transform2D` when you need the
   # matrix itself: converting points between spaces, drawing with `Graphics#apply`, or
   # baking a pose.
   #
