@@ -1,23 +1,37 @@
 module Eagle
-  # A 2D camera node. Its global position is the centre of the view.
-  # Add one to the tree and call `make_current` (or set `current: true`).
+  # A 2D camera: it decides which part of the world is on screen. Its global position is the
+  # center of the view.
   #
-  #   cam = Camera2D.new(zoom: 2)
-  #   cam.follow(player)          # smooth follow another node
-  #   cam.limits = Rect.new(0, 0, 4000, 2000)
+  # The first camera added to the tree becomes current automatically. The scene tree draws
+  # through the current camera, while `CanvasLayer` children stay fixed on screen.
+  #
+  # ```
+  # player = Node2D.new("Player", position: v2(400, 300))
+  # cam = Camera2D.new(zoom: 2)
+  # cam.follow(player)                            # smooth follow
+  # cam.limits = Rect.new(0, 0, 4000, 2000)       # never show outside the level
+  # cam.drag_margin = v2(40, 20)                  # small dead zone before scrolling
+  # SceneTree.root.add(player, cam)
+  #
+  # cam.shake(6, 0.25)                            # on explosions
+  # clicked = cam.mouse_world                     # mouse position in world space
+  # ```
   class Camera2D < Node2D
+    # Magnification: 2 shows everything twice as large, 0.5 shows twice as much of the world.
     property zoom : Float32 = 1_f32
-    # Size of the area the camera renders into (defaults to the window).
+    # Size of the screen area the camera renders into. `nil` means the window.
     property viewport : Vec2? = nil
-    # World-space limits; the view is clamped inside.
+    # World-space rectangle the view is kept inside.
     property limits : Rect? = nil
-    # Smoothing speed for `follow` (higher = snappier). 0 = instant.
+    # How quickly the camera catches up with its target. Higher is snappier, and 0 snaps instantly.
     property smoothing : Float32 = 8_f32
-    # Node to follow each frame (uses its global position).
+    # The node being followed.
     property target : Node2D? = nil
+    # Offset added to the target's position, for example to look ahead of the player.
     property target_offset : Vec2 = Vec2::ZERO
-    # Optional dead-zone (in world units) around the target before the camera moves.
+    # How far, in world units, the target can move from the center before the camera follows.
     property drag_margin : Vec2 = Vec2::ZERO
+    # True when this is the camera the scene is drawn through.
     getter? current = false
     @shake_amount = 0_f32
     @shake_time = 0_f32
@@ -27,17 +41,21 @@ module Eagle
 
     @@current : Camera2D? = nil
 
+    # Creates a camera. Pass `current: true` to make it current right away.
     def initialize(name : String = "", position : Vec2 = Vec2::ZERO, zoom : Number = 1, @viewport = nil, current : Bool = false)
       super(name, position)
       @zoom = zoom.to_f32
       make_current if current
     end
 
+    # The camera the scene tree is drawn through, if any.
     def self.current : Camera2D?; @@current; end
+    # Switches the active camera.
     def self.current=(c : Camera2D?); @@current.try(&.clear_current); @@current = c; c.try(&.set_current); end
     # :nodoc:
     def self.reset; @@current = nil; end
 
+    # Makes this the active camera. Returns self.
     def make_current : self
       Camera2D.current = self
       self
@@ -46,22 +64,26 @@ module Eagle
     protected def set_current; @current = true; end
     protected def clear_current; @current = false; end
 
+    # Becomes current if no other camera is.
     def enter_tree : Nil
       make_current if Camera2D.current.nil?
     end
 
+    # Stops being current when removed.
     def exit_tree : Nil
       Camera2D.current = nil if Camera2D.current == self
     end
 
+    # The size of the area the camera renders into.
     def viewport_size : Vec2; @viewport || Window.size; end
 
+    # Follows *node* every frame, smoothed by `smoothing`. Pass `nil` to stop.
     def follow(node : Node2D?, offset : Vec2 = Vec2::ZERO) : Nil
       @target = node
       @target_offset = offset
     end
 
-    # Camera centre after limits and shake.
+    # The actual view center after limits and shake.
     def effective_position : Vec2
       p = global_position
       if lim = @limits
@@ -73,17 +95,20 @@ module Eagle
       p + @shake_offset
     end
 
-    # World → screen transform.
+    # The world-to-screen transform.
     def view : Transform2D
       vs = viewport_size
       Transform2D.translation(vs / 2) * Transform2D.rotation(-global_rotation) * Transform2D.scale(Vec2.new(@zoom)) * Transform2D.translation(-effective_position)
     end
 
+    # Converts a screen point, such as the mouse, to world space.
     def screen_to_world(p : Vec2) : Vec2; view.inverse * p; end
+    # Converts a world point to screen space, for drawing HUD markers over objects.
     def world_to_screen(p : Vec2) : Vec2; view * p; end
+    # The mouse position in world space.
     def mouse_world : Vec2; screen_to_world(Input.mouse); end
 
-    # Visible world rectangle (axis-aligned bounds when rotated).
+    # The visible part of the world. Use it to skip work for things off screen.
     def bounds : Rect
       inv = view.inverse
       vs = viewport_size
@@ -92,11 +117,13 @@ module Eagle
       Rect.from_bounds(mn, mx)
     end
 
+    # Shakes the view by up to *amount* points, fading out over *duration* seconds.
     def shake(amount : Number, duration : Number = 0.3) : Nil
       @shake_amount = amount.to_f32
       @shake_time = @shake_duration = duration.to_f32
     end
 
+    # Updates following and shake. Called by the engine.
     def process(dt : Float32) : Nil
       if t = @target
         goal = t.global_position + @target_offset
@@ -127,7 +154,7 @@ module Eagle
       end
     end
 
-    # Cameras draw nothing and don't transform their children.
+    # Cameras draw nothing and don't move their children.
     def draw_tree(g : Graphics) : Nil
       draw_children(g)
     end
