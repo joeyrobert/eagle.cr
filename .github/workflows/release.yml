@@ -1,0 +1,154 @@
+# Builds release binaries of the eagle CLI and attaches them to a GitHub Release.
+#
+# Triggers:
+#   * pushing a tag like v0.1.0 builds everything and publishes the release for that tag
+#   * "Run workflow" (workflow_dispatch) builds everything; give it an existing tag to also
+#     upload to that tag's release, or leave it empty to just keep the files as workflow artifacts
+#
+# Assets (the names install.sh and install.ps1 download):
+#   eagle-linux-x86_64.tar.gz, eagle-macos-arm64.tar.gz   bin/eagle + src/
+#   eagle-windows-x86_64.zip                              bin\eagle.exe, bin\SDL2.dll, lib\SDL2.lib, src\
+#   eagle-setup.exe                                       Inno Setup installer of the zip's contents
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to upload to (empty: artifacts only)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+env:
+  SDL2_VERSION: "2.32.10"
+
+jobs:
+  unix:
+    name: ${{ matrix.asset }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 22.04 keeps the glibc requirement low so the binary runs on older distros too.
+          - os: ubuntu-22.04
+            asset: eagle-linux-x86_64
+          - os: macos-latest
+            asset: eagle-macos-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Install SDL2 (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+
+      - name: Install SDL2 (macOS)
+        if: runner.os == 'macOS'
+        run: brew install sdl2
+
+      - name: Build
+        run: shards build --release --no-debug eagle
+
+      - name: Smoke test
+        run: bin/eagle version && bin/eagle help init
+
+      - name: Package
+        run: sh script/package-release.sh ${{ matrix.asset }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}.tar.gz
+          if-no-files-found: error
+
+  windows:
+    name: eagle-windows-x86_64
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      # SDL2's official Visual C++ development package: include\, lib\x64\SDL2.lib and SDL2.dll.
+      - name: Download SDL2
+        run: |
+          $zip = "SDL2-devel-$env:SDL2_VERSION-VC.zip"
+          Invoke-WebRequest "https://github.com/libsdl-org/SDL/releases/download/release-$env:SDL2_VERSION/$zip" -OutFile $zip
+          Expand-Archive $zip -DestinationPath C:\sdl2
+          "SDL2_LIB=C:\sdl2\SDL2-$env:SDL2_VERSION\lib\x64" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build
+        run: |
+          New-Item -ItemType Directory -Force bin | Out-Null
+          crystal build src/cli.cr --release --no-debug -o bin/eagle.exe --link-flags "/LIBPATH:$env:SDL2_LIB"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Stage files
+        run: |
+          $stage = "dist\eagle-windows-x86_64"
+          New-Item -ItemType Directory -Force "$stage\bin", "$stage\lib", "$stage\src" | Out-Null
+          Copy-Item bin\eagle.exe "$stage\bin\"
+          Copy-Item "$env:SDL2_LIB\SDL2.dll" "$stage\bin\"
+          Copy-Item "$env:SDL2_LIB\SDL2.lib" "$stage\lib\"
+          git archive --format=zip -o dist\src.zip HEAD
+          Expand-Archive dist\src.zip -DestinationPath "$stage\src"
+
+      - name: Smoke test
+        run: |
+          dist\eagle-windows-x86_64\bin\eagle.exe version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Zip
+        run: Compress-Archive -Path dist\eagle-windows-x86_64\* -DestinationPath dist\eagle-windows-x86_64.zip
+
+      # Inno Setup ships on the windows-latest image; install it with Chocolatey if it ever goes missing.
+      - name: Build installer
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          $version = (Select-String -Path shard.yml -Pattern '^version:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
+          & $iscc "/DAppVersion=$version" "/DStageDir=$PWD\dist\eagle-windows-x86_64" "/DOutDir=$PWD\dist" packaging\windows\eagle.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eagle-windows-x86_64
+          path: |
+            dist/eagle-windows-x86_64.zip
+            dist/eagle-setup.exe
+          if-no-files-found: error
+
+  publish:
+    needs: [unix, windows]
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      # Creates the release on first run (notes generated from commits), then uploads, replacing same-named files.
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          ls -la dist
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Eagle $TAG" --generate-notes --verify-tag
+          gh release upload "$TAG" dist/* --clobber

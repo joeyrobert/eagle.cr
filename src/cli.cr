@@ -198,8 +198,8 @@ module Eagle::CLI
   # On Windows the installer ships SDL2.lib in EAGLE_HOME/lib; point the MSVC linker at it.
   private def windows_link_flags : Array(String)
     {% if flag?(:win32) %}
-      lib = File.join(File.dirname(Process.executable_path || "."), "..", "lib")
-      return ["--link-flags", "/LIBPATH:#{File.expand_path(lib)}"] if File.exists?(File.join(lib, "SDL2.lib"))
+      libdir = File.join(File.dirname(Process.executable_path || "."), "..", "lib")
+      return ["--link-flags", "/LIBPATH:#{File.expand_path(libdir)}"] if File.exists?(File.join(libdir, "SDL2.lib"))
     {% end %}
     [] of String
   end
