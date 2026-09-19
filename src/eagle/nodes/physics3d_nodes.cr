@@ -41,6 +41,10 @@ module Eagle
     def box(size : Vec3, offset : Vec3 = Vec3::ZERO) : self; add_shape(Physics3D::Cuboid.new(size, offset)); end
     # Adds a *w* by *h* by *d* box. Returns self.
     def box(w : Number, h : Number, d : Number) : self; box(Vec3.new(w, h, d)); end
+    # Adds an upright capsule: a cylinder of *height* between two hemispherical caps. Returns self.
+    def capsule(radius : Number, height : Number, offset : Vec3 = Vec3::ZERO) : self; add_shape(Physics3D::Capsule.new(radius, height, offset)); end
+    # Adds a static triangle-mesh collider built from *mesh*. Use it on `StaticBody3D`. Returns self.
+    def mesh(mesh : Mesh, offset : Vec3 = Vec3::ZERO) : self; add_shape(Physics3D::MeshCollider.from_mesh(mesh, offset)); end
     # The layer bits this object is on.
     def layer : UInt32; @body.layer; end
     # Sets the layer bits.
@@ -108,6 +112,11 @@ module Eagle
         case (s = ws.shape)
         when Physics3D::Sphere then Scene3D.debug_sphere(ws.center, s.radius, c)
         when Physics3D::Cuboid then Scene3D.debug_box(ws.center, s.half, ws.rotation, c)
+        when Physics3D::Capsule
+          a, b = ws.capsule_ends
+          Scene3D.debug_sphere(a, s.radius, c)
+          Scene3D.debug_sphere(b, s.radius, c)
+          Scene3D.debug_line(a, b, c)
         end
       end
     end
