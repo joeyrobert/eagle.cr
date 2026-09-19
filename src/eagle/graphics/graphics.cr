@@ -406,7 +406,8 @@ module Eagle
     # Draws a rectangle, filled by default. Pass `DrawMode::Line` for an outline.
     def rect(x : Number, y : Number, w : Number, h : Number, mode : DrawMode = DrawMode::Fill, color : Color = @color) : Nil
       if mode.fill?
-        quad(Texture.white, x.to_f32, y.to_f32, w.to_f32, h.to_f32, 0_f32, 0_f32, 0_f32, 0_f32, 0_f32, 1_f32, 1_f32, color)
+        tex, u, v = white
+        quad(tex, x.to_f32, y.to_f32, w.to_f32, h.to_f32, 0_f32, 0_f32, 0_f32, u, v, u, v, color)
       else
         polyline([Vec2.new(x, y), Vec2.new(x + w, y), Vec2.new(x + w, y + h), Vec2.new(x, y + h)], color, closed: true)
       end
@@ -498,7 +499,7 @@ module Eagle
       len = d.length
       return if len == 0
       n = d.perpendicular / len * (width / 2)
-      tri_quad(Texture.white, a + n, b + n, b - n, a - n, color)
+      tri_quad(a + n, b + n, b - n, a - n, color)
     end
 
     # Draws a line between two points.
@@ -532,7 +533,7 @@ module Eagle
         end
       end
       (pts.size - 1).times do |i|
-        tri_quad(Texture.white, pts[i] + offsets[i], pts[i + 1] + offsets[i + 1], pts[i + 1] - offsets[i + 1], pts[i] - offsets[i], color)
+        tri_quad(pts[i] + offsets[i], pts[i + 1] + offsets[i + 1], pts[i + 1] - offsets[i + 1], pts[i] - offsets[i], color)
       end
     end
 
@@ -547,10 +548,10 @@ module Eagle
         fan(points[0], points[1..], color, closed: false)
       else
         tris = Geometry.triangulate(points)
-        set_texture(Texture.white)
+        _, u, v = white
         ensure_space(points.size, tris.size)
         base = @vcount
-        points.each { |p| push_vertex(p, 0_f32, 0_f32, color) }
+        points.each { |p| push_vertex(p, u, v, color) }
         tris.each { |i| push_index(base + i) }
       end
     end
@@ -594,7 +595,8 @@ module Eagle
           if g = font.glyph(ch)
             cx += font.kerning(prev, ch) * s if prev
             r = g.region
-            quad(r.texture, cx + g.offset.x * s, cy + g.offset.y * s, r.width * s, r.height * s, 0_f32, 0_f32, 0_f32, r.u0, r.v0, r.u1, r.v1, color)
+            # whitespace has an empty region; skipping it avoids a needless texture switch
+            quad(r.texture, cx + g.offset.x * s, cy + g.offset.y * s, r.width * s, r.height * s, 0_f32, 0_f32, 0_f32, r.u0, r.v0, r.u1, r.v1, color) unless r.width == 0 || r.height == 0
             cx += (g.advance + font.letter_spacing) * s
           end
           prev = ch
@@ -690,22 +692,22 @@ module Eagle
       push_quad_indices(base)
     end
 
-    private def tri_quad(tex : Texture, a : Vec2, b : Vec2, c : Vec2, d : Vec2, color : Color)
-      set_texture(tex)
+    private def tri_quad(a : Vec2, b : Vec2, c : Vec2, d : Vec2, color : Color)
+      _, u, v = white
       ensure_space(4, 6)
       base = @vcount
-      push_vertex(a, 0_f32, 0_f32, color); push_vertex(b, 1_f32, 0_f32, color)
-      push_vertex(c, 1_f32, 1_f32, color); push_vertex(d, 0_f32, 1_f32, color)
+      push_vertex(a, u, v, color); push_vertex(b, u, v, color)
+      push_vertex(c, u, v, color); push_vertex(d, u, v, color)
       push_quad_indices(base)
     end
 
     private def fan(center : Vec2, pts : Array(Vec2), color : Color, closed : Bool = true)
-      set_texture(Texture.white)
+      _, u, v = white
       n = pts.size
       ensure_space(n + 1, n * 3)
       base = @vcount
-      push_vertex(center, 0.5_f32, 0.5_f32, color)
-      pts.each { |p| push_vertex(p, 0_f32, 0_f32, color) }
+      push_vertex(center, u, v, color)
+      pts.each { |p| push_vertex(p, u, v, color) }
       segs = closed ? n : n - 1
       segs.times do |i|
         push_index(base); push_index(base + 1 + i); push_index(base + 1 + (i + 1) % n)
@@ -723,6 +725,17 @@ module Eagle
         sign = s
       end
       true
+    end
+
+    # Selects a texture for solid shapes and returns it with the UV of a white texel. Stays on the
+    # current texture when it has one, so shapes batch with the text or sprites around them.
+    private def white : {Texture, Float32, Float32}
+      if uv = @texture.white_uv
+        return {@texture, uv.x, uv.y}
+      end
+      tex = Texture.white
+      set_texture(tex)
+      {tex, 0.5_f32, 0.5_f32}
     end
 
     @[AlwaysInline]

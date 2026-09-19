@@ -574,7 +574,12 @@ module Eagle
 
       def initialize(size : Int32, filter : GPU::Filter)
         @image = Image.new(size, size)
+        # a 3x3 white block in the corner, so bilinear sampling of its center stays pure white
+        3.times { |y| 3.times { |x| @image[x, y] = Color::WHITE } }
+        @x = 4
+        @row_h = 3
         @texture = Texture.new(@image, filter)
+        @texture.white_uv = Vec2.new(1.5_f32 / size, 1.5_f32 / size)
       end
 
       # Returns the rect where `img` was placed, or nil if full.

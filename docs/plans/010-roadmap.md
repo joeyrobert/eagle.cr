@@ -69,7 +69,6 @@ Requirements gathered from the project owner (2026-09-18):
 - 3D: no skeletal animation, no cubemaps/IBL/PBR, single directional shadow cascade, no post-processing stack.
 - UI: no scroll containers, drop-downs, or rich text.
 - No scene serialisation / editor; no networking.
-- 2D text switches textures per glyph run (many draw calls with TTF); an atlas-with-white-pixel optimisation would fix it.
 - Windows/Linux: objects cross-compile but no full link/run test on those OSes.
 - Web: no file system, clipboard or threads; wireframe is emulated with edge lines; text input uses keydown (no IME); audio starts after the first click (browser policy).
 
@@ -86,6 +85,7 @@ Requirements gathered from the project owner (2026-09-18):
 - [x] Usage docs on every public type: overview, when to use it, and an example; 125 doc examples type-checked by `script/check_doc_examples.cr`
 
 ## Log
+- 2026-09-18: Batched text with shapes (#29): font atlases now hold a white texel (`Texture#white_uv`) and `Graphics` shapes sample it when the current texture has one, so shapes and text share a batch. A spec scene of 4 rows of rect, text, line and circle went from 9 draw calls to 2; the rendered pixels are byte-identical (SHA1 of the canvas matched before and after for the pixel font and a TTF). Whitespace glyphs no longer emit empty quads.
 - 2026-09-18: Fixed the intermittent GL crash in the full spec run (#26). Crystal's monitor moves the main fiber to a new thread after a blocking syscall over 10ms (file reads in the audio specs), leaving GL and the Cocoa event loop on the old thread; `Fiber.syscall` now runs in place in the SDL platform so the fiber stays put. Regression spec forces the case; `Scene3D.reset` added to the 3D specs' `before_each` after an order-dependent shadow failure.
 - 2026-09-18: Voxel island maker (`examples/voxel`): seeded noise island, greedy-meshed `Mesh` with vertex colours, Minecraft-style DDA break/place, colour hotbar + `E` palette, AABB walking. Simulation in `world.cr` with headless specs. Native builds lock the mouse on load so `EAGLE_FRAMES` can screenshot without a click.
 - 2026-09-18: Neon Bastion FPS example (`examples/fps`): mouse look via `Window.relative_mouse` (click-to-capture for pointer lock; browsers need a gesture), pulse rifle + scattergun, procedural arena, grunt (keep distance and shoot on sight) and charger (rush melee) AI, Waves and Deathmatch, spatial stereo through `Audio.play_at` / `AudioPlayer3D` (shots, footsteps, enemy hums, deaths). Simulation is in `game.cr` with headless specs. Native builds lock the mouse on load so `EAGLE_FRAMES` can screenshot without a click.
