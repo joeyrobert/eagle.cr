@@ -65,6 +65,8 @@ module Eagle
     getter position : Vec2
     # 1 for a single click, 2 for a double-click.
     getter clicks : Int32
+    # True when this click was synthesized from a touch. See `Touch.emulate_mouse=`.
+    property? from_touch = false
     # Creates a mouse button event.
     def initialize(@button, @pressed, @position, @clicks = 1); end
     # True when the button was released.
@@ -78,6 +80,8 @@ module Eagle
     getter position : Vec2
     # Movement since the last motion event.
     getter delta : Vec2
+    # True when this motion was synthesized from a touch. See `Touch.emulate_mouse=`.
+    property? from_touch = false
     # Creates a mouse motion event.
     def initialize(@position, @delta); end
   end
@@ -90,6 +94,106 @@ module Eagle
     getter position : Vec2
     # Creates a mouse wheel event.
     def initialize(@delta, @position); end
+  end
+
+  # What a finger did in a `TouchEvent`.
+  enum TouchPhase
+    # The finger touched the screen.
+    Began
+    # The finger moved.
+    Moved
+    # The finger lifted.
+    Ended
+    # The system took the touch away (a call, a swipe from the screen edge). Undo, don't commit.
+    Cancelled
+  end
+
+  # A finger touched, moved on, or left the screen. Every finger has an `id` that stays the
+  # same from `Began` to `Ended` or `Cancelled`, so you can follow several fingers at once.
+  #
+  # Positions are in window coordinates, the same space as the mouse. Set `handled = true` to
+  # claim the touch; an unhandled touch is also turned into mouse events while
+  # `Touch.emulate_mouse=` is on. For polling instead of events, see `Touch`.
+  #
+  # ```
+  # class Pad < Node2D
+  #   def input(event : Event) : Nil
+  #     if event.is_a?(TouchEvent) && event.began?
+  #       puts "finger #{event.id} down at #{event.position}"
+  #       event.handled = true
+  #     end
+  #   end
+  # end
+  # ```
+  class TouchEvent < Event
+    # Stable finger id, from 0.
+    getter id : Int32
+    # What the finger did.
+    getter phase : TouchPhase
+    # Finger position in window coordinates.
+    getter position : Vec2
+    # How hard the finger presses, from 0 to 1. Devices without pressure report 1.
+    getter pressure : Float32
+    # Movement since this finger's previous event. Filled in by `Input` before delivery.
+    property delta : Vec2 = Vec2::ZERO
+    # Creates a touch event, for `Eagle.inject` and tests.
+    def initialize(@id, @phase, @position, @pressure = 1_f32); end
+    # True when the finger just touched down.
+    def began? : Bool; @phase.began?; end
+    # True when the finger moved.
+    def moved? : Bool; @phase.moved?; end
+    # True when the finger lifted.
+    def ended? : Bool; @phase.ended?; end
+    # True when the system cancelled the touch.
+    def cancelled? : Bool; @phase.cancelled?; end
+  end
+
+  # Where a finger is in a drag, for `TouchDragEvent`.
+  enum TouchDragKind
+    # The finger moved past `Touch.drag_threshold`.
+    Started
+    # The finger moved while dragging.
+    Moved
+    # The finger lifted, or the touch was cancelled.
+    Ended
+  end
+
+  # A finger has moved far enough to count as a drag, not a tap. Started fires once the finger
+  # passes `Touch.drag_threshold` pixels from where it landed, Moved fires on each move after
+  # that and Ended when it lifts. Delivered to `App#input` and `Node#input` like any event.
+  #
+  # ```
+  # class Card < Node2D
+  #   def input(event : Event) : Nil
+  #     if event.is_a?(TouchDragEvent) && event.moved?
+  #       self.position += event.delta
+  #     end
+  #   end
+  # end
+  # ```
+  class TouchDragEvent < Event
+    # The finger's id.
+    getter id : Int32
+    # Started, Moved or Ended.
+    getter kind : TouchDragKind
+    # Current finger position.
+    getter position : Vec2
+    # Where the finger first touched down.
+    getter start : Vec2
+    # Movement since the previous drag event. On Started it is the total travel so far.
+    getter delta : Vec2
+    # True for an Ended event caused by a cancelled touch.
+    getter? cancelled : Bool
+    # Creates a drag event.
+    def initialize(@id, @kind, @position, @start, @delta, @cancelled = false); end
+    # True for the first drag event.
+    def started? : Bool; @kind.started?; end
+    # True for drag movement.
+    def moved? : Bool; @kind.moved?; end
+    # True for the last drag event.
+    def ended? : Bool; @kind.ended?; end
+    # Total travel from where the finger landed.
+    def total : Vec2; @position - @start; end
   end
 
   # What happened to the window in a `WindowEvent`.

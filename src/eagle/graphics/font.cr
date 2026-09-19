@@ -152,6 +152,10 @@ module Eagle
         end
       end
       tex = Texture.new(img, GPU::Filter::Nearest)
+      # nearest filtering samples any solid pixel exactly, so shapes can batch with text
+      if px = (0...img.width * img.height).find { |n| img[n % img.width, n // img.width] == Color::WHITE }
+        tex.white_uv = Vec2.new((px % img.width + 0.5_f32) / img.width, (px // img.width + 0.5_f32) / img.height)
+      end
       f = new(tex, cell_h.to_f32)
       glyphs.size.times do |i|
         f.add((32 + i).chr, tex.region((i % cols) * cell_w, (i // cols) * cell_h, cell_w, cell_h), cell_w.to_f32)

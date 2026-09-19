@@ -25,6 +25,7 @@ EXAMPLES = {
   "physics3d"    => {"3D physics", "Spheres and boxes with SAT contacts, stacking pyramid, kinematic ramp.", "Click fires spheres · Space throws a box · R resets"},
   "ui"           => {"UI toolkit", "Panels, buttons, sliders, text input, drop-downs, rich text, scroll containers, grids and themes.", "Click around; Tab cycles focus"},
   "interactions" => {"Interactions", "Every input pattern with a live event log: clicks, drags, wheel zoom, text, gamepads, signals, timers.", "Try everything; the log on the right narrates"},
+  "touch"        => {"Touch", "Multi-touch drag, pinch and twist gestures, a virtual joystick and button, and touch-driven UI.", "Use a touch screen (or Chrome device emulation)"},
   "sandbox2d"    => {"2D sandbox", "Scene tree, tile map, following camera with shake, tweens and a HUD layer.", "WASD moves the player"},
   "embedded"     => {"Embedded assets", "A game whose PNG, WAV and shader are baked into the binary at compile time.", "Nothing to press. It runs with no files at all"},
   "smoke"        => {"Smoke test", "Shapes, sprites, lines and text: the first thing Eagle ever rendered.", ""},

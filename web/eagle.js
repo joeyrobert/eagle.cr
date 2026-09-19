@@ -29,7 +29,8 @@ const SCANCODES = {
 };
 
 // Event codes shared with src/eagle/platform/web.cr
-const EV = { KEY: 1, TEXT: 2, MOTION: 3, BUTTON: 4, WHEEL: 5, RESIZE: 6, FOCUS: 7, GP_CONNECT: 8, GP_BUTTON: 9, GP_AXIS: 10, QUIT: 12 };
+const EV = { KEY: 1, TEXT: 2, MOTION: 3, BUTTON: 4, WHEEL: 5, RESIZE: 6, FOCUS: 7, GP_CONNECT: 8, GP_BUTTON: 9, GP_AXIS: 10, QUIT: 12, TOUCH: 13 };
+const TOUCH = { BEGAN: 0, MOVED: 1, ENDED: 2, CANCELLED: 3 };
 
 class EagleRuntime {
   constructor(canvas, options) {
@@ -121,10 +122,41 @@ class EagleRuntime {
     c.addEventListener("blur", () => this.push(EV.FOCUS, 0));
     window.addEventListener("gamepadconnected", e => { this.gamepads.set(e.gamepad.index, { buttons: [], axes: [] }); this.push(EV.GP_CONNECT, e.gamepad.index, 1); });
     window.addEventListener("gamepaddisconnected", e => { this.gamepads.delete(e.gamepad.index); this.push(EV.GP_CONNECT, e.gamepad.index, 0); });
-    // touch -> mouse (single finger)
-    c.addEventListener("touchstart", e => { const t = e.touches[0]; const [x, y] = pos(t); this.push(EV.MOTION, x, y, 0, 0); this.push(EV.BUTTON, 1, 1, x, y, 1); this.resumeAudio(); e.preventDefault(); }, { passive: false });
-    c.addEventListener("touchmove", e => { const t = e.touches[0]; const [x, y] = pos(t); this.push(EV.MOTION, x, y, 0, 0); e.preventDefault(); }, { passive: false });
-    c.addEventListener("touchend", e => { const t = e.changedTouches[0]; const [x, y] = pos(t); this.push(EV.BUTTON, 1, 0, x, y, 1); e.preventDefault(); }, { passive: false });
+    // touch: every finger is its own event stream; the engine turns unhandled touches into mouse events
+    const st = c.style;
+    st.touchAction = "none"; st.userSelect = "none"; st.webkitUserSelect = "none";
+    st.webkitTouchCallout = "none"; st.webkitTapHighlightColor = "transparent";
+    if (this.options.fill) { document.documentElement.style.overscrollBehavior = "none"; document.body.style.overscrollBehavior = "none"; }
+    c.addEventListener("selectstart", e => e.preventDefault());
+    c.addEventListener("dragstart", e => e.preventDefault());
+    // browser identifiers can be huge; hand the engine small stable slots that fit in a float
+    this.touchSlots = new Map();
+    const slotFor = (ident, create) => {
+      let s = this.touchSlots.get(ident);
+      if (s === undefined && create) { s = 0; const used = new Set(this.touchSlots.values()); while (used.has(s)) s++; this.touchSlots.set(ident, s); }
+      return s;
+    };
+    const touches = (phase, e) => {
+      for (const t of e.changedTouches) {
+        const s = slotFor(t.identifier, phase === TOUCH.BEGAN);
+        if (s === undefined) continue;
+        const [x, y] = pos(t);
+        this.push(EV.TOUCH, phase, s, x, y, t.force || 1);
+        if (phase === TOUCH.ENDED || phase === TOUCH.CANCELLED) this.touchSlots.delete(t.identifier);
+      }
+      e.preventDefault();
+    };
+    c.addEventListener("touchstart", e => { c.focus(); touches(TOUCH.BEGAN, e); this.resumeAudio(); }, { passive: false });
+    c.addEventListener("touchmove", e => touches(TOUCH.MOVED, e), { passive: false });
+    c.addEventListener("touchend", e => touches(TOUCH.ENDED, e), { passive: false });
+    c.addEventListener("touchcancel", e => touches(TOUCH.CANCELLED, e), { passive: false });
+    // a hidden tab or lost focus never delivers the touchend, so cancel whatever is still down
+    const cancelAll = () => {
+      for (const s of this.touchSlots.values()) this.push(EV.TOUCH, TOUCH.CANCELLED, s, 0, 0, 0);
+      this.touchSlots.clear();
+    };
+    document.addEventListener("visibilitychange", () => { if (document.hidden) cancelAll(); });
+    window.addEventListener("blur", cancelAll);
   }
 
   resizeCanvas() {

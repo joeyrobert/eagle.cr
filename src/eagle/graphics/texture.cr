@@ -32,6 +32,9 @@ module Eagle
     getter? mipmaps : Bool
     # The file the texture came from, if any.
     getter path : String? = nil
+    # Center of a solid white texel in this texture, if it has one. Shapes sample it so they can
+    # share a batch with text or sprites from this texture instead of switching to `Texture.white`.
+    property white_uv : Vec2? = nil
 
     @@white : Texture? = nil
     @@default_filter = GPU::Filter::Linear

@@ -443,6 +443,12 @@ module Eagle
     app._input(ev)
     SceneTree.dispatch_input(ev)
     Control.handle_focus_navigation(ev) unless ev.handled?
+    return unless ev.is_a?(TouchEvent)
+    Touch.take_derived.each do |d|
+      app._input(d)
+      SceneTree.dispatch_input(d)
+    end
+    Touch.mouse_events(ev).each { |m| handle_event(m) } if Touch.emulate_mouse? && !ev.handled?
   end
 
   # Reads the current frame back from the GPU and returns it as an `Image`. Saves a PNG if you give a path.
