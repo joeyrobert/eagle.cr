@@ -158,6 +158,11 @@ bang <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">
 <p>The <code>fps</code> example (Neon Bastion) is a compact arena shooter: mouse look, a pulse rifle and scattergun, grunt and charger AI, Waves and Deathmatch. Combat and the procedural arena live in <code>examples/fps/game.cr</code> so they can be specced without a window; <code>main.cr</code> is the first-person view, HUD and spatial audio. Click to capture the mouse (browsers require a gesture for pointer lock); native builds lock it on launch.</p>
 <pre class="code"><code class="lang-sh">crystal run examples/fps/main.cr
 <span class="c"># WASD move, Shift sprint, click/RB fire, 1/2 weapons, F1 Waves, F2 Deathmatch</span></code></pre>
+<h3 id="voxel-island">Voxel island</h3>
+<p>The <code>voxel</code> example is a finite first-person island, not a Minecraft clone. <code>Noise</code> builds a grass-and-stone island with a sky around it; a greedy mesher turns occupancy into one <code>Mesh</code> whose vertex colours are the palette. Left click breaks the block under the crosshair, right click places the selected colour on the hit face, and <code>E</code> opens a colour menu (number keys and the scroll wheel also change the slot). Walking is an AABB against the grid, not Physics3D. Generation, meshing, DDA picking and collision live in <code>examples/voxel/world.cr</code> so they can be specced without a window.</p>
+<pre class="code"><code class="lang-sh">crystal run examples/voxel/main.cr
+<span class="c"># WASD move, Space jump, left break, right place, E colours, 1-9 / scroll palette, R regen</span></code></pre>
+<p>Set <code>EAGLE_WORLD_SEED=7</code> for a different island. Native builds lock the mouse on load so <code>EAGLE_FRAMES</code> can screenshot without a click.</p>
 <h2 id="automated-runs">Automated runs</h2>
 <p><code>EAGLE_FRAMES=60 EAGLE_SCREENSHOT=shot.png ./game</code> runs 60 frames, saves the frame and exits. <code>EAGLE_HEADLESS=1</code> hides the window. <code>Eagle.init</code>/<code>Eagle.step</code>/ <code>Eagle.shutdown</code> drive the loop manually in tests. <code>EAGLE_GL_DEBUG=1</code> checks for GL errors after every 3D stage.</p>
 <h2 id="backends">Backends</h2>

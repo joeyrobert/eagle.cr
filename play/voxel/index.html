@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voxel Island · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Voxel Island</li></ol></nav>
+<div class="play"><h1>Voxel Island</h1><p class="lead">A finite noise-generated island you walk first-person: break blocks, place from a colour palette, greedy-meshed as one Mesh.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Click to capture mouse · WASD move · Space jump · left break · right place · E colours · 1-9 / scroll palette · R regen</p>
+<details><summary>Source: <code>examples/voxel/main.cr</code></summary><h3>examples/voxel/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./world&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
+
+<span class="c"># Voxel Island: a finite noise-generated island you walk, break and paint.</span>
+<span class="c"># Left click breaks, right click places the selected colour, E opens the palette.</span>
+<span class="k">class</span> <span class="t">VoxelIslandApp</span> <span class="o">&lt;</span> <span class="t">App</span>
+  <span class="t">EYE</span>    <span class="o">=</span> <span class="n">1.62_f32</span>
+  <span class="t">HEIGHT</span> <span class="o">=</span> <span class="n">1.7_f32</span>
+  <span class="t">RADIUS</span> <span class="o">=</span> <span class="n">0.28_f32</span>
+  <span class="t">SPEED</span>  <span class="o">=</span> <span class="n">6.2_f32</span>
+  <span class="t">GRAVITY</span> <span class="o">=</span> <span class="n">28_f32</span>
+  <span class="t">JUMP</span>    <span class="o">=</span> <span class="n">9.2_f32</span>
+  <span class="t">REACH</span>   <span class="o">=</span> <span class="n">8_f32</span>
+
+  @island <span class="o">=</span> <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">Island</span>.new((<span class="t">ENV</span>[<span class="s">&quot;EAGLE_WORLD_SEED&quot;</span>]? <span class="o">||</span> <span class="s">&quot;2026&quot;</span>).to_i)
+  @mesh <span class="o">=</span> <span class="t">Mesh</span>.new(<span class="s">&quot;island&quot;</span>)
+  @terrain <span class="o">=</span> <span class="t">MeshInstance3D</span>.new
+  @camera <span class="o">=</span> <span class="t">Camera3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">8</span>, <span class="n">0</span>), fov: <span class="n">70</span>)
+  @feet <span class="o">=</span> <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>
+  @velocity <span class="o">=</span> <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>
+  @yaw <span class="o">=</span> <span class="n">0_f32</span>
+  @pitch <span class="o">=</span> <span class="n">-0.18_f32</span>
+  @on_ground <span class="o">=</span> <span class="n">false</span>
+  @kind <span class="o">=</span> <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">GRASS</span>
+  @menu <span class="o">=</span> <span class="n">false</span>
+  @dirty <span class="o">=</span> <span class="n">true</span>
+  @tip_time <span class="o">=</span> <span class="n">8_f32</span>
+  @cinematic <span class="o">=</span> <span class="n">false</span>
+  @break_sound : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @place_sound : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @step_sound : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @step_timer <span class="o">=</span> <span class="n">0_f32</span>
+  @bob <span class="o">=</span> <span class="n">0_f32</span>
+
+  <span class="k">def</span> <span class="m">load</span>
+    <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Right</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;forward&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">W</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Up</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;back&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">S</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Down</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;jump&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Space</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">A</span>
+    <span class="t">Input</span>.map <span class="s">&quot;sprint&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">LShift</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">LeftStick</span>
+    <span class="t">Input</span>.map <span class="s">&quot;break&quot;</span>, <span class="t">MouseButton</span><span class="t">::</span><span class="t">Left</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">LeftShoulder</span>
+    <span class="t">Input</span>.map <span class="s">&quot;place&quot;</span>, <span class="t">MouseButton</span><span class="t">::</span><span class="t">Right</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">RightShoulder</span>
+    <span class="t">Input</span>.map <span class="s">&quot;palette&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">E</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">Y</span>
+    <span class="o">{%</span> <span class="k">unless</span> flag?(<span class="n">:wasm32</span>) <span class="o">%}</span>
+      <span class="t">Window</span>.relative_mouse <span class="o">=</span> <span class="n">true</span>
+    <span class="o">{%</span> <span class="k">end</span> <span class="o">%}</span>
+    <span class="t">Window</span>.cursor_visible <span class="o">=</span> <span class="n">false</span>
+
+    @feet <span class="o">=</span> @island.spawn
+    look <span class="o">=</span> @island.center <span class="o">-</span> @feet
+    @yaw <span class="o">=</span> <span class="t">Math</span>.atan2(look.x, <span class="o">-</span>look.z).to_f32
+    <span class="k">if</span> <span class="t">ENV</span>[<span class="s">&quot;EAGLE_DEMO&quot;</span>]? <span class="o">==</span> <span class="s">&quot;1&quot;</span> <span class="o">||</span> <span class="t">ENV</span>.has_key?(<span class="s">&quot;EAGLE_FRAMES&quot;</span>)
+      @feet, ground_y <span class="o">=</span> @island.overlook
+      target <span class="o">=</span> v3(<span class="t">EagleVoxel</span><span class="t">::</span><span class="t">Island</span><span class="t">::</span><span class="t">WIDTH</span> <span class="o">*</span> <span class="n">0.5</span>, ground_y <span class="o">+</span> <span class="n">4</span>, <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">Island</span><span class="t">::</span><span class="t">DEPTH</span> <span class="o">*</span> <span class="n">0.55</span>)
+      to <span class="o">=</span> target <span class="o">-</span> (@feet <span class="o">+</span> v3(<span class="n">0</span>, <span class="t">EYE</span>, <span class="n">0</span>))
+      @yaw <span class="o">=</span> <span class="t">Math</span>.atan2(to.x, <span class="o">-</span>to.z).to_f32
+      @pitch <span class="o">=</span> <span class="t">Math</span>.atan2(to.y, <span class="t">Math</span>.hypot(to.x, to.z)).to_f32
+      @island.stamp_palette(@feet.x.to_i <span class="o">-</span> <span class="n">2</span>, ground_y <span class="o">+</span> <span class="n">1</span>, @feet.z.to_i <span class="o">+</span> <span class="n">4</span>)
+      @tip_time <span class="o">=</span> <span class="n">0</span>
+      <span class="k">if</span> <span class="t">ENV</span>.has_key?(<span class="s">&quot;EAGLE_FRAMES&quot;</span>)
+        @cinematic <span class="o">=</span> <span class="n">true</span>
+        @camera.position <span class="o">=</span> v3(<span class="n">4</span>, <span class="n">30</span>, <span class="n">4</span>)
+        @camera.look_at(v3(<span class="n">24</span>, <span class="n">8</span>, <span class="n">24</span>))
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    env <span class="o">=</span> <span class="t">Scene3D</span>.environment
+    env.sky_colors(<span class="t">Color</span>.hex(<span class="s">&quot;#6fa8ff&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#dbe8ff&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#4d5a70&quot;</span>))
+    env.fog(<span class="n">40</span>, <span class="n">90</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#c9d8ee&quot;</span>))
+    env.ambient <span class="o">=</span> <span class="t">Color</span>.new(<span class="n">0.38</span>, <span class="n">0.4</span>, <span class="n">0.42</span>)
+    env.shadows <span class="o">=</span> <span class="n">true</span>
+    env.shadow_distance <span class="o">=</span> <span class="n">48</span>
+
+    @island.build_mesh(@mesh)
+    @dirty <span class="o">=</span> <span class="n">false</span>
+    mat <span class="o">=</span> <span class="t">Material</span>.new(<span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, shininess: <span class="n">18</span>, specular: <span class="n">0.14</span>)
+    @terrain <span class="o">=</span> <span class="t">MeshInstance3D</span>.new(@mesh, mat, <span class="s">&quot;terrain&quot;</span>)
+    @break_sound <span class="o">=</span> <span class="t">Sound</span>.generate(<span class="n">0.14</span>) { <span class="o">|</span>t<span class="o">|</span> (<span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">90</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="t">Math</span>.exp(<span class="o">-</span>t <span class="o">*</span> <span class="n">18</span>) <span class="o">*</span> <span class="n">0.45</span> <span class="o">+</span> <span class="t">Random</span>.rand(<span class="n">-0.2</span>..<span class="n">0.2</span>) <span class="o">*</span> <span class="t">Math</span>.exp(<span class="o">-</span>t <span class="o">*</span> <span class="n">30</span>)).to_f32 }
+    @place_sound <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">640</span>, <span class="n">0.07</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Triangle</span>, <span class="n">0.28</span>)
+    @step_sound <span class="o">=</span> <span class="t">Sound</span>.generate(<span class="n">0.08</span>) { <span class="o">|</span>t<span class="o">|</span> (<span class="t">Random</span>.rand(<span class="n">-1.0</span>..<span class="n">1.0</span>) <span class="o">*</span> <span class="t">Math</span>.exp(<span class="o">-</span>t <span class="o">*</span> <span class="n">40</span>) <span class="o">*</span> <span class="n">0.4</span>).to_f32 }
+
+    root <span class="o">=</span> <span class="t">SceneTree</span>.root
+    root.add(@terrain, <span class="t">DirectionalLight3D</span>.new(v3(<span class="n">-0.45</span>, <span class="n">-1</span>, <span class="n">-0.28</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#fff4e0&quot;</span>), <span class="n">1.05</span>), @camera)
+    sync_camera
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    @tip_time <span class="o">-=</span> dt
+    <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;palette&quot;</span>)
+      toggle_menu
+    <span class="k">end</span>
+    <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+      <span class="k">if</span> @menu
+        toggle_menu(<span class="n">false</span>)
+      <span class="k">else</span>
+        <span class="t">Window</span>.relative_mouse <span class="o">=</span> <span class="n">false</span>
+        <span class="t">Window</span>.cursor_visible <span class="o">=</span> <span class="n">true</span>
+        <span class="t">Eagle</span>.quit
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">R</span>)
+      seed <span class="o">=</span> @island.seed
+      @island <span class="o">=</span> <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">Island</span>.new(seed)
+      @feet <span class="o">=</span> @island.spawn
+      @velocity <span class="o">=</span> <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>
+      @dirty <span class="o">=</span> <span class="n">true</span>
+    <span class="k">end</span>
+
+    select_colour
+    <span class="k">unless</span> @menu <span class="o">||</span> <span class="t">ENV</span>.has_key?(<span class="s">&quot;EAGLE_FRAMES&quot;</span>)
+      <span class="t">Window</span>.relative_mouse <span class="o">=</span> <span class="n">true</span> <span class="k">if</span> <span class="t">Input</span>.mouse_pressed?(<span class="t">MouseButton</span><span class="t">::</span><span class="t">Left</span>)
+      look(dt)
+      walk(dt)
+      edit
+    <span class="k">else</span>
+      pick_menu <span class="k">if</span> @menu
+    <span class="k">end</span>
+
+    rebuild <span class="k">if</span> @dirty
+    sync_camera
+    <span class="k">if</span> hit <span class="o">=</span> aimed
+      <span class="k">unless</span> <span class="t">ENV</span>.has_key?(<span class="s">&quot;EAGLE_FRAMES&quot;</span>)
+        <span class="t">Scene3D</span>.debug_box(v3(hit.x <span class="o">+</span> <span class="n">0.5</span>, hit.y <span class="o">+</span> <span class="n">0.5</span>, hit.z <span class="o">+</span> <span class="n">0.5</span>), v3(<span class="n">0.505</span>, <span class="n">0.505</span>, <span class="n">0.505</span>), color: <span class="t">Color</span>.new(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>, <span class="n">0.85</span>))
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    w <span class="o">=</span> <span class="t">Window</span>.width
+    h <span class="o">=</span> <span class="t">Window</span>.height
+    g.line(w <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">10</span>, h <span class="o">/</span> <span class="n">2</span>, w <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">3</span>, h <span class="o">/</span> <span class="n">2</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, <span class="n">2</span>)
+    g.line(w <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">3</span>, h <span class="o">/</span> <span class="n">2</span>, w <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">10</span>, h <span class="o">/</span> <span class="n">2</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, <span class="n">2</span>)
+    g.line(w <span class="o">/</span> <span class="n">2</span>, h <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">10</span>, w <span class="o">/</span> <span class="n">2</span>, h <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">3</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, <span class="n">2</span>)
+    g.line(w <span class="o">/</span> <span class="n">2</span>, h <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">3</span>, w <span class="o">/</span> <span class="n">2</span>, h <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">10</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, <span class="n">2</span>)
+
+    g.rect(<span class="n">12</span>, <span class="n">12</span>, <span class="n">280</span>, <span class="n">52</span>, color: <span class="t">Color</span>.new(<span class="n">0.05</span>, <span class="n">0.07</span>, <span class="n">0.1</span>, <span class="n">0.72</span>))
+    g.print(<span class="s">&quot;Voxel Island   </span><span class="i">#{</span><span class="t">EagleVoxel</span><span class="t">::</span><span class="t">NAMES</span>[@kind]<span class="i">}</span><span class="s">&quot;</span>, <span class="n">22</span>, <span class="n">20</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.print(<span class="s">&quot;blocks </span><span class="i">#{</span>@island.occupied<span class="i">}</span><span class="s">   quads </span><span class="i">#{</span>@island.mesh_quads<span class="i">}</span><span class="s">&quot;</span>, <span class="n">22</span>, <span class="n">40</span>, <span class="t">Color</span>.gray(<span class="n">0.8</span>))
+
+    draw_hotbar(g)
+    draw_menu(g) <span class="k">if</span> @menu
+    <span class="k">if</span> @tip_time <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="o">!</span>@menu
+      g.rect(<span class="n">0</span>, h <span class="o">-</span> <span class="n">54</span>, w, <span class="n">54</span>, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.62</span>))
+      g.printf(<span class="s">&quot;Click to capture mouse. WASD move, Space jump, Shift sprint.&quot;</span>, <span class="n">0</span>, h <span class="o">-</span> <span class="n">42</span>, w, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>, color: <span class="t">Color</span>.gray(<span class="n">0.86</span>))
+      g.printf(<span class="s">&quot;Left break · Right place · E colour menu · scroll / 1-9 palette · R regen&quot;</span>, <span class="n">0</span>, h <span class="o">-</span> <span class="n">22</span>, w, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>, color: <span class="t">Color</span>.gray(<span class="n">0.86</span>))
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">look</span>(dt : <span class="t">Float32</span>)
+    @yaw <span class="o">-=</span> <span class="t">Input</span>.mouse_delta.x <span class="o">*</span> <span class="n">0.0025</span>
+    @pitch <span class="o">=</span> (@pitch <span class="o">-</span> <span class="t">Input</span>.mouse_delta.y <span class="o">*</span> <span class="n">0.0025</span>).clamp(<span class="n">-1.35_f32</span>, <span class="n">1.35_f32</span>)
+    <span class="k">if</span> pad <span class="o">=</span> <span class="t">Input</span>.gamepad
+      @yaw <span class="o">-=</span> pad.right_stick.x <span class="o">*</span> dt <span class="o">*</span> <span class="n">2.4</span>
+      @pitch <span class="o">=</span> (@pitch <span class="o">-</span> pad.right_stick.y <span class="o">*</span> dt <span class="o">*</span> <span class="n">2.0</span>).clamp(<span class="n">-1.35_f32</span>, <span class="n">1.35_f32</span>)
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">look_direction</span> : <span class="t">Vec3</span>
+    cp <span class="o">=</span> <span class="t">Math</span>.cos(@pitch)
+    v3(<span class="t">Math</span>.sin(@yaw) <span class="o">*</span> cp, <span class="t">Math</span>.sin(@pitch), <span class="o">-</span><span class="t">Math</span>.cos(@yaw) <span class="o">*</span> cp).normalized
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">walk</span>(dt : <span class="t">Float32</span>)
+    input <span class="o">=</span> <span class="t">Input</span>.vector(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>, <span class="s">&quot;forward&quot;</span>, <span class="s">&quot;back&quot;</span>)
+    forward <span class="o">=</span> v3(<span class="t">Math</span>.sin(@yaw), <span class="n">0</span>, <span class="o">-</span><span class="t">Math</span>.cos(@yaw))
+    right <span class="o">=</span> v3(<span class="t">Math</span>.cos(@yaw), <span class="n">0</span>, <span class="t">Math</span>.sin(@yaw))
+    speed <span class="o">=</span> <span class="t">SPEED</span> <span class="o">*</span> (<span class="t">Input</span>.down?(<span class="s">&quot;sprint&quot;</span>) ? <span class="n">1.55_f32</span> : <span class="n">1_f32</span>)
+    wish <span class="o">=</span> (right <span class="o">*</span> input.x <span class="o">+</span> forward <span class="o">*</span> <span class="o">-</span>input.y)
+    wish <span class="o">=</span> wish.length <span class="o">&gt;</span> <span class="n">1e-5</span> ? wish.normalized <span class="o">*</span> speed : <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>
+    @velocity <span class="o">=</span> v3(wish.x, @velocity.y <span class="o">-</span> <span class="t">GRAVITY</span> <span class="o">*</span> dt, wish.z)
+    <span class="k">if</span> @on_ground <span class="o">&amp;&amp;</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;jump&quot;</span>)
+      @velocity <span class="o">=</span> v3(@velocity.x, <span class="t">JUMP</span>, @velocity.z)
+      @on_ground <span class="o">=</span> <span class="n">false</span>
+    <span class="k">end</span>
+    @feet, @velocity, @on_ground <span class="o">=</span> @island.move(@feet, @velocity, dt, <span class="t">RADIUS</span>, <span class="t">HEIGHT</span>)
+    moving <span class="o">=</span> wish.length <span class="o">&gt;</span> <span class="n">0.01</span> <span class="o">&amp;&amp;</span> @on_ground
+    @bob <span class="o">=</span> moving ? @bob <span class="o">+</span> dt <span class="o">*</span> speed : <span class="n">0_f32</span>
+    <span class="k">if</span> moving
+      @step_timer <span class="o">+=</span> dt <span class="o">*</span> (<span class="t">Input</span>.down?(<span class="s">&quot;sprint&quot;</span>) ? <span class="n">1.5_f32</span> : <span class="n">1_f32</span>)
+      <span class="k">if</span> @step_timer <span class="o">&gt;=</span> <span class="n">0.42</span>
+        @step_timer <span class="o">=</span> <span class="n">0</span>
+        @step_sound.try(<span class="o">&amp;</span>.play(pitch: <span class="n">0.9</span> <span class="o">+</span> <span class="t">Random</span>.rand <span class="o">*</span> <span class="n">0.2</span>, volume: <span class="n">0.35</span>))
+      <span class="k">end</span>
+    <span class="k">else</span>
+      @step_timer <span class="o">=</span> <span class="n">0.3_f32</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">aimed</span> : <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">Hit</span>?
+    @island.raycast(eye, look_direction, <span class="t">REACH</span>)
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">eye</span> : <span class="t">Vec3</span>
+    bob <span class="o">=</span> @on_ground <span class="o">&amp;&amp;</span> @bob <span class="o">&gt;</span> <span class="n">0</span> ? <span class="t">Math</span>.sin(@bob <span class="o">*</span> <span class="n">10</span>) <span class="o">*</span> <span class="n">0.03</span> : <span class="n">0</span>
+    @feet <span class="o">+</span> v3(<span class="n">0</span>, <span class="t">EYE</span> <span class="o">+</span> bob, <span class="n">0</span>)
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">edit</span>
+    hit <span class="o">=</span> aimed
+    <span class="k">return</span> <span class="k">unless</span> hit
+    <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;break&quot;</span>)
+      <span class="k">if</span> @island.break_at(hit) <span class="o">!=</span> <span class="n">0</span>
+        @dirty <span class="o">=</span> <span class="n">true</span>
+        @break_sound.try(<span class="o">&amp;</span>.play(pitch: <span class="n">0.85</span> <span class="o">+</span> <span class="t">Random</span>.rand <span class="o">*</span> <span class="n">0.3</span>))
+      <span class="k">end</span>
+    <span class="k">elsif</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;place&quot;</span>)
+      <span class="k">if</span> @island.place_at(hit, @kind, @feet, <span class="t">RADIUS</span>, <span class="t">HEIGHT</span>)
+        @dirty <span class="o">=</span> <span class="n">true</span>
+        @place_sound.try(<span class="o">&amp;</span>.play(pitch: <span class="n">0.95</span> <span class="o">+</span> <span class="t">Random</span>.rand <span class="o">*</span> <span class="n">0.15</span>))
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">select_colour</span>
+    keys <span class="o">=</span> {<span class="t">Key</span><span class="t">::</span><span class="t">Num1</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num2</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num3</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num4</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num5</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num6</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num7</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num8</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num9</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num0</span>}
+    keys.each_with_index <span class="k">do</span> <span class="o">|</span>key, i<span class="o">|</span>
+      n <span class="o">=</span> i <span class="o">==</span> <span class="n">9</span> ? <span class="n">10</span> : i <span class="o">+</span> <span class="n">1</span>
+      @kind <span class="o">=</span> n.to_u8 <span class="k">if</span> <span class="t">Input</span>.pressed?(key) <span class="o">&amp;&amp;</span> n <span class="o">&lt;</span> <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">PALETTE</span>.size
+    <span class="k">end</span>
+    wheel <span class="o">=</span> <span class="t">Input</span>.wheel.y
+    <span class="k">if</span> wheel <span class="o">!=</span> <span class="n">0</span>
+      n <span class="o">=</span> <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">PALETTE</span>.size <span class="o">-</span> <span class="n">1</span>
+      @kind <span class="o">=</span> (((@kind.to_i <span class="o">-</span> <span class="n">1</span> <span class="o">-</span> (wheel <span class="o">&gt;</span> <span class="n">0</span> ? <span class="n">1</span> : <span class="n">-1</span>)) <span class="o">%</span> n <span class="o">+</span> n) <span class="o">%</span> n <span class="o">+</span> <span class="n">1</span>).to_u8
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">toggle_menu</span>(open : <span class="t">Bool</span>? <span class="o">=</span> <span class="n">nil</span>)
+    @menu <span class="o">=</span> open.<span class="k">nil?</span> ? <span class="o">!</span>@menu : open.<span class="k">as</span>(<span class="t">Bool</span>)
+    <span class="t">Window</span>.relative_mouse <span class="o">=</span> <span class="o">!</span>@menu
+    <span class="t">Window</span>.cursor_visible <span class="o">=</span> @menu
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">pick_menu</span>
+    <span class="k">return</span> <span class="k">unless</span> <span class="t">Input</span>.mouse_pressed?(<span class="t">MouseButton</span><span class="t">::</span><span class="t">Left</span>)
+    mx, my <span class="o">=</span> <span class="t">Input</span>.mouse.x, <span class="t">Input</span>.mouse.y
+    slot <span class="o">=</span> menu_slot_at(mx, my) <span class="o">||</span> hotbar_slot_at(mx, my)
+    <span class="k">if</span> slot <span class="o">&amp;&amp;</span> slot <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> slot <span class="o">&lt;</span> <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">PALETTE</span>.size
+      @kind <span class="o">=</span> slot.to_u8
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">rebuild</span>
+    @island.build_mesh(@mesh)
+    @dirty <span class="o">=</span> <span class="n">false</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">sync_camera</span>
+    <span class="k">return</span> <span class="k">if</span> @cinematic
+    @camera.position <span class="o">=</span> eye
+    @camera.look_at(@camera.position <span class="o">+</span> look_direction)
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">hotbar_geometry</span>
+    n <span class="o">=</span> <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">PALETTE</span>.size <span class="o">-</span> <span class="n">1</span>
+    size <span class="o">=</span> <span class="n">40_f32</span>
+    gap <span class="o">=</span> <span class="n">6_f32</span>
+    total <span class="o">=</span> n <span class="o">*</span> size <span class="o">+</span> (n <span class="o">-</span> <span class="n">1</span>) <span class="o">*</span> gap
+    x0 <span class="o">=</span> (<span class="t">Window</span>.width <span class="o">-</span> total) <span class="o">/</span> <span class="n">2</span>
+    y <span class="o">=</span> <span class="t">Window</span>.height <span class="o">-</span> <span class="n">52</span>
+    {n, size, gap, x0, y}
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">hotbar_slot_at</span>(mx : <span class="t">Float32</span>, my : <span class="t">Float32</span>) : <span class="t">Int32</span>?
+    n, size, gap, x0, y <span class="o">=</span> hotbar_geometry
+    <span class="k">return</span> <span class="n">nil</span> <span class="k">unless</span> my <span class="o">&gt;=</span> y <span class="o">&amp;&amp;</span> my <span class="o">&lt;=</span> y <span class="o">+</span> size
+    n.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+      x <span class="o">=</span> x0 <span class="o">+</span> i <span class="o">*</span> (size <span class="o">+</span> gap)
+      <span class="k">return</span> i <span class="o">+</span> <span class="n">1</span> <span class="k">if</span> mx <span class="o">&gt;=</span> x <span class="o">&amp;&amp;</span> mx <span class="o">&lt;=</span> x <span class="o">+</span> size
+    <span class="k">end</span>
+    <span class="n">nil</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_hotbar</span>(g : <span class="t">Graphics</span>)
+    n, size, gap, x0, y <span class="o">=</span> hotbar_geometry
+    n.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+      kind <span class="o">=</span> (i <span class="o">+</span> <span class="n">1</span>).to_u8
+      x <span class="o">=</span> x0 <span class="o">+</span> i <span class="o">*</span> (size <span class="o">+</span> gap)
+      g.rect(x, y, size, size, color: <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">PALETTE</span>[kind])
+      <span class="k">if</span> kind <span class="o">==</span> @kind
+        g.rect(x <span class="o">-</span> <span class="n">2</span>, y <span class="o">-</span> <span class="n">2</span>, size <span class="o">+</span> <span class="n">4</span>, size <span class="o">+</span> <span class="n">4</span>, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+      <span class="k">else</span>
+        g.rect(x, y, size, size, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.45</span>))
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">menu_geometry</span>
+    cols <span class="o">=</span> <span class="n">4</span>
+    size <span class="o">=</span> <span class="n">56_f32</span>
+    gap <span class="o">=</span> <span class="n">10_f32</span>
+    n <span class="o">=</span> <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">PALETTE</span>.size <span class="o">-</span> <span class="n">1</span>
+    rows <span class="o">=</span> (n <span class="o">+</span> cols <span class="o">-</span> <span class="n">1</span>) <span class="o">//</span> cols
+    panel_w <span class="o">=</span> cols <span class="o">*</span> size <span class="o">+</span> (cols <span class="o">+</span> <span class="n">1</span>) <span class="o">*</span> gap <span class="o">+</span> <span class="n">160</span>
+    panel_h <span class="o">=</span> rows <span class="o">*</span> size <span class="o">+</span> (rows <span class="o">+</span> <span class="n">1</span>) <span class="o">*</span> gap <span class="o">+</span> <span class="n">48</span>
+    x0 <span class="o">=</span> (<span class="t">Window</span>.width <span class="o">-</span> panel_w) <span class="o">/</span> <span class="n">2</span>
+    y0 <span class="o">=</span> (<span class="t">Window</span>.height <span class="o">-</span> panel_h) <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">20</span>
+    {cols, size, gap, n, x0, y0, panel_w, panel_h}
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">menu_slot_at</span>(mx : <span class="t">Float32</span>, my : <span class="t">Float32</span>) : <span class="t">Int32</span>?
+    cols, size, gap, n, x0, y0, _, _ <span class="o">=</span> menu_geometry
+    n.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+      col <span class="o">=</span> i <span class="o">%</span> cols
+      row <span class="o">=</span> i <span class="o">//</span> cols
+      x <span class="o">=</span> x0 <span class="o">+</span> gap <span class="o">+</span> col <span class="o">*</span> (size <span class="o">+</span> gap)
+      y <span class="o">=</span> y0 <span class="o">+</span> <span class="n">40</span> <span class="o">+</span> row <span class="o">*</span> (size <span class="o">+</span> gap)
+      <span class="k">return</span> i <span class="o">+</span> <span class="n">1</span> <span class="k">if</span> mx <span class="o">&gt;=</span> x <span class="o">&amp;&amp;</span> mx <span class="o">&lt;=</span> x <span class="o">+</span> size <span class="o">&amp;&amp;</span> my <span class="o">&gt;=</span> y <span class="o">&amp;&amp;</span> my <span class="o">&lt;=</span> y <span class="o">+</span> size
+    <span class="k">end</span>
+    <span class="n">nil</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_menu</span>(g : <span class="t">Graphics</span>)
+    cols, size, gap, n, x0, y0, panel_w, panel_h <span class="o">=</span> menu_geometry
+    g.rect(x0, y0, panel_w, panel_h, color: <span class="t">Color</span>.new(<span class="n">0.07</span>, <span class="n">0.09</span>, <span class="n">0.12</span>, <span class="n">0.92</span>))
+    g.print(<span class="s">&quot;Colours  ·  click a block to build with it&quot;</span>, x0 <span class="o">+</span> <span class="n">16</span>, y0 <span class="o">+</span> <span class="n">14</span>, <span class="t">Color</span>.gray(<span class="n">0.9</span>))
+    n.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+      kind <span class="o">=</span> (i <span class="o">+</span> <span class="n">1</span>).to_u8
+      col <span class="o">=</span> i <span class="o">%</span> cols
+      row <span class="o">=</span> i <span class="o">//</span> cols
+      x <span class="o">=</span> x0 <span class="o">+</span> gap <span class="o">+</span> col <span class="o">*</span> (size <span class="o">+</span> gap)
+      y <span class="o">=</span> y0 <span class="o">+</span> <span class="n">40</span> <span class="o">+</span> row <span class="o">*</span> (size <span class="o">+</span> gap)
+      g.rect(x, y, size, size, color: <span class="t">EagleVoxel</span><span class="t">::</span><span class="t">PALETTE</span>[kind])
+      <span class="k">if</span> kind <span class="o">==</span> @kind
+        g.rect(x <span class="o">-</span> <span class="n">2</span>, y <span class="o">-</span> <span class="n">2</span>, size <span class="o">+</span> <span class="n">4</span>, size <span class="o">+</span> <span class="n">4</span>, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+      <span class="k">end</span>
+      g.print(<span class="t">EagleVoxel</span><span class="t">::</span><span class="t">NAMES</span>[kind], x <span class="o">+</span> size <span class="o">+</span> <span class="n">8</span>, y <span class="o">+</span> <span class="n">20</span>, <span class="t">Color</span>.gray(<span class="n">0.85</span>))
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="t">Eagle</span>.run(<span class="t">VoxelIslandApp</span>, title: <span class="s">&quot;Eagle: Voxel Island&quot;</span>, width: <span class="n">1100</span>, height: <span class="n">680</span>, msaa: <span class="n">4</span>)
+</code></pre>
+<h3>examples/voxel/world.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+
+<span class="c"># Renderer-independent voxel island: noise terrain, greedy meshing, DDA picking and AABB</span>
+<span class="c"># walking. Specs drive this file without opening a window.</span>
+<span class="k">module</span> <span class="t">EagleVoxel</span>
+  <span class="k">include</span> <span class="t">Eagle</span>
+
+  <span class="c"># Palette index 0 is air. The rest are solid, coloured blocks the player can place.</span>
+  <span class="t">PALETTE</span> <span class="o">=</span> [
+    <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>),
+    <span class="t">Color</span>.hex(<span class="s">&quot;#5d9b3e&quot;</span>), <span class="c"># grass</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#8a5a32&quot;</span>), <span class="c"># dirt</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#8d8d8d&quot;</span>), <span class="c"># stone</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#e2c56e&quot;</span>), <span class="c"># sand</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#6b3f22&quot;</span>), <span class="c"># wood</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#3b7cc4&quot;</span>), <span class="c"># water</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#b34335&quot;</span>), <span class="c"># brick</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#d4a017&quot;</span>), <span class="c"># gold</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#eef2f6&quot;</span>), <span class="c"># snow</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#2a2a2a&quot;</span>), <span class="c"># coal</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#c44bb0&quot;</span>), <span class="c"># magenta</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#3ecfcf&quot;</span>), <span class="c"># cyan</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#e07a2f&quot;</span>), <span class="c"># orange</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#f4f0e6&quot;</span>), <span class="c"># white</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#2f6b32&quot;</span>), <span class="c"># pine</span>
+    <span class="t">Color</span>.hex(<span class="s">&quot;#c27a6a&quot;</span>), <span class="c"># clay</span>
+  ]
+
+  <span class="t">NAMES</span> <span class="o">=</span> [
+    <span class="s">&quot;Air&quot;</span>, <span class="s">&quot;Grass&quot;</span>, <span class="s">&quot;Dirt&quot;</span>, <span class="s">&quot;Stone&quot;</span>, <span class="s">&quot;Sand&quot;</span>, <span class="s">&quot;Wood&quot;</span>, <span class="s">&quot;Water&quot;</span>, <span class="s">&quot;Brick&quot;</span>,
+    <span class="s">&quot;Gold&quot;</span>, <span class="s">&quot;Snow&quot;</span>, <span class="s">&quot;Coal&quot;</span>, <span class="s">&quot;Magenta&quot;</span>, <span class="s">&quot;Cyan&quot;</span>, <span class="s">&quot;Orange&quot;</span>, <span class="s">&quot;White&quot;</span>, <span class="s">&quot;Pine&quot;</span>, <span class="s">&quot;Clay&quot;</span>,
+  ]
+
+  <span class="t">GRASS</span>   <span class="o">=</span> <span class="n">1_u8</span>
+  <span class="t">DIRT</span>    <span class="o">=</span> <span class="n">2_u8</span>
+  <span class="t">STONE</span>   <span class="o">=</span> <span class="n">3_u8</span>
+  <span class="t">SAND</span>    <span class="o">=</span> <span class="n">4_u8</span>
+  <span class="t">WOOD</span>    <span class="o">=</span> <span class="n">5_u8</span>
+  <span class="t">WATER</span>   <span class="o">=</span> <span class="n">6_u8</span>
+  <span class="t">BRICK</span>   <span class="o">=</span> <span class="n">7_u8</span>
+
+  record <span class="t">Hit</span>, x : <span class="t">Int32</span>, y : <span class="t">Int32</span>, z : <span class="t">Int32</span>, nx : <span class="t">Int32</span>, ny : <span class="t">Int32</span>, nz : <span class="t">Int32</span>, distance : <span class="t">Float32</span> <span class="k">do</span>
+    <span class="k">def</span> <span class="m">voxel</span> : {<span class="t">Int32</span>, <span class="t">Int32</span>, <span class="t">Int32</span>}; {x, y, z}; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">place</span> : {<span class="t">Int32</span>, <span class="t">Int32</span>, <span class="t">Int32</span>}; {x <span class="o">+</span> nx, y <span class="o">+</span> ny, z <span class="o">+</span> nz}; <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">class</span> <span class="t">Island</span>
+    <span class="t">WIDTH</span>  <span class="o">=</span> <span class="n">48</span>
+    <span class="t">HEIGHT</span> <span class="o">=</span> <span class="n">36</span>
+    <span class="t">DEPTH</span>  <span class="o">=</span> <span class="n">48</span>
+    <span class="t">VOLUME</span> <span class="o">=</span> <span class="t">WIDTH</span> <span class="o">*</span> <span class="t">HEIGHT</span> <span class="o">*</span> <span class="t">DEPTH</span>
+
+    getter seed : <span class="t">Int32</span>
+    getter cells : <span class="t">Slice</span>(<span class="t">UInt8</span>)
+    getter mesh_triangles <span class="o">=</span> <span class="n">0</span>
+    getter mesh_quads <span class="o">=</span> <span class="n">0</span>
+
+    <span class="k">def</span> <span class="m">initialize</span>(@seed : <span class="t">Int32</span> <span class="o">=</span> <span class="n">2026</span>)
+      @cells <span class="o">=</span> <span class="t">Slice</span>(<span class="t">UInt8</span>).new(<span class="t">VOLUME</span>, <span class="n">0_u8</span>)
+      generate
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">self</span>.index(x : <span class="t">Int32</span>, y : <span class="t">Int32</span>, z : <span class="t">Int32</span>) : <span class="t">Int32</span>
+      x <span class="o">+</span> <span class="t">WIDTH</span> <span class="o">*</span> (z <span class="o">+</span> <span class="t">DEPTH</span> <span class="o">*</span> y)
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">in_bounds?</span>(x : <span class="t">Int</span>, y : <span class="t">Int</span>, z : <span class="t">Int</span>) : <span class="t">Bool</span>
+      x <span class="o">&gt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> x <span class="o">&lt;</span> <span class="t">WIDTH</span> <span class="o">&amp;&amp;</span> y <span class="o">&gt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> y <span class="o">&lt;</span> <span class="t">HEIGHT</span> <span class="o">&amp;&amp;</span> z <span class="o">&gt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> z <span class="o">&lt;</span> <span class="t">DEPTH</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">[]</span>(x : <span class="t">Int</span>, y : <span class="t">Int</span>, z : <span class="t">Int</span>) : <span class="t">UInt8</span>
+      in_bounds?(x, y, z) ? @cells[<span class="t">Island</span>.index(x.to_i, y.to_i, z.to_i)] : <span class="n">0_u8</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">[]=</span>(x : <span class="t">Int</span>, y : <span class="t">Int</span>, z : <span class="t">Int</span>, kind : <span class="t">UInt8</span>) : <span class="t">Nil</span>
+      @cells[<span class="t">Island</span>.index(x.to_i, y.to_i, z.to_i)] <span class="o">=</span> kind <span class="k">if</span> in_bounds?(x, y, z)
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">solid?</span>(x : <span class="t">Int</span>, y : <span class="t">Int</span>, z : <span class="t">Int</span>) : <span class="t">Bool</span>
+      <span class="k">self</span>[x, y, z] <span class="o">!=</span> <span class="n">0</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">occupied</span> : <span class="t">Int32</span>
+      n <span class="o">=</span> <span class="n">0</span>
+      @cells.each { <span class="o">|</span>c<span class="o">|</span> n <span class="o">+=</span> <span class="n">1</span> <span class="k">if</span> c <span class="o">!=</span> <span class="n">0</span> }
+      n
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">generate</span> : <span class="t">Nil</span>
+      @cells.fill(<span class="n">0_u8</span>)
+      noise <span class="o">=</span> <span class="t">Noise</span>.new(@seed)
+      cx <span class="o">=</span> (<span class="t">WIDTH</span> <span class="o">-</span> <span class="n">1</span>) <span class="o">*</span> <span class="n">0.5</span>
+      cz <span class="o">=</span> (<span class="t">DEPTH</span> <span class="o">-</span> <span class="n">1</span>) <span class="o">*</span> <span class="n">0.5</span>
+      radius <span class="o">=</span> <span class="t">WIDTH</span> <span class="o">*</span> <span class="n">0.42</span>
+      <span class="t">WIDTH</span>.times <span class="k">do</span> <span class="o">|</span>x<span class="o">|</span>
+        <span class="t">DEPTH</span>.times <span class="k">do</span> <span class="o">|</span>z<span class="o">|</span>
+          dx <span class="o">=</span> (x <span class="o">-</span> cx) <span class="o">/</span> radius
+          dz <span class="o">=</span> (z <span class="o">-</span> cz) <span class="o">/</span> radius
+          dist <span class="o">=</span> <span class="t">Math</span>.hypot(dx, dz)
+          <span class="k">next</span> <span class="k">if</span> dist <span class="o">&gt;=</span> <span class="n">1</span>
+          mask <span class="o">=</span> (<span class="n">1</span> <span class="o">-</span> dist) <span class="o">*</span> (<span class="n">1</span> <span class="o">-</span> dist)
+          hills <span class="o">=</span> <span class="n">0.5</span> <span class="o">+</span> <span class="n">0.5</span> <span class="o">*</span> noise.fbm(x <span class="o">*</span> <span class="n">0.07</span>, z <span class="o">*</span> <span class="n">0.07</span>, octaves: <span class="n">5</span>)
+          ridge <span class="o">=</span> noise.ridged(x <span class="o">*</span> <span class="n">0.05</span>, z <span class="o">*</span> <span class="n">0.05</span>, octaves: <span class="n">3</span>)
+          peak <span class="o">=</span> <span class="n">6</span> <span class="o">+</span> <span class="n">16</span> <span class="o">*</span> hills <span class="o">*</span> mask <span class="o">+</span> <span class="n">5</span> <span class="o">*</span> ridge <span class="o">*</span> mask
+          top <span class="o">=</span> <span class="t">Mathf</span>.clamp(<span class="n">10</span> <span class="o">+</span> peak, <span class="n">1</span>, <span class="t">HEIGHT</span> <span class="o">-</span> <span class="n">2</span>).to_i
+          bottom <span class="o">=</span> <span class="t">Mathf</span>.clamp(<span class="n">8</span> <span class="o">-</span> <span class="n">7</span> <span class="o">*</span> mask, <span class="n">1</span>, top <span class="o">-</span> <span class="n">3</span>).to_i
+          bottom.upto(top) <span class="k">do</span> <span class="o">|</span>y<span class="o">|</span>
+            cave <span class="o">=</span> noise.perlin(x <span class="o">*</span> <span class="n">0.11</span>, y <span class="o">*</span> <span class="n">0.13</span>, z <span class="o">*</span> <span class="n">0.11</span>)
+            <span class="k">next</span> <span class="k">if</span> cave <span class="o">&gt;</span> <span class="n">0.48</span> <span class="o">&amp;&amp;</span> y <span class="o">&gt;</span> bottom <span class="o">+</span> <span class="n">2</span> <span class="o">&amp;&amp;</span> y <span class="o">&lt;</span> top <span class="o">-</span> <span class="n">2</span>
+            kind <span class="o">=</span> <span class="k">if</span> y <span class="o">==</span> top
+                     top <span class="o">&lt;=</span> <span class="n">14</span> ? <span class="t">SAND</span> : <span class="t">GRASS</span>
+                   <span class="k">elsif</span> y <span class="o">&gt;</span> top <span class="o">-</span> <span class="n">3</span>
+                     <span class="t">DIRT</span>
+                   <span class="k">else</span>
+                     <span class="t">STONE</span>
+                   <span class="k">end</span>
+            <span class="k">self</span>[x, y, z] <span class="o">=</span> kind
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c"># A 4x4 swatch of every placeable colour, for screenshots and as a nearby sample.</span>
+    <span class="k">def</span> <span class="m">stamp_palette</span>(origin_x : <span class="t">Int32</span>, origin_y : <span class="t">Int32</span>, origin_z : <span class="t">Int32</span>) : <span class="t">Nil</span>
+      (<span class="n">1</span>...<span class="t">PALETTE</span>.size).each <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+        px <span class="o">=</span> origin_x <span class="o">+</span> (i <span class="o">-</span> <span class="n">1</span>) <span class="o">%</span> <span class="n">4</span>
+        pz <span class="o">=</span> origin_z <span class="o">+</span> (i <span class="o">-</span> <span class="n">1</span>) <span class="o">//</span> <span class="n">4</span>
+        <span class="k">self</span>[px, origin_y <span class="o">-</span> <span class="n">1</span>, pz] <span class="o">=</span> <span class="t">STONE</span> <span class="k">if</span> <span class="k">self</span>[px, origin_y <span class="o">-</span> <span class="n">1</span>, pz] <span class="o">==</span> <span class="n">0</span>
+        <span class="k">self</span>[px, origin_y, pz] <span class="o">=</span> i.to_u8
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">spawn</span> : <span class="t">Vec3</span>
+      cx <span class="o">=</span> <span class="t">WIDTH</span> <span class="o">//</span> <span class="n">2</span>
+      cz <span class="o">=</span> <span class="t">DEPTH</span> <span class="o">//</span> <span class="n">2</span>
+      best <span class="o">=</span> {cx, <span class="n">8</span>, cz}
+      best_y <span class="o">=</span> <span class="n">-1</span>
+      (cx <span class="o">-</span> <span class="n">6</span>).upto(cx <span class="o">+</span> <span class="n">6</span>) <span class="k">do</span> <span class="o">|</span>x<span class="o">|</span>
+        (cz <span class="o">-</span> <span class="n">6</span>).upto(cz <span class="o">+</span> <span class="n">6</span>) <span class="k">do</span> <span class="o">|</span>z<span class="o">|</span>
+          y <span class="o">=</span> <span class="t">HEIGHT</span> <span class="o">-</span> <span class="n">1</span>
+          <span class="k">while</span> y <span class="o">&gt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="o">!</span>solid?(x, y, z)
+            y <span class="o">-=</span> <span class="n">1</span>
+          <span class="k">end</span>
+          <span class="k">next</span> <span class="k">if</span> y <span class="o">&lt;</span> <span class="n">1</span>
+          <span class="k">next</span> <span class="k">unless</span> <span class="o">!</span>solid?(x, y <span class="o">+</span> <span class="n">1</span>, z) <span class="o">&amp;&amp;</span> <span class="o">!</span>solid?(x, y <span class="o">+</span> <span class="n">2</span>, z)
+          <span class="k">if</span> y <span class="o">&gt;</span> best_y
+            best_y <span class="o">=</span> y
+            best <span class="o">=</span> {x, y, z}
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+      feet <span class="o">=</span> <span class="t">Vec3</span>.new(best[<span class="n">0</span>] <span class="o">+</span> <span class="n">0.5</span>, best[<span class="n">1</span>] <span class="o">+</span> <span class="n">1.01</span>, best[<span class="n">2</span>] <span class="o">+</span> <span class="n">0.5</span>)
+      <span class="n">8</span>.times <span class="k">do</span>
+        <span class="k">break</span> <span class="k">unless</span> blocked?(<span class="t">Vec3</span>.new(feet.x <span class="o">-</span> <span class="n">0.28</span>, feet.y, feet.z <span class="o">-</span> <span class="n">0.28</span>), <span class="t">Vec3</span>.new(feet.x <span class="o">+</span> <span class="n">0.28</span>, feet.y <span class="o">+</span> <span class="n">1.7</span>, feet.z <span class="o">+</span> <span class="n">0.28</span>))
+        feet <span class="o">=</span> <span class="t">Vec3</span>.new(feet.x, feet.y <span class="o">+</span> <span class="n">1</span>, feet.z)
+      <span class="k">end</span>
+      feet
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">overlook</span> : {<span class="t">Vec3</span>, <span class="t">Int32</span>}
+      x <span class="o">=</span> <span class="t">WIDTH</span> <span class="o">//</span> <span class="n">2</span>
+      z <span class="o">=</span> <span class="n">12</span>
+      y <span class="o">=</span> <span class="n">8</span>
+      yy <span class="o">=</span> <span class="t">HEIGHT</span> <span class="o">-</span> <span class="n">1</span>
+      <span class="k">while</span> yy <span class="o">&gt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="o">!</span>solid?(x, yy, z)
+        yy <span class="o">-=</span> <span class="n">1</span>
+      <span class="k">end</span>
+      y <span class="o">=</span> yy <span class="k">if</span> yy <span class="o">&gt;=</span> <span class="n">1</span>
+      {<span class="t">Vec3</span>.new(x <span class="o">+</span> <span class="n">0.5</span>, y <span class="o">+</span> <span class="n">1.05</span>, z <span class="o">+</span> <span class="n">0.5</span>), y}
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">center</span> : <span class="t">Vec3</span>
+      <span class="t">Vec3</span>.new(<span class="t">WIDTH</span> <span class="o">*</span> <span class="n">0.5</span>, <span class="t">HEIGHT</span> <span class="o">*</span> <span class="n">0.35</span>, <span class="t">DEPTH</span> <span class="o">*</span> <span class="n">0.5</span>)
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">raycast</span>(origin : <span class="t">Vec3</span>, direction : <span class="t">Vec3</span>, max_distance : <span class="t">Number</span> <span class="o">=</span> <span class="n">8</span>) : <span class="t">Hit</span>?
+      dir <span class="o">=</span> direction.normalized
+      <span class="k">return</span> <span class="n">nil</span> <span class="k">if</span> dir.length_squared <span class="o">&lt;</span> <span class="n">1e-10</span>
+      max <span class="o">=</span> max_distance.to_f32
+      x <span class="o">=</span> origin.x.floor.to_i
+      y <span class="o">=</span> origin.y.floor.to_i
+      z <span class="o">=</span> origin.z.floor.to_i
+      step_x <span class="o">=</span> dir.x <span class="o">&gt;=</span> <span class="n">0</span> ? <span class="n">1</span> : <span class="n">-1</span>
+      step_y <span class="o">=</span> dir.y <span class="o">&gt;=</span> <span class="n">0</span> ? <span class="n">1</span> : <span class="n">-1</span>
+      step_z <span class="o">=</span> dir.z <span class="o">&gt;=</span> <span class="n">0</span> ? <span class="n">1</span> : <span class="n">-1</span>
+      t_delta_x <span class="o">=</span> dir.x.abs <span class="o">&lt;</span> <span class="n">1e-8</span> ? <span class="t">Float32</span><span class="t">::</span><span class="t">MAX</span> : (<span class="n">1</span> <span class="o">/</span> dir.x.abs).to_f32
+      t_delta_y <span class="o">=</span> dir.y.abs <span class="o">&lt;</span> <span class="n">1e-8</span> ? <span class="t">Float32</span><span class="t">::</span><span class="t">MAX</span> : (<span class="n">1</span> <span class="o">/</span> dir.y.abs).to_f32
+      t_delta_z <span class="o">=</span> dir.z.abs <span class="o">&lt;</span> <span class="n">1e-8</span> ? <span class="t">Float32</span><span class="t">::</span><span class="t">MAX</span> : (<span class="n">1</span> <span class="o">/</span> dir.z.abs).to_f32
+      t_max_x <span class="o">=</span> dir.x.abs <span class="o">&lt;</span> <span class="n">1e-8</span> ? <span class="t">Float32</span><span class="t">::</span><span class="t">MAX</span> : (((dir.x <span class="o">&gt;=</span> <span class="n">0</span> ? x <span class="o">+</span> <span class="n">1</span> : x) <span class="o">-</span> origin.x) <span class="o">/</span> dir.x).to_f32
+      t_max_y <span class="o">=</span> dir.y.abs <span class="o">&lt;</span> <span class="n">1e-8</span> ? <span class="t">Float32</span><span class="t">::</span><span class="t">MAX</span> : (((dir.y <span class="o">&gt;=</span> <span class="n">0</span> ? y <span class="o">+</span> <span class="n">1</span> : y) <span class="o">-</span> origin.y) <span class="o">/</span> dir.y).to_f32
+      t_max_z <span class="o">=</span> dir.z.abs <span class="o">&lt;</span> <span class="n">1e-8</span> ? <span class="t">Float32</span><span class="t">::</span><span class="t">MAX</span> : (((dir.z <span class="o">&gt;=</span> <span class="n">0</span> ? z <span class="o">+</span> <span class="n">1</span> : z) <span class="o">-</span> origin.z) <span class="o">/</span> dir.z).to_f32
+      nx <span class="o">=</span> <span class="n">0</span>
+      ny <span class="o">=</span> <span class="n">0</span>
+      nz <span class="o">=</span> <span class="n">0</span>
+      t <span class="o">=</span> <span class="n">0_f32</span>
+      <span class="n">96</span>.times <span class="k">do</span>
+        <span class="k">if</span> t <span class="o">&gt;</span> max
+          <span class="k">return</span> <span class="n">nil</span>
+        <span class="k">end</span>
+        <span class="k">if</span> t <span class="o">&gt;</span> <span class="n">1e-4</span> <span class="o">&amp;&amp;</span> solid?(x, y, z)
+          <span class="k">return</span> <span class="t">Hit</span>.new(x, y, z, nx, ny, nz, t)
+        <span class="k">end</span>
+        <span class="k">if</span> t_max_x <span class="o">&lt;</span> t_max_y <span class="o">&amp;&amp;</span> t_max_x <span class="o">&lt;</span> t_max_z
+          t <span class="o">=</span> t_max_x
+          t_max_x <span class="o">+=</span> t_delta_x
+          x <span class="o">+=</span> step_x
+          nx <span class="o">=</span> <span class="o">-</span>step_x
+          ny <span class="o">=</span> <span class="n">0</span>
+          nz <span class="o">=</span> <span class="n">0</span>
+        <span class="k">elsif</span> t_max_y <span class="o">&lt;</span> t_max_z
+          t <span class="o">=</span> t_max_y
+          t_max_y <span class="o">+=</span> t_delta_y
+          y <span class="o">+=</span> step_y
+          nx <span class="o">=</span> <span class="n">0</span>
+          ny <span class="o">=</span> <span class="o">-</span>step_y
+          nz <span class="o">=</span> <span class="n">0</span>
+        <span class="k">else</span>
+          t <span class="o">=</span> t_max_z
+          t_max_z <span class="o">+=</span> t_delta_z
+          z <span class="o">+=</span> step_z
+          nx <span class="o">=</span> <span class="n">0</span>
+          ny <span class="o">=</span> <span class="n">0</span>
+          nz <span class="o">=</span> <span class="o">-</span>step_z
+        <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="n">nil</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">break_at</span>(hit : <span class="t">Hit</span>) : <span class="t">UInt8</span>
+      kind <span class="o">=</span> <span class="k">self</span>[hit.x, hit.y, hit.z]
+      <span class="k">self</span>[hit.x, hit.y, hit.z] <span class="o">=</span> <span class="n">0_u8</span>
+      kind
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">place_at</span>(hit : <span class="t">Hit</span>, kind : <span class="t">UInt8</span>, feet : <span class="t">Vec3</span>, radius : <span class="t">Number</span>, height : <span class="t">Number</span>) : <span class="t">Bool</span>
+      <span class="k">return</span> <span class="n">false</span> <span class="k">if</span> kind <span class="o">==</span> <span class="n">0</span>
+      x, y, z <span class="o">=</span> hit.place
+      <span class="k">return</span> <span class="n">false</span> <span class="k">unless</span> in_bounds?(x, y, z) <span class="o">&amp;&amp;</span> <span class="k">self</span>[x, y, z] <span class="o">==</span> <span class="n">0</span>
+      <span class="k">return</span> <span class="n">false</span> <span class="k">if</span> overlaps_player?(x, y, z, feet, radius, height)
+      <span class="k">self</span>[x, y, z] <span class="o">=</span> kind
+      <span class="n">true</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">overlaps_player?</span>(x : <span class="t">Int</span>, y : <span class="t">Int</span>, z : <span class="t">Int</span>, feet : <span class="t">Vec3</span>, radius : <span class="t">Number</span>, height : <span class="t">Number</span>) : <span class="t">Bool</span>
+      r <span class="o">=</span> radius.to_f32
+      h <span class="o">=</span> height.to_f32
+      px0 <span class="o">=</span> feet.x <span class="o">-</span> r
+      px1 <span class="o">=</span> feet.x <span class="o">+</span> r
+      py0 <span class="o">=</span> feet.y
+      py1 <span class="o">=</span> feet.y <span class="o">+</span> h
+      pz0 <span class="o">=</span> feet.z <span class="o">-</span> r
+      pz1 <span class="o">=</span> feet.z <span class="o">+</span> r
+      bx0 <span class="o">=</span> x.to_f32
+      bx1 <span class="o">=</span> x <span class="o">+</span> <span class="n">1_f32</span>
+      by0 <span class="o">=</span> y.to_f32
+      by1 <span class="o">=</span> y <span class="o">+</span> <span class="n">1_f32</span>
+      bz0 <span class="o">=</span> z.to_f32
+      bz1 <span class="o">=</span> z <span class="o">+</span> <span class="n">1_f32</span>
+      px0 <span class="o">&lt;</span> bx1 <span class="o">&amp;&amp;</span> px1 <span class="o">&gt;</span> bx0 <span class="o">&amp;&amp;</span> py0 <span class="o">&lt;</span> by1 <span class="o">&amp;&amp;</span> py1 <span class="o">&gt;</span> by0 <span class="o">&amp;&amp;</span> pz0 <span class="o">&lt;</span> bz1 <span class="o">&amp;&amp;</span> pz1 <span class="o">&gt;</span> bz0
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">blocked?</span>(min : <span class="t">Vec3</span>, max : <span class="t">Vec3</span>) : <span class="t">Bool</span>
+      x0 <span class="o">=</span> min.x.floor.to_i
+      y0 <span class="o">=</span> min.y.floor.to_i
+      z0 <span class="o">=</span> min.z.floor.to_i
+      x1 <span class="o">=</span> (max.x <span class="o">-</span> <span class="n">1e-4</span>).floor.to_i
+      y1 <span class="o">=</span> (max.y <span class="o">-</span> <span class="n">1e-4</span>).floor.to_i
+      z1 <span class="o">=</span> (max.z <span class="o">-</span> <span class="n">1e-4</span>).floor.to_i
+      x0.upto(x1) <span class="k">do</span> <span class="o">|</span>x<span class="o">|</span>
+        y0.upto(y1) <span class="k">do</span> <span class="o">|</span>y<span class="o">|</span>
+          z0.upto(z1) <span class="k">do</span> <span class="o">|</span>z<span class="o">|</span>
+            <span class="k">return</span> <span class="n">true</span> <span class="k">if</span> solid?(x, y, z)
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="n">false</span>
+    <span class="k">end</span>
+
+    <span class="c"># Minecraft-style AABB: move X, then Z, then Y against the occupancy grid.</span>
+    <span class="k">def</span> <span class="m">move</span>(feet : <span class="t">Vec3</span>, velocity : <span class="t">Vec3</span>, dt : <span class="t">Float32</span>, radius : <span class="t">Number</span>, height : <span class="t">Number</span>) : {<span class="t">Vec3</span>, <span class="t">Vec3</span>, <span class="t">Bool</span>}
+      r <span class="o">=</span> radius.to_f32
+      h <span class="o">=</span> height.to_f32
+      pos <span class="o">=</span> feet
+      vel <span class="o">=</span> velocity
+      on_ground <span class="o">=</span> <span class="n">false</span>
+
+      pos <span class="o">=</span> <span class="t">Vec3</span>.new(pos.x <span class="o">+</span> vel.x <span class="o">*</span> dt, pos.y, pos.z)
+      <span class="k">if</span> blocked?(<span class="t">Vec3</span>.new(pos.x <span class="o">-</span> r, pos.y, pos.z <span class="o">-</span> r), <span class="t">Vec3</span>.new(pos.x <span class="o">+</span> r, pos.y <span class="o">+</span> h, pos.z <span class="o">+</span> r))
+        pos <span class="o">=</span> <span class="t">Vec3</span>.new(pos.x <span class="o">-</span> vel.x <span class="o">*</span> dt, pos.y, pos.z)
+        vel <span class="o">=</span> <span class="t">Vec3</span>.new(<span class="n">0</span>, vel.y, vel.z)
+      <span class="k">end</span>
+
+      pos <span class="o">=</span> <span class="t">Vec3</span>.new(pos.x, pos.y, pos.z <span class="o">+</span> vel.z <span class="o">*</span> dt)
+      <span class="k">if</span> blocked?(<span class="t">Vec3</span>.new(pos.x <span class="o">-</span> r, pos.y, pos.z <span class="o">-</span> r), <span class="t">Vec3</span>.new(pos.x <span class="o">+</span> r, pos.y <span class="o">+</span> h, pos.z <span class="o">+</span> r))
+        pos <span class="o">=</span> <span class="t">Vec3</span>.new(pos.x, pos.y, pos.z <span class="o">-</span> vel.z <span class="o">*</span> dt)
+        vel <span class="o">=</span> <span class="t">Vec3</span>.new(vel.x, vel.y, <span class="n">0</span>)
+      <span class="k">end</span>
+
+      pos <span class="o">=</span> <span class="t">Vec3</span>.new(pos.x, pos.y <span class="o">+</span> vel.y <span class="o">*</span> dt, pos.z)
+      <span class="k">if</span> blocked?(<span class="t">Vec3</span>.new(pos.x <span class="o">-</span> r, pos.y, pos.z <span class="o">-</span> r), <span class="t">Vec3</span>.new(pos.x <span class="o">+</span> r, pos.y <span class="o">+</span> h, pos.z <span class="o">+</span> r))
+        <span class="k">if</span> vel.y <span class="o">&lt;</span> <span class="n">0</span>
+          on_ground <span class="o">=</span> <span class="n">true</span>
+        <span class="k">end</span>
+        pos <span class="o">=</span> <span class="t">Vec3</span>.new(pos.x, pos.y <span class="o">-</span> vel.y <span class="o">*</span> dt, pos.z)
+        vel <span class="o">=</span> <span class="t">Vec3</span>.new(vel.x, <span class="n">0</span>, vel.z)
+      <span class="k">end</span>
+
+      {pos, vel, on_ground}
+    <span class="k">end</span>
+
+    <span class="c"># Greedy mesh: merge coplanar same-colour faces into quads. Vertex colours carry the palette.</span>
+    <span class="k">def</span> <span class="m">build_mesh</span>(into : <span class="t">Mesh</span>? <span class="o">=</span> <span class="n">nil</span>) : <span class="t">Mesh</span>
+      mesh <span class="o">=</span> into <span class="o">||</span> <span class="t">Mesh</span>.new(<span class="s">&quot;island&quot;</span>)
+      mesh.clear
+      quads <span class="o">=</span> <span class="n">0</span>
+      dims <span class="o">=</span> {<span class="t">WIDTH</span>, <span class="t">HEIGHT</span>, <span class="t">DEPTH</span>}
+      <span class="n">3</span>.times <span class="k">do</span> <span class="o">|</span>d<span class="o">|</span>
+        u <span class="o">=</span> (d <span class="o">+</span> <span class="n">1</span>) <span class="o">%</span> <span class="n">3</span>
+        v <span class="o">=</span> (d <span class="o">+</span> <span class="n">2</span>) <span class="o">%</span> <span class="n">3</span>
+        x <span class="o">=</span> [<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>]
+        q <span class="o">=</span> [<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>]
+        q[d] <span class="o">=</span> <span class="n">1</span>
+        mask <span class="o">=</span> <span class="t">Slice</span>(<span class="t">Int32</span>).new(dims[u] <span class="o">*</span> dims[v], <span class="n">0</span>)
+        x[d] <span class="o">=</span> <span class="n">-1</span>
+        <span class="k">while</span> x[d] <span class="o">&lt;</span> dims[d]
+          n <span class="o">=</span> <span class="n">0</span>
+          x[v] <span class="o">=</span> <span class="n">0</span>
+          <span class="k">while</span> x[v] <span class="o">&lt;</span> dims[v]
+            x[u] <span class="o">=</span> <span class="n">0</span>
+            <span class="k">while</span> x[u] <span class="o">&lt;</span> dims[u]
+              a <span class="o">=</span> x[d] <span class="o">&gt;=</span> <span class="n">0</span> ? <span class="k">self</span>[x[<span class="n">0</span>], x[<span class="n">1</span>], x[<span class="n">2</span>]].to_i : <span class="n">0</span>
+              b <span class="o">=</span> x[d] <span class="o">&lt;</span> dims[d] <span class="o">-</span> <span class="n">1</span> ? <span class="k">self</span>[x[<span class="n">0</span>] <span class="o">+</span> q[<span class="n">0</span>], x[<span class="n">1</span>] <span class="o">+</span> q[<span class="n">1</span>], x[<span class="n">2</span>] <span class="o">+</span> q[<span class="n">2</span>]].to_i : <span class="n">0</span>
+              mask[n] <span class="o">=</span> <span class="k">if</span> (a <span class="o">!=</span> <span class="n">0</span>) <span class="o">==</span> (b <span class="o">!=</span> <span class="n">0</span>)
+                          <span class="n">0</span>
+                        <span class="k">elsif</span> a <span class="o">!=</span> <span class="n">0</span>
+                          a
+                        <span class="k">else</span>
+                          <span class="o">-</span>b
+                        <span class="k">end</span>
+              n <span class="o">+=</span> <span class="n">1</span>
+              x[u] <span class="o">+=</span> <span class="n">1</span>
+            <span class="k">end</span>
+            x[v] <span class="o">+=</span> <span class="n">1</span>
+          <span class="k">end</span>
+          x[d] <span class="o">+=</span> <span class="n">1</span>
+          n <span class="o">=</span> <span class="n">0</span>
+          j <span class="o">=</span> <span class="n">0</span>
+          <span class="k">while</span> j <span class="o">&lt;</span> dims[v]
+            i <span class="o">=</span> <span class="n">0</span>
+            <span class="k">while</span> i <span class="o">&lt;</span> dims[u]
+              <span class="k">if</span> (c <span class="o">=</span> mask[n]) <span class="o">!=</span> <span class="n">0</span>
+                w <span class="o">=</span> <span class="n">1</span>
+                <span class="k">while</span> i <span class="o">+</span> w <span class="o">&lt;</span> dims[u] <span class="o">&amp;&amp;</span> mask[n <span class="o">+</span> w] <span class="o">==</span> c
+                  w <span class="o">+=</span> <span class="n">1</span>
+                <span class="k">end</span>
+                h <span class="o">=</span> <span class="n">1</span>
+                done <span class="o">=</span> <span class="n">false</span>
+                <span class="k">while</span> j <span class="o">+</span> h <span class="o">&lt;</span> dims[v]
+                  k <span class="o">=</span> <span class="n">0</span>
+                  <span class="k">while</span> k <span class="o">&lt;</span> w
+                    <span class="k">if</span> mask[n <span class="o">+</span> k <span class="o">+</span> h <span class="o">*</span> dims[u]] <span class="o">!=</span> c
+                      done <span class="o">=</span> <span class="n">true</span>
+                      <span class="k">break</span>
+                    <span class="k">end</span>
+                    k <span class="o">+=</span> <span class="n">1</span>
+                  <span class="k">end</span>
+                  <span class="k">break</span> <span class="k">if</span> done
+                  h <span class="o">+=</span> <span class="n">1</span>
+                <span class="k">end</span>
+                x[u] <span class="o">=</span> i
+                x[v] <span class="o">=</span> j
+                du <span class="o">=</span> [<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>]
+                dv <span class="o">=</span> [<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>]
+                <span class="k">if</span> c <span class="o">&gt;</span> <span class="n">0</span>
+                  du[u] <span class="o">=</span> w
+                  dv[v] <span class="o">=</span> h
+                <span class="k">else</span>
+                  du[v] <span class="o">=</span> h
+                  dv[u] <span class="o">=</span> w
+                <span class="k">end</span>
+                p0 <span class="o">=</span> <span class="t">Vec3</span>.new(x[<span class="n">0</span>].to_f32, x[<span class="n">1</span>].to_f32, x[<span class="n">2</span>].to_f32)
+                p1 <span class="o">=</span> <span class="t">Vec3</span>.new((x[<span class="n">0</span>] <span class="o">+</span> du[<span class="n">0</span>]).to_f32, (x[<span class="n">1</span>] <span class="o">+</span> du[<span class="n">1</span>]).to_f32, (x[<span class="n">2</span>] <span class="o">+</span> du[<span class="n">2</span>]).to_f32)
+                p2 <span class="o">=</span> <span class="t">Vec3</span>.new((x[<span class="n">0</span>] <span class="o">+</span> du[<span class="n">0</span>] <span class="o">+</span> dv[<span class="n">0</span>]).to_f32, (x[<span class="n">1</span>] <span class="o">+</span> du[<span class="n">1</span>] <span class="o">+</span> dv[<span class="n">1</span>]).to_f32, (x[<span class="n">2</span>] <span class="o">+</span> du[<span class="n">2</span>] <span class="o">+</span> dv[<span class="n">2</span>]).to_f32)
+                p3 <span class="o">=</span> <span class="t">Vec3</span>.new((x[<span class="n">0</span>] <span class="o">+</span> dv[<span class="n">0</span>]).to_f32, (x[<span class="n">1</span>] <span class="o">+</span> dv[<span class="n">1</span>]).to_f32, (x[<span class="n">2</span>] <span class="o">+</span> dv[<span class="n">2</span>]).to_f32)
+                kind <span class="o">=</span> c.abs
+                color <span class="o">=</span> <span class="t">PALETTE</span>[kind]
+                normal <span class="o">=</span> <span class="k">if</span> c <span class="o">&gt;</span> <span class="n">0</span>
+                           <span class="t">Vec3</span>.new(q[<span class="n">0</span>].to_f32, q[<span class="n">1</span>].to_f32, q[<span class="n">2</span>].to_f32)
+                         <span class="k">else</span>
+                           <span class="t">Vec3</span>.new(<span class="o">-</span>q[<span class="n">0</span>].to_f32, <span class="o">-</span>q[<span class="n">1</span>].to_f32, <span class="o">-</span>q[<span class="n">2</span>].to_f32)
+                         <span class="k">end</span>
+                add_face(mesh, p0, p1, p2, p3, normal, color)
+                quads <span class="o">+=</span> <span class="n">1</span>
+                h.times <span class="k">do</span> <span class="o">|</span>ly<span class="o">|</span>
+                  w.times <span class="k">do</span> <span class="o">|</span>lx<span class="o">|</span>
+                    mask[n <span class="o">+</span> lx <span class="o">+</span> ly <span class="o">*</span> dims[u]] <span class="o">=</span> <span class="n">0</span>
+                  <span class="k">end</span>
+                <span class="k">end</span>
+                i <span class="o">+=</span> w
+                n <span class="o">+=</span> w
+              <span class="k">else</span>
+                i <span class="o">+=</span> <span class="n">1</span>
+                n <span class="o">+=</span> <span class="n">1</span>
+              <span class="k">end</span>
+            <span class="k">end</span>
+            j <span class="o">+=</span> <span class="n">1</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+      @mesh_quads <span class="o">=</span> quads
+      @mesh_triangles <span class="o">=</span> quads <span class="o">*</span> <span class="n">2</span>
+      mesh
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">add_face</span>(mesh : <span class="t">Mesh</span>, a : <span class="t">Vec3</span>, b : <span class="t">Vec3</span>, c : <span class="t">Vec3</span>, d : <span class="t">Vec3</span>, normal : <span class="t">Vec3</span>, color : <span class="t">Color</span>) : <span class="t">Nil</span>
+      ia <span class="o">=</span> mesh.add_vertex(a, normal, <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>, color)
+      ib <span class="o">=</span> mesh.add_vertex(b, normal, <span class="t">Vec2</span>.new(<span class="n">1</span>, <span class="n">0</span>), color)
+      ic <span class="o">=</span> mesh.add_vertex(c, normal, <span class="t">Vec2</span><span class="t">::</span><span class="t">ONE</span>, color)
+      id <span class="o">=</span> mesh.add_vertex(d, normal, <span class="t">Vec2</span>.new(<span class="n">0</span>, <span class="n">1</span>), color)
+      mesh.add_quad(ia, ib, ic, id)
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre>
+</details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./voxel.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
+</body></html>
