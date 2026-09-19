@@ -197,7 +197,7 @@ cd .. && eagle.cr/bin/eagle init mygame --local eagle.cr --yes   # a game that u
 `examples/` contains complete, self-contained programs (no external assets):
 
 * **Games (2D):** `chess` (full rules + alpha-beta AI), `checkers` (1 or 2 players, AI), `breakout`, `asteroids`, `platformer`, `snake`, `roguelike`
-* **Games (3D):** `coinrush3d`, `joyride` (an infinite streamed city/countryside driving game with traffic, police, pedestrians and missions), `fps` (Neon Bastion: mouse-look arena shooter with two weapons, grunt/charger AI, Waves and Deathmatch)
+* **Games (3D):** `coinrush3d`, `joyride` (an infinite streamed city/countryside driving game with traffic, police, pedestrians and missions), `fps` (Neon Bastion: mouse-look arena shooter with two weapons, grunt/charger AI, Waves and Deathmatch), `voxel` (noise island you walk, break and paint from a colour palette)
 * **Feature tests:** `smoke`, `sandbox2d`, `physics`, `physics3d`, `ui`, `interactions`, `embedded`, `flythrough3d`, `spatial_audio3d`, `algorithms` (A*, noise, Poisson disk, flocking, FOV)
 
 Every example supports `EAGLE_FRAMES=60 EAGLE_SCREENSHOT=out.png` for automated verification.

@@ -76,7 +76,7 @@ describe Eagle::Mesh do
 end
 
 describe Eagle::Node3D do
-  before_each { SceneTree.reset }
+  before_each { SceneTree.reset; Scene3D.reset }
 
   it "composes transforms and looks at targets" do
     parent = Node3D.new(position: v3(10, 0, 0))
@@ -135,7 +135,7 @@ describe Eagle::Node3D do
 end
 
 describe Eagle::Renderer3D do
-  before_each { SceneTree.reset }
+  before_each { SceneTree.reset; Scene3D.reset }
 
   gpu_it "renders a lit scene into a canvas" do
     root = SceneTree.root
