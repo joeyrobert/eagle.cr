@@ -54,6 +54,42 @@ module Eagle
     def initialize(@text); end
   end
 
+  # The in-progress text of an input method (IME), such as the kanji candidates being chosen
+  # before the player commits them. An empty `text` means composition ended or was cancelled;
+  # the committed text then arrives as a `TextEvent`. `TextInput` underlines it while it is shown.
+  #
+  # ```
+  # Eagle.inject(CompositionEvent.new("にほん"))
+  # ```
+  class CompositionEvent < Event
+    # The preedit string, or empty when composition is over.
+    getter text : String
+    # Creates a composition event.
+    def initialize(@text); end
+  end
+
+  # What a clipboard command wants to do.
+  enum ClipboardAction
+    Paste
+    Copy
+    Cut
+  end
+
+  # A paste, copy or cut requested by the browser (menu, shortcut or mobile toolbar), where
+  # the clipboard is only readable from inside such an event. For `Paste`, `text` is what was pasted.
+  #
+  # ```
+  # Eagle.inject(ClipboardEvent.new(ClipboardAction::Paste, "hello"))
+  # ```
+  class ClipboardEvent < Event
+    # Paste, copy or cut.
+    getter action : ClipboardAction
+    # The pasted text; empty for copy and cut.
+    getter text : String
+    # Creates a clipboard event.
+    def initialize(@action, @text = ""); end
+  end
+
   # A mouse button went down or up. `position` is in window coordinates, and `clicks` is
   # 2 for a double-click.
   class MouseButtonEvent < Event

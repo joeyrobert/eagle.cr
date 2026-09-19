@@ -146,6 +146,12 @@ module Eagle
     # Turns OS text input on or off. While on, typing produces `TextEvent`s and fills `text`.
     # `TextInput` controls handle this for you.
     def self.text_input=(v : Bool); Eagle.platform?.try(&.text_input=(v)); end
+    # Tells the OS where the text caret is, so IME candidate windows and on-screen keyboards
+    # appear next to it. *rect* is the caret area in window coordinates. `TextInput` does this for you.
+    def self.text_input_area(rect : Rect, text : String = "", caret : Int32 = 0) : Nil
+      Eagle.platform?.try(&.set_text_input_area(rect, text, caret))
+    end
+
     # True if any key, mouse button or gamepad button went down this frame. Handy for "press any key".
     def self.any_pressed? : Bool; @@any_pressed; end
 
@@ -320,6 +326,7 @@ module Eagle
           @@down[i] = false
         end
       when TextEvent then @@text += e.text
+      when CompositionEvent then nil
       when MouseMotionEvent
         @@mouse = e.position
         @@mouse_delta += e.delta

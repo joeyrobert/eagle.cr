@@ -67,6 +67,9 @@ module Eagle
       abstract def clipboard=(s : String)
       # Starts or stops OS text input.
       abstract def text_input=(enabled : Bool)
+      # Tells the OS where the text caret is (in window coordinates) and what the focused field
+      # holds, so IME candidate windows and on-screen keyboards can sit next to it.
+      def set_text_input_area(rect : Rect, text : String, caret : Int32) : Nil; end
       # Folder containing the executable.
       abstract def base_path : String
       # A writable folder for saves and settings, per organization and app.
