@@ -6,7 +6,8 @@
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
 <body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
-<main class="wrap"><div class="play"><h1>Roguelike</h1><p class="lead">Procedural dungeons, shadowcasting field of view, monsters that chase, items, five levels.</p>
+<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Roguelike</li></ol></nav>
+<div class="play"><h1>Roguelike</h1><p class="lead">Procedural dungeons, shadowcasting field of view, monsters that chase, items, five levels.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
 <p class="controls">Arrows/WASD/hjkl move · Space wait · Enter descends on > · R restart</p>
 <details><summary>Source: <code>examples/roguelike/main.cr</code></summary><h3>examples/roguelike/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
@@ -302,56 +303,17 @@
 
     <span class="k">def</span> <span class="m">walkable_count</span> : <span class="t">Int32</span>; @tiles.count(<span class="o">&amp;</span>.walkable?); <span class="k">end</span>
 
-    <span class="c"># Symmetric shadowcasting FOV (recursive, 8 octants).</span>
+    <span class="c"># Symmetric shadowcasting FOV via `Eagle::Grid.field_of_view`.</span>
     <span class="k">def</span> <span class="m">compute_fov</span>(ox, oy, radius) : <span class="t">Nil</span>
       @visible.fill(<span class="n">false</span>)
-      mark_visible(ox, oy)
-      <span class="n">8</span>.times { <span class="o">|</span>oct<span class="o">|</span> cast_light(ox, oy, radius, <span class="n">1</span>, <span class="n">1.0</span>, <span class="n">0.0</span>, oct) }
-    <span class="k">end</span>
-
-    <span class="k">private</span> <span class="k">def</span> <span class="m">mark_visible</span>(x, y)
-      <span class="k">return</span> <span class="k">unless</span> in_bounds?(x, y)
-      @visible[y <span class="o">*</span> @width <span class="o">+</span> x] <span class="o">=</span> <span class="n">true</span>
-      @explored[y <span class="o">*</span> @width <span class="o">+</span> x] <span class="o">=</span> <span class="n">true</span>
-    <span class="k">end</span>
-
-    <span class="t">MULT</span> <span class="o">=</span> [[<span class="n">1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-1</span>, <span class="n">-1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">1</span>], [<span class="n">0</span>, <span class="n">1</span>, <span class="n">-1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-1</span>, <span class="n">1</span>, <span class="n">0</span>], [<span class="n">0</span>, <span class="n">1</span>, <span class="n">1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-1</span>, <span class="n">-1</span>, <span class="n">0</span>], [<span class="n">1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">1</span>, <span class="n">-1</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">-1</span>]]
-
-    <span class="k">private</span> <span class="k">def</span> <span class="m">cast_light</span>(cx, cy, radius, row, start : <span class="t">Float64</span>, finish : <span class="t">Float64</span>, oct)
-      <span class="k">return</span> <span class="k">if</span> start <span class="o">&lt;</span> finish
-      xx <span class="o">=</span> <span class="t">MULT</span>[<span class="n">0</span>][oct]; xy <span class="o">=</span> <span class="t">MULT</span>[<span class="n">1</span>][oct]; yx <span class="o">=</span> <span class="t">MULT</span>[<span class="n">2</span>][oct]; yy <span class="o">=</span> <span class="t">MULT</span>[<span class="n">3</span>][oct]
-      r2 <span class="o">=</span> radius <span class="o">*</span> radius
-      (row..radius).each <span class="k">do</span> <span class="o">|</span>j<span class="o">|</span>
-        dx <span class="o">=</span> <span class="o">-</span>j <span class="o">-</span> <span class="n">1</span>; dy <span class="o">=</span> <span class="o">-</span>j
-        blocked <span class="o">=</span> <span class="n">false</span>
-        new_start <span class="o">=</span> start
-        <span class="k">while</span> dx <span class="o">&lt;=</span> <span class="n">0</span>
-          dx <span class="o">+=</span> <span class="n">1</span>
-          x <span class="o">=</span> cx <span class="o">+</span> dx <span class="o">*</span> xx <span class="o">+</span> dy <span class="o">*</span> xy
-          y <span class="o">=</span> cy <span class="o">+</span> dx <span class="o">*</span> yx <span class="o">+</span> dy <span class="o">*</span> yy
-          l_slope <span class="o">=</span> (dx <span class="o">-</span> <span class="n">0.5</span>) <span class="o">/</span> (dy <span class="o">+</span> <span class="n">0.5</span>)
-          r_slope <span class="o">=</span> (dx <span class="o">+</span> <span class="n">0.5</span>) <span class="o">/</span> (dy <span class="o">-</span> <span class="n">0.5</span>)
-          <span class="k">if</span> start <span class="o">&lt;</span> r_slope
-            <span class="k">next</span>
-          <span class="k">elsif</span> finish <span class="o">&gt;</span> l_slope
-            <span class="k">break</span>
-          <span class="k">end</span>
-          mark_visible(x, y) <span class="k">if</span> dx <span class="o">*</span> dx <span class="o">+</span> dy <span class="o">*</span> dy <span class="o">&lt;</span> r2
-          <span class="k">if</span> blocked
-            <span class="k">if</span> <span class="k">self</span>[x, y].opaque?
-              new_start <span class="o">=</span> r_slope
-              <span class="k">next</span>
-            <span class="k">else</span>
-              blocked <span class="o">=</span> <span class="n">false</span>
-              start <span class="o">=</span> new_start
-            <span class="k">end</span>
-          <span class="k">elsif</span> <span class="k">self</span>[x, y].opaque? <span class="o">&amp;&amp;</span> j <span class="o">&lt;</span> radius
-            blocked <span class="o">=</span> <span class="n">true</span>
-            cast_light(cx, cy, radius, j <span class="o">+</span> <span class="n">1</span>, start, l_slope, oct)
-            new_start <span class="o">=</span> r_slope
-          <span class="k">end</span>
-        <span class="k">end</span>
-        <span class="k">break</span> <span class="k">if</span> blocked
+      seen <span class="o">=</span> <span class="t">Eagle</span><span class="t">::</span><span class="t">Grid</span>.field_of_view({ox, oy}, radius) <span class="k">do</span> <span class="o">|</span>x, y<span class="o">|</span>
+        <span class="o">!</span>in_bounds?(x, y) <span class="o">||</span> <span class="k">self</span>[x, y].opaque?
+      <span class="k">end</span>
+      seen.each <span class="k">do</span> <span class="o">|</span>(x, y)<span class="o">|</span>
+        <span class="k">next</span> <span class="k">unless</span> in_bounds?(x, y)
+        i <span class="o">=</span> y <span class="o">*</span> @width <span class="o">+</span> x
+        @visible[i] <span class="o">=</span> <span class="n">true</span>
+        @explored[i] <span class="o">=</span> <span class="n">true</span>
       <span class="k">end</span>
     <span class="k">end</span>
 

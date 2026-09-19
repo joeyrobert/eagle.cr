@@ -6,7 +6,8 @@
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
 <body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
-<main class="wrap"><div class="play"><h1>Platformer</h1><p class="lead">ASCII level to TileMap + colliders, coyote time, jump buffering, enemies you can stomp, coins and a goal.</p>
+<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Platformer</li></ol></nav>
+<div class="play"><h1>Platformer</h1><p class="lead">ASCII level to TileMap + colliders, coyote time, jump buffering, enemies you can stomp, coins and a goal.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
 <p class="controls">Arrows/WASD move · Space jump · R restart</p>
 <details><summary>Source: <code>examples/platformer/main.cr</code></summary><h3>examples/platformer/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>

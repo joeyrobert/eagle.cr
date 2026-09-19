@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Bastion (FPS) · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Neon Bastion (FPS)</li></ol></nav>
+<div class="play"><h1>Neon Bastion (FPS)</h1><p class="lead">First-person arena shooter: mouse look, pulse rifle and scattergun, grunt and charger AI, Waves and Deathmatch.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Click to capture mouse · WASD move · Shift sprint · fire click/RB · 1/2 weapons · F1 Waves · F2 Deathmatch</p>
+<details><summary>Source: <code>examples/fps/main.cr</code></summary><h3>examples/fps/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./game&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
+
+<span class="c"># Neon Bastion is a compact first-person shooter built entirely from procedural meshes and</span>
+<span class="c"># synthesized audio. F1 starts escalating Waves; F2 starts a 15-frag Deathmatch.</span>
+<span class="k">class</span> <span class="t">NeonBastion</span> <span class="o">&lt;</span> <span class="t">App</span>
+  <span class="t">MOVE_SPEED</span> <span class="o">=</span> <span class="n">8_f32</span>
+  @game <span class="o">=</span> <span class="t">EagleFPS</span><span class="t">::</span><span class="t">Game</span>.new
+  @camera <span class="o">=</span> <span class="t">Camera3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">1.65</span>, <span class="n">0</span>))
+  @enemy_nodes <span class="o">=</span> {} <span class="k">of</span> <span class="t">Int32</span> <span class="o">=&gt;</span> <span class="t">MeshInstance3D</span>
+  @yaw <span class="o">=</span> <span class="n">0_f32</span>
+  @pitch <span class="o">=</span> <span class="n">0_f32</span>
+  @bob <span class="o">=</span> <span class="n">0_f32</span>
+  @flash <span class="o">=</span> <span class="n">0_f32</span>
+  @tracer : {<span class="t">Vec3</span>, <span class="t">Vec3</span>, <span class="t">Color</span>}? <span class="o">=</span> <span class="n">nil</span>
+  @shot_sound <span class="o">=</span> <span class="t">NeonBastion</span>.shot_sound
+  @scatter_sound <span class="o">=</span> <span class="t">NeonBastion</span>.scatter_sound
+  @impact_sound <span class="o">=</span> <span class="t">NeonBastion</span>.impact_sound
+  @hurt_sound <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">110</span>, <span class="n">0.18</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Saw</span>, <span class="n">0.25</span>)
+  @step_sound <span class="o">=</span> <span class="t">NeonBastion</span>.step_sound
+  @death_sound <span class="o">=</span> <span class="t">NeonBastion</span>.death_sound
+  @grunt_hum <span class="o">=</span> <span class="t">NeonBastion</span>.grunt_hum
+  @charger_hum <span class="o">=</span> <span class="t">NeonBastion</span>.charger_hum
+  @old_health <span class="o">=</span> <span class="n">100</span>
+  @tip_time <span class="o">=</span> <span class="n">8_f32</span>
+  @step_timer <span class="o">=</span> <span class="n">0_f32</span>
+
+  <span class="k">def</span> <span class="m">self</span>.shot_sound : <span class="t">Sound</span>
+    rng <span class="o">=</span> <span class="t">Random</span>.new(<span class="n">24</span>)
+    <span class="t">Sound</span>.generate(<span class="n">0.22</span>) { <span class="o">|</span>t<span class="o">|</span> ((rng.rand(<span class="n">-1.0</span>..<span class="n">1.0</span>) <span class="o">*</span> <span class="n">0.35</span> <span class="o">+</span> <span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">105</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="n">0.5</span>) <span class="o">*</span> <span class="t">Math</span>.exp(<span class="o">-</span>t <span class="o">*</span> <span class="n">25</span>)).to_f32 }
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">self</span>.scatter_sound : <span class="t">Sound</span>
+    rng <span class="o">=</span> <span class="t">Random</span>.new(<span class="n">71</span>)
+    <span class="t">Sound</span>.generate(<span class="n">0.35</span>) { <span class="o">|</span>t<span class="o">|</span> ((rng.rand(<span class="n">-1.0</span>..<span class="n">1.0</span>) <span class="o">*</span> <span class="n">0.7</span> <span class="o">+</span> <span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">58</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="n">0.55</span>) <span class="o">*</span> <span class="t">Math</span>.exp(<span class="o">-</span>t <span class="o">*</span> <span class="n">15</span>)).to_f32 }
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">self</span>.impact_sound : <span class="t">Sound</span>
+    <span class="t">Sound</span>.generate(<span class="n">0.12</span>) { <span class="o">|</span>t<span class="o">|</span> (<span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">340</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="t">Math</span>.exp(<span class="o">-</span>t <span class="o">*</span> <span class="n">35</span>) <span class="o">*</span> <span class="n">0.35</span>).to_f32 }
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">self</span>.step_sound : <span class="t">Sound</span>
+    rng <span class="o">=</span> <span class="t">Random</span>.new(<span class="n">3</span>)
+    <span class="t">Sound</span>.generate(<span class="n">0.09</span>) { <span class="o">|</span>t<span class="o">|</span> (rng.rand(<span class="n">-1.0</span>..<span class="n">1.0</span>) <span class="o">*</span> <span class="t">Math</span>.exp(<span class="o">-</span>t <span class="o">*</span> <span class="n">42</span>) <span class="o">*</span> <span class="n">0.45</span>).to_f32 }
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">self</span>.death_sound : <span class="t">Sound</span>
+    <span class="t">Sound</span>.generate(<span class="n">0.32</span>) { <span class="o">|</span>t<span class="o">|</span> (<span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">86</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="t">Math</span>.exp(<span class="o">-</span>t <span class="o">*</span> <span class="n">7</span>) <span class="o">*</span> <span class="n">0.5</span> <span class="o">+</span> <span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">38</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="t">Math</span>.exp(<span class="o">-</span>t <span class="o">*</span> <span class="n">5</span>) <span class="o">*</span> <span class="n">0.4</span>).to_f32 }
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">self</span>.grunt_hum : <span class="t">Sound</span>
+    <span class="t">Sound</span>.generate(<span class="n">1.0</span>) { <span class="o">|</span>t<span class="o">|</span> (<span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">88</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="n">0.16</span> <span class="o">+</span> <span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">176</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="n">0.05</span>).to_f32 }
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">self</span>.charger_hum : <span class="t">Sound</span>
+    <span class="t">Sound</span>.generate(<span class="n">1.0</span>) { <span class="o">|</span>t<span class="o">|</span> (<span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">42</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="n">0.2</span> <span class="o">+</span> <span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">63</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="n">0.08</span>).to_f32 }
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">load</span>
+    <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;forward&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">W</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;back&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">S</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;fire&quot;</span>, <span class="t">MouseButton</span><span class="t">::</span><span class="t">Left</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">RightShoulder</span>
+    <span class="t">Input</span>.map <span class="s">&quot;sprint&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">LShift</span>, <span class="t">GamepadButton</span><span class="t">::</span><span class="t">LeftStick</span>
+    <span class="o">{%</span> <span class="k">unless</span> flag?(<span class="n">:wasm32</span>) <span class="o">%}</span>
+      <span class="t">Window</span>.relative_mouse <span class="o">=</span> <span class="n">true</span>
+    <span class="o">{%</span> <span class="k">end</span> <span class="o">%}</span>
+    <span class="t">Window</span>.cursor_visible <span class="o">=</span> <span class="n">false</span>
+
+    env <span class="o">=</span> <span class="t">Scene3D</span>.environment
+    env.sky_colors(<span class="t">Color</span>.hex(<span class="s">&quot;#050817&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#182342&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#070b16&quot;</span>))
+    env.fog(<span class="n">30</span>, <span class="n">65</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#101830&quot;</span>))
+    env.ambient <span class="o">=</span> <span class="t">Color</span>.new(<span class="n">0.16</span>, <span class="n">0.18</span>, <span class="n">0.28</span>)
+    env.shadows <span class="o">=</span> <span class="n">true</span>
+    root <span class="o">=</span> <span class="t">SceneTree</span>.root
+    floor_tex <span class="o">=</span> <span class="t">Texture</span>.new(<span class="t">Image</span>.checkerboard(<span class="n">64</span>, <span class="n">64</span>, <span class="n">8</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#171d30&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#202943&quot;</span>)), wrap: <span class="t">GPU</span><span class="t">::</span><span class="t">Wrap</span><span class="t">::</span><span class="t">Repeat</span>)
+    root.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.plane(<span class="n">50</span>, <span class="n">50</span>, <span class="n">8</span>, uv_scale: <span class="n">16</span>), <span class="t">Material</span>.new(texture: floor_tex, specular: <span class="n">0.12</span>)))
+    @game.arena.obstacles.each_with_index <span class="k">do</span> <span class="o">|</span>wall, i<span class="o">|</span>
+      height <span class="o">=</span> i <span class="o">&lt;</span> <span class="n">4</span> ? <span class="n">4_f32</span> : <span class="n">1.8_f32</span> <span class="o">+</span> (i <span class="o">%</span> <span class="n">3</span>) <span class="o">*</span> <span class="n">0.7_f32</span>
+      color <span class="o">=</span> i <span class="o">&lt;</span> <span class="n">4</span> ? <span class="t">Color</span>.hex(<span class="s">&quot;#202b47&quot;</span>) : <span class="t">Color</span>.hsv(<span class="n">205</span> <span class="o">+</span> i <span class="o">*</span> <span class="n">9</span>, <span class="n">0.52</span>, <span class="n">0.62</span>)
+      mesh <span class="o">=</span> <span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.box(wall.half.x <span class="o">*</span> <span class="n">2</span>, height, wall.half.y <span class="o">*</span> <span class="n">2</span>), <span class="t">Material</span>.new(color, shininess: <span class="n">36</span>, specular: <span class="n">0.25</span>), position: v3(wall.center.x, height <span class="o">/</span> <span class="n">2</span>, wall.center.y))
+      root.add(mesh)
+    <span class="k">end</span>
+    root.add(<span class="t">DirectionalLight3D</span>.new(v3(<span class="n">-0.5</span>, <span class="n">-1</span>, <span class="n">-0.25</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#9eb8ff&quot;</span>), <span class="n">0.65</span>))
+    [<span class="n">-16</span>, <span class="n">0</span>, <span class="n">16</span>].each <span class="k">do</span> <span class="o">|</span>x<span class="o">|</span>
+      root.add(<span class="t">PointLight3D</span>.new(v3(x, <span class="n">3.5</span>, <span class="n">-8</span>), <span class="t">Color</span>.hex(x <span class="o">==</span> <span class="n">0</span> ? <span class="s">&quot;#ff3d9a&quot;</span> : <span class="s">&quot;#39d8ff&quot;</span>), <span class="n">1.8</span>, <span class="n">15</span>))
+    <span class="k">end</span>
+    <span class="c"># A low positional beacon makes orientation audible even before the first shot.</span>
+    beacon <span class="o">=</span> <span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.cylinder(<span class="n">0.45</span>, <span class="n">2.2</span>, <span class="n">12</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#ff3d9a&quot;</span>), emissive: <span class="t">Color</span>.hex(<span class="s">&quot;#531536&quot;</span>)), position: v3(<span class="n">0</span>, <span class="n">1.1</span>, <span class="n">-10</span>))
+    beacon.add(<span class="t">AudioPlayer3D</span>.new(<span class="t">Sound</span>.tone(<span class="n">72</span>, <span class="n">2</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Saw</span>, volume: <span class="n">0.08</span>), loop: <span class="n">true</span>, autoplay: <span class="n">true</span>, min_distance: <span class="n">3</span>, max_distance: <span class="n">35</span>))
+    root.add(beacon, @camera)
+    sync_enemies
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    @tip_time <span class="o">-=</span> dt
+    @flash <span class="o">=</span> <span class="t">Math</span>.max(<span class="n">0_f32</span>, @flash <span class="o">-</span> dt)
+    <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">F1</span>)
+      restart(<span class="t">EagleFPS</span><span class="t">::</span><span class="t">Mode</span><span class="t">::</span><span class="t">Waves</span>)
+    <span class="k">elsif</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">F2</span>)
+      restart(<span class="t">EagleFPS</span><span class="t">::</span><span class="t">Mode</span><span class="t">::</span><span class="t">Deathmatch</span>)
+    <span class="k">elsif</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">R</span>)
+      restart(@game.mode)
+    <span class="k">end</span>
+    @game.switch_weapon(<span class="n">0</span>) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Num1</span>)
+    @game.switch_weapon(<span class="n">1</span>) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Num2</span>)
+
+    <span class="c"># Calling this from a click is required by browser pointer-lock&#39;s user-gesture rule;</span>
+    <span class="c"># repeating it is harmless and lets a click recapture after Escape releases the lock.</span>
+    <span class="t">Window</span>.relative_mouse <span class="o">=</span> <span class="n">true</span> <span class="k">if</span> <span class="t">Input</span>.mouse_pressed?(<span class="t">MouseButton</span><span class="t">::</span><span class="t">Left</span>)
+    @yaw <span class="o">-=</span> <span class="t">Input</span>.mouse_delta.x <span class="o">*</span> <span class="n">0.0025</span>
+    @pitch <span class="o">=</span> (@pitch <span class="o">-</span> <span class="t">Input</span>.mouse_delta.y <span class="o">*</span> <span class="n">0.0025</span>).clamp(<span class="n">-1.25_f32</span>, <span class="n">1.25_f32</span>)
+    <span class="k">if</span> pad <span class="o">=</span> <span class="t">Input</span>.gamepad
+      @yaw <span class="o">-=</span> pad.right_stick.x <span class="o">*</span> dt <span class="o">*</span> <span class="n">2.4</span>
+      @pitch <span class="o">=</span> (@pitch <span class="o">-</span> pad.right_stick.y <span class="o">*</span> dt <span class="o">*</span> <span class="n">2.0</span>).clamp(<span class="n">-1.25_f32</span>, <span class="n">1.25_f32</span>)
+    <span class="k">end</span>
+
+    input <span class="o">=</span> <span class="t">Input</span>.vector(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>, <span class="s">&quot;forward&quot;</span>, <span class="s">&quot;back&quot;</span>)
+    forward <span class="o">=</span> v2(<span class="t">Math</span>.sin(@yaw), <span class="o">-</span><span class="t">Math</span>.cos(@yaw))
+    right <span class="o">=</span> v2(<span class="t">Math</span>.cos(@yaw), <span class="t">Math</span>.sin(@yaw))
+    speed <span class="o">=</span> <span class="t">MOVE_SPEED</span> <span class="o">*</span> (<span class="t">Input</span>.down?(<span class="s">&quot;sprint&quot;</span>) ? <span class="n">1.55_f32</span> : <span class="n">1_f32</span>)
+    motion <span class="o">=</span> (right <span class="o">*</span> input.x <span class="o">+</span> forward <span class="o">*</span> <span class="o">-</span>input.y).limit(<span class="n">1</span>) <span class="o">*</span> speed <span class="o">*</span> dt
+    @game.move_player(motion)
+    @bob <span class="o">+=</span> motion.length <span class="o">*</span> <span class="n">1.6</span>
+    footstep(dt, motion)
+
+    <span class="k">if</span> <span class="t">Input</span>.down?(<span class="s">&quot;fire&quot;</span>)
+      result <span class="o">=</span> @game.shoot(forward)
+      fire(result) <span class="k">if</span> result.fired
+    <span class="k">end</span>
+    @game.update(dt)
+    <span class="k">if</span> @game.health <span class="o">&lt;</span> @old_health
+      <span class="t">Audio</span>.play_at(@hurt_sound, @camera.position, volume: <span class="n">0.65</span>, min_distance: <span class="n">1</span>, max_distance: <span class="n">20</span>)
+      @flash <span class="o">=</span> <span class="n">0.22_f32</span>
+      <span class="k">if</span> @game.health <span class="o">&lt;=</span> <span class="n">0</span>
+        <span class="t">Audio</span>.play_at(@death_sound, @camera.position, volume: <span class="n">0.85</span>, pitch: <span class="n">0.72</span>, min_distance: <span class="n">1</span>, max_distance: <span class="n">24</span>)
+      <span class="k">end</span>
+    <span class="k">end</span>
+    @old_health <span class="o">=</span> @game.health
+    sync_enemies
+
+    bob_y <span class="o">=</span> motion.length <span class="o">&gt;</span> <span class="n">0.001</span> ? <span class="t">Math</span>.sin(@bob) <span class="o">*</span> <span class="n">0.035</span> : <span class="n">0</span>
+    @camera.position <span class="o">=</span> v3(@game.player.x, <span class="n">1.65</span> <span class="o">+</span> bob_y, @game.player.y)
+    look <span class="o">=</span> look_direction
+    @camera.look_at(@camera.position <span class="o">+</span> look)
+    draw_debug(look)
+    <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+      <span class="t">Window</span>.relative_mouse <span class="o">=</span> <span class="n">false</span>
+      <span class="t">Window</span>.cursor_visible <span class="o">=</span> <span class="n">true</span>
+      <span class="t">Eagle</span>.quit
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">fire</span>(result : <span class="t">EagleFPS</span><span class="t">::</span><span class="t">ShotResult</span>) : <span class="t">Nil</span>
+    sound <span class="o">=</span> @game.weapon_index <span class="o">==</span> <span class="n">0</span> ? @shot_sound : @scatter_sound
+    <span class="t">Audio</span>.play_at(sound, @camera.position <span class="o">+</span> look_direction <span class="o">*</span> <span class="n">0.5</span>, volume: <span class="n">0.8</span>, min_distance: <span class="n">2</span>, max_distance: <span class="n">50</span>)
+    endpoint <span class="o">=</span> v3(result.endpoint.x, <span class="n">1.1</span>, result.endpoint.y)
+    color <span class="o">=</span> @game.weapon_index <span class="o">==</span> <span class="n">0</span> ? <span class="t">Color</span>.hex(<span class="s">&quot;#69e9ff&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#ffbd59&quot;</span>)
+    @tracer <span class="o">=</span> {@camera.position <span class="o">+</span> look_direction <span class="o">*</span> <span class="n">0.6</span>, endpoint, color}
+    @flash <span class="o">=</span> <span class="n">0.08_f32</span>
+    <span class="k">if</span> result.hits <span class="o">&gt;</span> <span class="n">0</span>
+      <span class="t">Audio</span>.play_at(@impact_sound, endpoint, volume: <span class="n">0.65</span>, min_distance: <span class="n">2</span>, max_distance: <span class="n">35</span>)
+    <span class="k">end</span>
+    <span class="k">if</span> result.kills <span class="o">&gt;</span> <span class="n">0</span>
+      <span class="t">Audio</span>.play_at(@death_sound, endpoint, volume: <span class="n">0.75</span>, pitch: <span class="n">0.9</span> <span class="o">+</span> result.kills <span class="o">*</span> <span class="n">0.06</span>, min_distance: <span class="n">2</span>, max_distance: <span class="n">40</span>)
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">footstep</span>(dt : <span class="t">Float32</span>, motion : <span class="t">Vec2</span>) : <span class="t">Nil</span>
+    <span class="k">if</span> @game.health <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> motion.length <span class="o">&gt;</span> <span class="n">0.001</span>
+      @step_timer <span class="o">+=</span> dt <span class="o">*</span> (<span class="t">Input</span>.down?(<span class="s">&quot;sprint&quot;</span>) ? <span class="n">1.55_f32</span> : <span class="n">1_f32</span>)
+      <span class="k">if</span> @step_timer <span class="o">&gt;=</span> <span class="n">0.38</span>
+        @step_timer <span class="o">=</span> <span class="n">0</span>
+        <span class="t">Audio</span>.play_at(@step_sound, v3(@game.player.x, <span class="n">0.08</span>, @game.player.y), volume: <span class="n">0.45</span>, pitch: <span class="n">0.88</span> <span class="o">+</span> <span class="t">Random</span>.rand <span class="o">*</span> <span class="n">0.22</span>, min_distance: <span class="n">0.6</span>, max_distance: <span class="n">14</span>)
+      <span class="k">end</span>
+    <span class="k">else</span>
+      @step_timer <span class="o">=</span> <span class="n">0.28_f32</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">look_direction</span> : <span class="t">Vec3</span>
+    cp <span class="o">=</span> <span class="t">Math</span>.cos(@pitch)
+    v3(<span class="t">Math</span>.sin(@yaw) <span class="o">*</span> cp, <span class="t">Math</span>.sin(@pitch), <span class="o">-</span><span class="t">Math</span>.cos(@yaw) <span class="o">*</span> cp).normalized
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">sync_enemies</span> : <span class="t">Nil</span>
+    alive_ids <span class="o">=</span> @game.enemies.<span class="k">select</span>(<span class="o">&amp;</span>.alive?).map(<span class="o">&amp;</span>.id)
+    @enemy_nodes.keys.each <span class="k">do</span> <span class="o">|</span>id<span class="o">|</span>
+      <span class="k">unless</span> alive_ids.includes?(id)
+        @enemy_nodes.delete(id).try(<span class="o">&amp;</span>.free)
+      <span class="k">end</span>
+    <span class="k">end</span>
+    @game.enemies.each <span class="k">do</span> <span class="o">|</span>enemy<span class="o">|</span>
+      <span class="k">next</span> <span class="k">unless</span> enemy.alive?
+      node <span class="o">=</span> @enemy_nodes[enemy.id]? <span class="o">||</span> <span class="k">begin</span>
+        charger <span class="o">=</span> enemy.kind.charger?
+        mesh <span class="o">=</span> charger ? <span class="t">Mesh</span>.sphere(<span class="n">0.78</span>, <span class="n">16</span>, <span class="n">10</span>) : <span class="t">Mesh</span>.capsule(<span class="n">0.48</span>, <span class="n">1.0</span>, <span class="n">16</span>)
+        color <span class="o">=</span> charger ? <span class="t">Color</span>.hex(<span class="s">&quot;#ff416c&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#5ee7ff&quot;</span>)
+        created <span class="o">=</span> <span class="t">MeshInstance3D</span>.new(mesh, <span class="t">Material</span>.new(color, emissive: color <span class="o">*</span> <span class="n">0.18</span>, shininess: <span class="n">48</span>, specular: <span class="n">0.35</span>))
+        hum <span class="o">=</span> <span class="t">AudioPlayer3D</span>.new(charger ? @charger_hum : @grunt_hum, loop: <span class="n">true</span>, autoplay: <span class="n">true</span>, volume: charger ? <span class="n">0.28</span> : <span class="n">0.16</span>, min_distance: <span class="n">1.2</span>, max_distance: <span class="n">22</span>)
+        created.add(hum)
+        <span class="t">SceneTree</span>.root.add(created)
+        @enemy_nodes[enemy.id] <span class="o">=</span> created
+      <span class="k">end</span>
+      height <span class="o">=</span> enemy.kind.charger? ? <span class="n">0.8_f32</span> : <span class="n">1.0_f32</span>
+      node.position <span class="o">=</span> v3(enemy.position.x, height <span class="o">+</span> <span class="t">Math</span>.sin(<span class="t">Clock</span>.elapsed <span class="o">*</span> <span class="n">4</span> <span class="o">+</span> enemy.id) <span class="o">*</span> <span class="n">0.05</span>, enemy.position.y)
+      node.look_at(v3(@game.player.x, height, @game.player.y))
+      node.scale <span class="o">=</span> <span class="n">0.82_f32</span> <span class="o">+</span> <span class="n">0.18_f32</span> <span class="o">*</span> (enemy.health <span class="o">/</span> (enemy.kind.charger? ? <span class="n">105_f32</span> : <span class="n">70_f32</span>)).clamp(<span class="n">0_f32</span>, <span class="n">1_f32</span>)
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_debug</span>(_look : <span class="t">Vec3</span>) : <span class="t">Nil</span>
+    <span class="k">if</span> tracer <span class="o">=</span> @tracer
+      <span class="t">Scene3D</span>.debug_line(tracer[<span class="n">0</span>], tracer[<span class="n">1</span>], tracer[<span class="n">2</span>])
+      @tracer <span class="o">=</span> <span class="n">nil</span>
+    <span class="k">end</span>
+    <span class="c"># Directional markers over enemies remain readable in dark cover.</span>
+    @game.enemies.each <span class="k">do</span> <span class="o">|</span>enemy<span class="o">|</span>
+      <span class="k">next</span> <span class="k">unless</span> enemy.alive?
+      p <span class="o">=</span> v3(enemy.position.x, enemy.kind.charger? ? <span class="n">1.7</span> : <span class="n">2.0</span>, enemy.position.y)
+      <span class="t">Scene3D</span>.debug_line(p, p <span class="o">+</span> v3(<span class="n">0</span>, <span class="n">0.18</span>, <span class="n">0</span>), enemy.kind.charger? ? <span class="t">Color</span>.hex(<span class="s">&quot;#ff416c&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#5ee7ff&quot;</span>))
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">restart</span>(mode : <span class="t">EagleFPS</span><span class="t">::</span><span class="t">Mode</span>) : <span class="t">Nil</span>
+    @enemy_nodes.each_value(<span class="o">&amp;</span>.free)
+    @enemy_nodes.clear
+    @game <span class="o">=</span> <span class="t">EagleFPS</span><span class="t">::</span><span class="t">Game</span>.new(mode)
+    @old_health <span class="o">=</span> @game.health
+    @tip_time <span class="o">=</span> <span class="n">5_f32</span>
+    @step_timer <span class="o">=</span> <span class="n">0_f32</span>
+    sync_enemies
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    w <span class="o">=</span> <span class="t">Window</span>.width
+    h <span class="o">=</span> <span class="t">Window</span>.height
+    <span class="c"># Weapon silhouette and recoil flash make firing legible without an external model.</span>
+    gun <span class="o">=</span> @game.weapon_index <span class="o">==</span> <span class="n">0</span> ? <span class="t">Color</span>.hex(<span class="s">&quot;#4d5e82&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#6a5238&quot;</span>)
+    g.polygon([v2(w <span class="o">*</span> <span class="n">0.56</span>, h), v2(w <span class="o">*</span> <span class="n">0.62</span>, h <span class="o">*</span> <span class="n">0.76</span>), v2(w <span class="o">*</span> <span class="n">0.75</span>, h <span class="o">*</span> <span class="n">0.8</span>), v2(w <span class="o">*</span> <span class="n">0.82</span>, h)], color: gun)
+    <span class="k">if</span> @flash <span class="o">&gt;</span> <span class="n">0</span>
+      g.circle(v2(w <span class="o">*</span> <span class="n">0.63</span>, h <span class="o">*</span> <span class="n">0.75</span>), <span class="n">9</span> <span class="o">+</span> @flash <span class="o">*</span> <span class="n">35</span>, color: <span class="t">Color</span>.new(<span class="n">1</span>, <span class="n">0.75</span>, <span class="n">0.25</span>, (@flash <span class="o">*</span> <span class="n">4</span>).clamp(<span class="n">0_f32</span>, <span class="n">1_f32</span>)))
+    <span class="k">end</span>
+    cross <span class="o">=</span> @game.cooldown <span class="o">&gt;</span> <span class="n">0</span> ? <span class="t">Color</span>.hex(<span class="s">&quot;#8190aa&quot;</span>) : <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>
+    g.line(w <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">12</span>, h <span class="o">/</span> <span class="n">2</span>, w <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">3</span>, h <span class="o">/</span> <span class="n">2</span>, cross, <span class="n">2</span>)
+    g.line(w <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">3</span>, h <span class="o">/</span> <span class="n">2</span>, w <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">12</span>, h <span class="o">/</span> <span class="n">2</span>, cross, <span class="n">2</span>)
+    g.line(w <span class="o">/</span> <span class="n">2</span>, h <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">12</span>, w <span class="o">/</span> <span class="n">2</span>, h <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">3</span>, cross, <span class="n">2</span>)
+    g.line(w <span class="o">/</span> <span class="n">2</span>, h <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">3</span>, w <span class="o">/</span> <span class="n">2</span>, h <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">12</span>, cross, <span class="n">2</span>)
+    panel_h <span class="o">=</span> @game.message.empty? ? <span class="n">70</span> : <span class="n">94</span>
+    g.rect(<span class="n">12</span>, <span class="n">12</span>, <span class="n">340</span>, panel_h, color: <span class="t">Color</span>.new(<span class="n">0.02</span>, <span class="n">0.03</span>, <span class="n">0.08</span>, <span class="n">0.78</span>))
+    g.print(<span class="s">&quot;</span><span class="i">#{</span>@game.mode<span class="i">}</span><span class="s">  </span><span class="i">#{</span>@game.mode.waves? ? <span class="s">&quot;WAVE </span><span class="i">#{</span>@game.wave<span class="i">}</span><span class="s">&quot;</span> : <span class="s">&quot;FRAGS </span><span class="i">#{</span>@game.score<span class="i">}</span><span class="s">/15&quot;</span><span class="i">}</span><span class="s">&quot;</span>, <span class="n">24</span>, <span class="n">22</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#69e9ff&quot;</span>))
+    g.print(<span class="s">&quot;HP </span><span class="i">#{</span>@game.health.to_s.rjust(<span class="n">3</span>)<span class="i">}</span><span class="s">   </span><span class="i">#{</span>@game.weapon.name.upcase<span class="i">}</span><span class="s">   K </span><span class="i">#{</span>@game.score<span class="i">}</span><span class="s"> / D </span><span class="i">#{</span>@game.deaths<span class="i">}</span><span class="s">&quot;</span>, <span class="n">24</span>, <span class="n">48</span>, @game.health <span class="o">&lt;</span> <span class="n">30</span> ? <span class="t">Color</span>.hex(<span class="s">&quot;#ff416c&quot;</span>) : <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.print(@game.message, <span class="n">24</span>, <span class="n">72</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#ffbd59&quot;</span>)) <span class="k">unless</span> @game.message.empty?
+    <span class="k">if</span> @game.health <span class="o">&lt;=</span> <span class="n">0</span> <span class="o">||</span> @game.finished?
+      text <span class="o">=</span> @game.finished? ? <span class="s">&quot;VICTORY\nR TO RESTART&quot;</span> : <span class="s">&quot;SYSTEM DOWN\nRESPAWNING&quot;</span>
+      g.printf(text, <span class="n">0</span>, h <span class="o">*</span> <span class="n">0.38</span>, w, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>, color: <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, scale: <span class="n">2</span>)
+    <span class="k">elsif</span> @tip_time <span class="o">&gt;</span> <span class="n">0</span>
+      g.rect(<span class="n">0</span>, h <span class="o">-</span> <span class="n">54</span>, w, <span class="n">54</span>, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.62</span>))
+      g.printf(<span class="s">&quot;Click to capture mouse. WASD move, Shift sprint, click/RB fire.&quot;</span>, <span class="n">0</span>, h <span class="o">-</span> <span class="n">42</span>, w, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>, color: <span class="t">Color</span>.gray(<span class="n">0.86</span>))
+      g.printf(<span class="s">&quot;1/2 weapons. F1 Waves. F2 Deathmatch.&quot;</span>, <span class="n">0</span>, h <span class="o">-</span> <span class="n">22</span>, w, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>, color: <span class="t">Color</span>.gray(<span class="n">0.86</span>))
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="t">Eagle</span>.run(<span class="t">NeonBastion</span>, title: <span class="s">&quot;Eagle: Neon Bastion&quot;</span>, width: <span class="n">1100</span>, height: <span class="n">680</span>, msaa: <span class="n">4</span>)
+</code></pre>
+<h3>examples/fps/game.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle/math/math&quot;</span>
+
+<span class="c"># Renderer-independent game rules for the FPS example. Keeping simulation here makes the</span>
+<span class="c"># arena, weapons, enemy decisions and game modes deterministic and cheap to spec.</span>
+<span class="k">module</span> <span class="t">EagleFPS</span>
+  <span class="k">include</span> <span class="t">Eagle</span>
+
+  <span class="k">enum</span> <span class="t">Mode</span>
+    <span class="t">Waves</span>
+    <span class="t">Deathmatch</span>
+  <span class="k">end</span>
+
+  <span class="k">enum</span> <span class="t">EnemyKind</span>
+    <span class="t">Grunt</span>
+    <span class="t">Charger</span>
+  <span class="k">end</span>
+
+  record <span class="t">Weapon</span>, name : <span class="t">String</span>, damage : <span class="t">Int32</span>, pellets : <span class="t">Int32</span>, spread : <span class="t">Float32</span>,
+    cooldown : <span class="t">Float32</span>, range : <span class="t">Float32</span>
+
+  <span class="t">RIFLE</span>      <span class="o">=</span> <span class="t">Weapon</span>.new(<span class="s">&quot;Pulse rifle&quot;</span>, <span class="n">34</span>, <span class="n">1</span>, <span class="n">0.006_f32</span>, <span class="n">0.16_f32</span>, <span class="n">42_f32</span>)
+  <span class="t">SCATTERGUN</span> <span class="o">=</span> <span class="t">Weapon</span>.new(<span class="s">&quot;Scattergun&quot;</span>, <span class="n">15</span>, <span class="n">7</span>, <span class="n">0.12_f32</span>, <span class="n">0.72_f32</span>, <span class="n">20_f32</span>)
+  <span class="t">WEAPONS</span>    <span class="o">=</span> [<span class="t">RIFLE</span>, <span class="t">SCATTERGUN</span>]
+
+  record <span class="t">Obstacle</span>, center : <span class="t">Vec2</span>, half : <span class="t">Vec2</span> <span class="k">do</span>
+    <span class="k">def</span> <span class="m">contains?</span>(p : <span class="t">Vec2</span>, radius : <span class="t">Number</span> <span class="o">=</span> <span class="n">0</span>) : <span class="t">Bool</span>
+      r <span class="o">=</span> radius.to_f32
+      (p.x <span class="o">-</span> center.x).abs <span class="o">&lt;=</span> half.x <span class="o">+</span> r <span class="o">&amp;&amp;</span> (p.y <span class="o">-</span> center.y).abs <span class="o">&lt;=</span> half.y <span class="o">+</span> r
+    <span class="k">end</span>
+
+    <span class="c"># Distance along a normalized ray, or nil. Slab intersection also makes walls occlude shots.</span>
+    <span class="k">def</span> <span class="m">ray_distance</span>(origin : <span class="t">Vec2</span>, direction : <span class="t">Vec2</span>, max_distance : <span class="t">Float32</span>) : <span class="t">Float32</span>?
+      lo <span class="o">=</span> center <span class="o">-</span> half
+      hi <span class="o">=</span> center <span class="o">+</span> half
+      t0 <span class="o">=</span> <span class="n">0_f32</span>
+      t1 <span class="o">=</span> max_distance
+      o <span class="o">=</span> origin.x
+      d <span class="o">=</span> direction.x
+      a <span class="o">=</span> lo.x
+      b <span class="o">=</span> hi.x
+      <span class="k">if</span> d.abs <span class="o">&lt;</span> <span class="n">1e-6</span>
+        <span class="k">return</span> <span class="n">nil</span> <span class="k">unless</span> o <span class="o">&gt;=</span> a <span class="o">&amp;&amp;</span> o <span class="o">&lt;=</span> b
+      <span class="k">else</span>
+        x0 <span class="o">=</span> (a <span class="o">-</span> o) <span class="o">/</span> d
+        x1 <span class="o">=</span> (b <span class="o">-</span> o) <span class="o">/</span> d
+        x0, x1 <span class="o">=</span> x1, x0 <span class="k">if</span> x0 <span class="o">&gt;</span> x1
+        t0 <span class="o">=</span> <span class="t">Math</span>.max(t0, x0)
+        t1 <span class="o">=</span> <span class="t">Math</span>.min(t1, x1)
+        <span class="k">return</span> <span class="n">nil</span> <span class="k">if</span> t0 <span class="o">&gt;</span> t1
+      <span class="k">end</span>
+      o <span class="o">=</span> origin.y
+      d <span class="o">=</span> direction.y
+      a <span class="o">=</span> lo.y
+      b <span class="o">=</span> hi.y
+      <span class="k">if</span> d.abs <span class="o">&lt;</span> <span class="n">1e-6</span>
+        <span class="k">return</span> <span class="n">nil</span> <span class="k">unless</span> o <span class="o">&gt;=</span> a <span class="o">&amp;&amp;</span> o <span class="o">&lt;=</span> b
+      <span class="k">else</span>
+        x0 <span class="o">=</span> (a <span class="o">-</span> o) <span class="o">/</span> d
+        x1 <span class="o">=</span> (b <span class="o">-</span> o) <span class="o">/</span> d
+        x0, x1 <span class="o">=</span> x1, x0 <span class="k">if</span> x0 <span class="o">&gt;</span> x1
+        t0 <span class="o">=</span> <span class="t">Math</span>.max(t0, x0)
+        t1 <span class="o">=</span> <span class="t">Math</span>.min(t1, x1)
+        <span class="k">return</span> <span class="n">nil</span> <span class="k">if</span> t0 <span class="o">&gt;</span> t1
+      <span class="k">end</span>
+      t0
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c"># Tiny stable generator so layouts and combat spread stay identical across platforms.</span>
+  <span class="k">class</span> <span class="t">RNG</span>
+    @state : <span class="t">UInt32</span>
+    <span class="k">def</span> <span class="m">initialize</span>(seed : <span class="t">Int32</span>)
+      @state <span class="o">=</span> seed.to_u32
+      @state <span class="o">=</span> <span class="n">1_u32</span> <span class="k">if</span> @state <span class="o">==</span> <span class="n">0</span>
+    <span class="k">end</span>
+    <span class="k">def</span> <span class="m">next_u32</span> : <span class="t">UInt32</span>
+      x <span class="o">=</span> @state
+      x <span class="o">^=</span> x <span class="o">&lt;&lt;</span> <span class="n">13</span>; x <span class="o">^=</span> x <span class="o">&gt;&gt;</span> <span class="n">17</span>; x <span class="o">^=</span> x <span class="o">&lt;&lt;</span> <span class="n">5</span>
+      @state <span class="o">=</span> x
+    <span class="k">end</span>
+    <span class="k">def</span> <span class="m">float</span> : <span class="t">Float32</span>; ((next_u32 <span class="o">&amp;</span> <span class="n">0xffffff</span>).to_f32 <span class="o">/</span> <span class="n">0x1000000</span>).to_f32; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">range</span>(lo : <span class="t">Number</span>, hi : <span class="t">Number</span>) : <span class="t">Float32</span>; lo.to_f32 <span class="o">+</span> float <span class="o">*</span> (hi.to_f32 <span class="o">-</span> lo.to_f32); <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">class</span> <span class="t">Arena</span>
+    <span class="t">HALF</span> <span class="o">=</span> <span class="n">24_f32</span>
+    getter obstacles <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Obstacle</span>
+    getter spawn_points <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Vec2</span>
+
+    <span class="k">def</span> <span class="m">initialize</span>(seed : <span class="t">Int32</span> <span class="o">=</span> <span class="n">2401</span>)
+      rng <span class="o">=</span> <span class="t">RNG</span>.new(seed)
+      @obstacles.concat([
+        <span class="t">Obstacle</span>.new(v2(<span class="n">0</span>, <span class="o">-</span><span class="t">HALF</span>), v2(<span class="t">HALF</span>, <span class="n">0.6</span>)),
+        <span class="t">Obstacle</span>.new(v2(<span class="n">0</span>, <span class="t">HALF</span>), v2(<span class="t">HALF</span>, <span class="n">0.6</span>)),
+        <span class="t">Obstacle</span>.new(v2(<span class="o">-</span><span class="t">HALF</span>, <span class="n">0</span>), v2(<span class="n">0.6</span>, <span class="t">HALF</span>)),
+        <span class="t">Obstacle</span>.new(v2(<span class="t">HALF</span>, <span class="n">0</span>), v2(<span class="n">0.6</span>, <span class="t">HALF</span>)),
+      ])
+      <span class="c"># Mirrored cover keeps the arena fair while its sizes and offsets are procedural.</span>
+      <span class="n">5</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+        x <span class="o">=</span> rng.range(<span class="n">5</span>, <span class="n">18</span>) <span class="o">*</span> (i.even? ? <span class="n">1</span> : <span class="n">-1</span>)
+        z <span class="o">=</span> rng.range(<span class="n">-17</span>, <span class="n">17</span>)
+        half <span class="o">=</span> v2(rng.range(<span class="n">1.2</span>, <span class="n">2.8</span>), rng.range(<span class="n">1.0</span>, <span class="n">3.2</span>))
+        @obstacles <span class="o">&lt;&lt;</span> <span class="t">Obstacle</span>.new(v2(x, z), half)
+        @obstacles <span class="o">&lt;&lt;</span> <span class="t">Obstacle</span>.new(v2(<span class="o">-</span>x, <span class="o">-</span>z), half)
+      <span class="k">end</span>
+      @spawn_points.concat([v2(<span class="n">-19</span>, <span class="n">-19</span>), v2(<span class="n">19</span>, <span class="n">19</span>), v2(<span class="n">-19</span>, <span class="n">19</span>), v2(<span class="n">19</span>, <span class="n">-19</span>), v2(<span class="n">0</span>, <span class="n">-19</span>), v2(<span class="n">0</span>, <span class="n">19</span>)])
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">free?</span>(p : <span class="t">Vec2</span>, radius : <span class="t">Number</span> <span class="o">=</span> <span class="n">0.55</span>) : <span class="t">Bool</span>
+      p.x.abs <span class="o">&lt;</span> <span class="t">HALF</span> <span class="o">-</span> radius <span class="o">&amp;&amp;</span> p.y.abs <span class="o">&lt;</span> <span class="t">HALF</span> <span class="o">-</span> radius <span class="o">&amp;&amp;</span> @obstacles.none?(<span class="o">&amp;</span>.contains?(p, radius))
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">move</span>(from : <span class="t">Vec2</span>, delta : <span class="t">Vec2</span>, radius : <span class="t">Number</span> <span class="o">=</span> <span class="n">0.55</span>) : <span class="t">Vec2</span>
+      p <span class="o">=</span> from
+      px <span class="o">=</span> v2(from.x <span class="o">+</span> delta.x, from.y)
+      p <span class="o">=</span> px <span class="k">if</span> free?(px, radius)
+      py <span class="o">=</span> v2(p.x, p.y <span class="o">+</span> delta.y)
+      p <span class="o">=</span> py <span class="k">if</span> free?(py, radius)
+      p
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">visible?</span>(a : <span class="t">Vec2</span>, b : <span class="t">Vec2</span>) : <span class="t">Bool</span>
+      delta <span class="o">=</span> b <span class="o">-</span> a
+      distance <span class="o">=</span> delta.length
+      <span class="k">return</span> <span class="n">true</span> <span class="k">if</span> distance <span class="o">&lt;</span> <span class="n">1e-5</span>
+      @obstacles.none? { <span class="o">|</span>o<span class="o">|</span> (t <span class="o">=</span> o.ray_distance(a, delta <span class="o">/</span> distance, distance)) <span class="o">&amp;&amp;</span> t <span class="o">&gt;</span> <span class="n">0.01</span> }
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">class</span> <span class="t">Enemy</span>
+    getter id : <span class="t">Int32</span>
+    getter kind : <span class="t">EnemyKind</span>
+    property position : <span class="t">Vec2</span>
+    property health : <span class="t">Int32</span>
+    property cooldown <span class="o">=</span> <span class="n">0_f32</span>
+
+    <span class="k">def</span> <span class="m">initialize</span>(@id, @kind, @position)
+      @health <span class="o">=</span> kind.grunt? ? <span class="n">70</span> : <span class="n">105</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">radius</span> : <span class="t">Float32</span>; @kind.grunt? ? <span class="n">0.6_f32</span> : <span class="n">0.78_f32</span>; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">alive?</span> : <span class="t">Bool</span>; @health <span class="o">&gt;</span> <span class="n">0</span>; <span class="k">end</span>
+  <span class="k">end</span>
+
+  record <span class="t">ShotResult</span>, fired : <span class="t">Bool</span>, hits : <span class="t">Int32</span> <span class="o">=</span> <span class="n">0</span>, kills : <span class="t">Int32</span> <span class="o">=</span> <span class="n">0</span>, endpoint : <span class="t">Vec2</span> <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+
+  <span class="k">class</span> <span class="t">Game</span>
+    getter arena : <span class="t">Arena</span>
+    getter enemies <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Enemy</span>
+    getter mode : <span class="t">Mode</span>
+    getter player : <span class="t">Vec2</span> <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+    getter health <span class="o">=</span> <span class="n">100</span>
+    getter score <span class="o">=</span> <span class="n">0</span>
+    getter deaths <span class="o">=</span> <span class="n">0</span>
+    getter wave <span class="o">=</span> <span class="n">1</span>
+    getter weapon_index <span class="o">=</span> <span class="n">0</span>
+    getter cooldown <span class="o">=</span> <span class="n">0_f32</span>
+    getter elapsed <span class="o">=</span> <span class="n">0_f32</span>
+    getter message <span class="o">=</span> <span class="s">&quot;&quot;</span>
+    getter? finished <span class="o">=</span> <span class="n">false</span>
+    @next_id <span class="o">=</span> <span class="n">1</span>
+    @rng : <span class="t">RNG</span>
+    @spawn_cursor <span class="o">=</span> <span class="n">0</span>
+    @respawn <span class="o">=</span> <span class="n">0_f32</span>
+
+    <span class="k">def</span> <span class="m">initialize</span>(@mode <span class="o">=</span> <span class="t">Mode</span><span class="t">::</span><span class="t">Waves</span>, seed : <span class="t">Int32</span> <span class="o">=</span> <span class="n">2401</span>)
+      @arena <span class="o">=</span> <span class="t">Arena</span>.new(seed)
+      @rng <span class="o">=</span> <span class="t">RNG</span>.new(seed <span class="o">^</span> <span class="n">0x5eed</span>)
+      spawn_wave
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">weapon</span> : <span class="t">Weapon</span>; <span class="t">WEAPONS</span>[@weapon_index]; <span class="k">end</span>
+    <span class="k">def</span> <span class="m">switch_weapon</span>(index : <span class="t">Int32</span>) : <span class="t">Nil</span>; @weapon_index <span class="o">=</span> index.clamp(<span class="n">0</span>, <span class="t">WEAPONS</span>.size <span class="o">-</span> <span class="n">1</span>); <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">move_player</span>(delta : <span class="t">Vec2</span>) : <span class="t">Vec2</span>
+      <span class="k">return</span> @player <span class="k">if</span> @health <span class="o">&lt;=</span> <span class="n">0</span> <span class="o">||</span> @finished
+      @player <span class="o">=</span> @arena.move(@player, delta)
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>) : <span class="t">Nil</span>
+      <span class="k">return</span> <span class="k">if</span> @finished
+      @elapsed <span class="o">+=</span> dt
+      @cooldown <span class="o">=</span> <span class="t">Math</span>.max(<span class="n">0_f32</span>, @cooldown <span class="o">-</span> dt)
+      <span class="k">if</span> @health <span class="o">&lt;=</span> <span class="n">0</span>
+        @respawn <span class="o">-=</span> dt
+        respawn_player <span class="k">if</span> @respawn <span class="o">&lt;=</span> <span class="n">0</span>
+      <span class="k">else</span>
+        @enemies.each <span class="k">do</span> <span class="o">|</span>enemy<span class="o">|</span>
+          <span class="k">next</span> <span class="k">unless</span> enemy.alive?
+          enemy.cooldown <span class="o">=</span> <span class="t">Math</span>.max(<span class="n">0_f32</span>, enemy.cooldown <span class="o">-</span> dt)
+          to_player <span class="o">=</span> @player <span class="o">-</span> enemy.position
+          distance <span class="o">=</span> to_player.length
+          <span class="k">next</span> <span class="k">if</span> distance <span class="o">&lt;</span> <span class="n">1e-4</span>
+          <span class="k">if</span> enemy.kind.charger?
+            enemy.position <span class="o">=</span> @arena.move(enemy.position, to_player <span class="o">/</span> distance <span class="o">*</span> (<span class="n">5.0_f32</span> <span class="o">*</span> dt), enemy.radius)
+            <span class="k">if</span> distance <span class="o">&lt;</span> <span class="n">1.25</span> <span class="o">&amp;&amp;</span> enemy.cooldown <span class="o">&lt;=</span> <span class="n">0</span>
+              damage_player(<span class="n">18</span>)
+              enemy.cooldown <span class="o">=</span> <span class="n">0.8_f32</span>
+            <span class="k">end</span>
+          <span class="k">else</span>
+            desired <span class="o">=</span> distance <span class="o">&gt;</span> <span class="n">9</span> ? <span class="n">1_f32</span> : (distance <span class="o">&lt;</span> <span class="n">6</span> ? <span class="n">-1_f32</span> : <span class="n">0_f32</span>)
+            enemy.position <span class="o">=</span> @arena.move(enemy.position, to_player <span class="o">/</span> distance <span class="o">*</span> (<span class="n">2.4_f32</span> <span class="o">*</span> dt <span class="o">*</span> desired), enemy.radius)
+            <span class="k">if</span> distance <span class="o">&lt;</span> <span class="n">20</span> <span class="o">&amp;&amp;</span> enemy.cooldown <span class="o">&lt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> @arena.visible?(enemy.position, @player)
+              damage_player(<span class="n">7</span>)
+              enemy.cooldown <span class="o">=</span> <span class="n">1.0_f32</span> <span class="o">+</span> @rng.float <span class="o">*</span> <span class="n">0.5_f32</span>
+            <span class="k">end</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+
+      <span class="k">if</span> @mode.waves? <span class="o">&amp;&amp;</span> @health <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> @enemies.none?(<span class="o">&amp;</span>.alive?)
+        @wave <span class="o">+=</span> <span class="n">1</span>
+        @health <span class="o">=</span> <span class="t">Math</span>.min(<span class="n">100</span>, @health <span class="o">+</span> <span class="n">25</span>)
+        @message <span class="o">=</span> <span class="s">&quot;Wave </span><span class="i">#{</span>@wave<span class="i">}</span><span class="s">&quot;</span>
+        spawn_wave
+      <span class="k">elsif</span> @mode.deathmatch?
+        @enemies.reject! { <span class="o">|</span>e<span class="o">|</span> <span class="o">!</span>e.alive? }
+        <span class="k">while</span> @enemies.size <span class="o">&lt;</span> <span class="n">6</span>
+          spawn_enemy(@next_id.even? ? <span class="t">EnemyKind</span><span class="t">::</span><span class="t">Grunt</span> : <span class="t">EnemyKind</span><span class="t">::</span><span class="t">Charger</span>)
+        <span class="k">end</span>
+        <span class="k">if</span> @score <span class="o">&gt;=</span> <span class="n">15</span>
+          @finished <span class="o">=</span> <span class="n">true</span>
+          @message <span class="o">=</span> <span class="s">&quot;Frag limit reached&quot;</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">shoot</span>(direction : <span class="t">Vec2</span>) : <span class="t">ShotResult</span>
+      <span class="k">return</span> <span class="t">ShotResult</span>.new(<span class="n">false</span>, endpoint: @player) <span class="k">if</span> @finished <span class="o">||</span> @health <span class="o">&lt;=</span> <span class="n">0</span> <span class="o">||</span> @cooldown <span class="o">&gt;</span> <span class="n">0</span>
+      dir <span class="o">=</span> direction.normalized
+      <span class="k">return</span> <span class="t">ShotResult</span>.new(<span class="n">false</span>, endpoint: @player) <span class="k">if</span> dir.zero?
+      w <span class="o">=</span> weapon
+      @cooldown <span class="o">=</span> w.cooldown
+      hits <span class="o">=</span> <span class="n">0</span>
+      kills <span class="o">=</span> <span class="n">0</span>
+      endpoint <span class="o">=</span> @player <span class="o">+</span> dir <span class="o">*</span> w.range
+      w.pellets.times <span class="k">do</span>
+        shot_dir <span class="o">=</span> dir.rotated(@rng.range(<span class="o">-</span>w.spread, w.spread))
+        wall_distance <span class="o">=</span> w.range
+        @arena.obstacles.each <span class="k">do</span> <span class="o">|</span>obstacle<span class="o">|</span>
+          <span class="k">if</span> t <span class="o">=</span> obstacle.ray_distance(@player, shot_dir, w.range)
+            wall_distance <span class="o">=</span> <span class="t">Math</span>.min(wall_distance, t)
+          <span class="k">end</span>
+        <span class="k">end</span>
+        endpoint <span class="o">=</span> @player <span class="o">+</span> shot_dir <span class="o">*</span> wall_distance <span class="k">if</span> w.pellets <span class="o">==</span> <span class="n">1</span>
+        target : <span class="t">Enemy</span>? <span class="o">=</span> <span class="n">nil</span>
+        target_t <span class="o">=</span> wall_distance
+        @enemies.each <span class="k">do</span> <span class="o">|</span>enemy<span class="o">|</span>
+          <span class="k">next</span> <span class="k">unless</span> enemy.alive?
+          rel <span class="o">=</span> enemy.position <span class="o">-</span> @player
+          t <span class="o">=</span> rel.dot(shot_dir)
+          <span class="k">next</span> <span class="k">unless</span> t <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> t <span class="o">&lt;</span> target_t
+          miss <span class="o">=</span> (rel <span class="o">-</span> shot_dir <span class="o">*</span> t).length
+          <span class="k">if</span> miss <span class="o">&lt;=</span> enemy.radius
+            target <span class="o">=</span> enemy
+            target_t <span class="o">=</span> t
+          <span class="k">end</span>
+        <span class="k">end</span>
+        <span class="k">if</span> enemy <span class="o">=</span> target
+          was_alive <span class="o">=</span> enemy.alive?
+          enemy.health <span class="o">-=</span> w.damage
+          hits <span class="o">+=</span> <span class="n">1</span>
+          <span class="k">if</span> was_alive <span class="o">&amp;&amp;</span> <span class="o">!</span>enemy.alive?
+            kills <span class="o">+=</span> <span class="n">1</span>
+            @score <span class="o">+=</span> <span class="n">1</span>
+          <span class="k">end</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+      <span class="t">ShotResult</span>.new(<span class="n">true</span>, hits, kills, endpoint)
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">damage_player</span>(amount : <span class="t">Int32</span>) : <span class="t">Nil</span>
+      <span class="k">return</span> <span class="k">if</span> @health <span class="o">&lt;=</span> <span class="n">0</span>
+      @health <span class="o">=</span> <span class="t">Math</span>.max(<span class="n">0</span>, @health <span class="o">-</span> amount)
+      <span class="k">if</span> @health <span class="o">==</span> <span class="n">0</span>
+        @deaths <span class="o">+=</span> <span class="n">1</span>
+        @respawn <span class="o">=</span> <span class="n">2_f32</span>
+        @message <span class="o">=</span> <span class="s">&quot;Respawning...&quot;</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">respawn_player</span> : <span class="t">Nil</span>
+      @health <span class="o">=</span> <span class="n">100</span>
+      @player <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+      @message <span class="o">=</span> <span class="s">&quot;Back in the fight&quot;</span>
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">spawn_wave</span> : <span class="t">Nil</span>
+      count <span class="o">=</span> @mode.waves? ? <span class="n">2</span> <span class="o">+</span> @wave <span class="o">*</span> <span class="n">2</span> : <span class="n">6</span>
+      count.times { <span class="o">|</span>i<span class="o">|</span> spawn_enemy((i <span class="o">+</span> @wave) <span class="o">%</span> <span class="n">3</span> <span class="o">==</span> <span class="n">0</span> ? <span class="t">EnemyKind</span><span class="t">::</span><span class="t">Charger</span> : <span class="t">EnemyKind</span><span class="t">::</span><span class="t">Grunt</span>) }
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">spawn_enemy</span>(kind : <span class="t">EnemyKind</span>) : <span class="t">Nil</span>
+      points <span class="o">=</span> @arena.spawn_points
+      point <span class="o">=</span> points[@spawn_cursor <span class="o">%</span> points.size]
+      @spawn_cursor <span class="o">+=</span> <span class="n">1</span>
+      point <span class="o">+=</span> v2(@rng.range(<span class="n">-1.2</span>, <span class="n">1.2</span>), @rng.range(<span class="n">-1.2</span>, <span class="n">1.2</span>))
+      @enemies <span class="o">&lt;&lt;</span> <span class="t">Enemy</span>.new(@next_id, kind, point)
+      @next_id <span class="o">+=</span> <span class="n">1</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre>
+</details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./fps.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
+</body></html>

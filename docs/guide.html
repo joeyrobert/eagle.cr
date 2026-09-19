@@ -6,7 +6,32 @@
 <link rel="stylesheet" href="../assets/site.css">
 <link rel="icon" href="../assets/favicon.svg"></head>
 <body><header class="top"><div class="wrap"><a class="brand" href="../index.html"><img src="../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../play/index.html">Play</a><a href="../docs/guide.html" class="active">Guide</a><a href="../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
-<main class="wrap"><article class="doc"><h1 id="eagle-guide">Eagle guide</h1>
+<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../index.html">Home</a></li><li><a href="../docs/index.html">Docs</a></li><li aria-current="page">Guide</li></ol></nav>
+<article class="doc"><h1 id="eagle-guide">Eagle guide</h1>
+<h2 id="setup">Setup</h2>
+<p>Eagle needs Crystal 1.21 or newer and SDL2. Install the <code>eagle</code> CLI with one line; the installer checks the prerequisites and prints the command for anything missing (<code>--with-deps</code> runs it for you):</p>
+<pre class="code"><code class="lang-sh"><span class="c"># macOS and Linux</span>
+curl -fsSL https://raw.githubusercontent.com/joeyrobert/eagle.cr/main/install.sh | sh</code></pre>
+<pre class="code"><code class="lang-powershell"># Windows (PowerShell); or run eagle-setup.exe from the releases page
+irm https://raw.githubusercontent.com/joeyrobert/eagle.cr/main/install.ps1 | iex</code></pre>
+<p>Then create a project and run it:</p>
+<pre class="code"><code class="lang-sh">eagle init mygame<span class="c">   # pick a template (2d-game, 3d-game, ui-app, empty), window size, pixel art, web, git, CI</span>
+cd mygame
+eagle run
+crystal spec<span class="c">        # the generated sample spec</span></code></pre>
+<p>In scripts, pass the answers as flags: <code>eagle init mygame --template 3d --size 1280x720 --no-ci --yes</code>. <code>eagle help init</code> lists them all. The game lives in <code>src/&lt;name&gt;.cr</code> and <code>src/main.cr</code> only starts it, so specs can <code>require &quot;../src/&lt;name&gt;&quot;</code> without opening a window.</p>
+<h3 id="manual-setup">Manual setup</h3>
+<p>Adding Eagle to an existing Crystal project needs no CLI:</p>
+<ol><li>Install SDL2: <code>brew install sdl2</code> (macOS), <code>sudo apt install libsdl2-dev</code> (Debian/Ubuntu),</li></ol>
+<p><code>sudo dnf install SDL2-devel</code> (Fedora), <code>sudo pacman -S sdl2</code> (Arch). On Windows, download <code>SDL2-devel-2.x.x-VC.zip</code> from the SDL releases on GitHub, build with <code>--link-flags &quot;/LIBPATH:C:\path\to\SDL2\lib\x64&quot;</code>, and ship <code>SDL2.dll</code> next to the executable.</p>
+<ol><li>Add Eagle to <code>shard.yml</code>, then run <code>shards install</code>:</li></ol>
+<p>``<code>yaml dependencies: eagle: github: joeyrobert/eagle.cr </code>``</p>
+<ol><li><code>require &quot;eagle&quot;</code> and hand an <code>App</code> to <code>Eagle.run</code>:</li></ol>
+<p>```crystal require &quot;eagle&quot; include Eagle</p>
+<p>class Game &lt; App def draw(g : Graphics) g.print(&quot;Hello, Eagle!&quot;, 10, 10) end end</p>
+<p>Eagle.run(Game, title: &quot;My Game&quot;, width: 960, height: 540) ```</p>
+<ol><li><code>crystal run src/main.cr</code> runs it; <code>mkdir -p bin &amp;&amp; crystal build src/main.cr --release -o bin/game</code> builds a</li></ol>
+<p>release executable. <code>eagle run</code> and <code>eagle build</code> do the same, and work in any project that has <code>src/main.cr</code>.</p>
 <h2 id="the-loop">The loop</h2>
 <p><code>Eagle.run(MyApp)</code> opens the window, creates the GPU device, constructs your <code>App</code>, calls <code>load</code>, then every frame:</p>
 <ol><li>polls events → <code>Input</code> state, <code>App#input</code>, <code>Node#input</code> (children first)</li><li>runs zero or more <strong>fixed</strong> steps (<code>Config#fixed_fps</code>, default 60): physics world step → <code>Node#physics_process</code> → <code>App#fixed_update</code></li><li><code>Node#process</code> → tweens → <code>App#update(dt)</code></li><li>mixes audio</li><li>clears, renders 3D (if a <code>Camera3D</code> is current), draws the 2D scene tree (with the current <code>Camera2D</code>), then <code>App#draw(g)</code></li></ol>
@@ -79,6 +104,23 @@ player <span class="o">=</span> <span class="t">Player</span>.new(position: v2(<
 <span class="t">SceneTree</span>.root.add(ground, ball, player)
 <span class="t">Physics2D</span>.world.raycast(player.position, v2(<span class="n">1</span>, <span class="n">0</span>), <span class="n">100</span>)</code></pre>
 <p>Units are pixels and seconds; default gravity 980 px/s². Layers/masks are bit sets on <code>body.layer</code> / <code>body.mask</code>. <code>Area2D</code> is a sensor. <code>debug = true</code> on any body draws its shapes.</p>
+<h2 id="algorithms">Algorithms</h2>
+<p>Seeded helpers for procedural content, grid games and lightweight AI. <code>Rng</code> is a PCG32 generator that includes Crystal&#39;s <code>Random</code>, so <code>array.shuffle(rng)</code> works and the same seed replays on native and wasm. <code>Noise</code> is Perlin, simplex, fBm and Worley. <code>Grid</code> and <code>Pathfinding</code> cover Bresenham, shadowcasting FOV, A*, Dijkstra and flow fields. <code>Procedural</code> builds Poisson-disk points, BSP rooms, caves and mazes. <code>Geometry</code>, <code>Quadtree</code> / <code>SpatialHash</code>, <code>Steering</code> and the behavior-tree types sit beside them.</p>
+<pre class="code"><code class="lang-crystal">rng <span class="o">=</span> <span class="t">Rng</span>.new(<span class="n">2026</span>)
+dmg <span class="o">=</span> rng.roll(<span class="s">&quot;2d6+1&quot;</span>)
+
+n <span class="o">=</span> <span class="t">Noise</span>.new(<span class="n">42</span>)
+height <span class="o">=</span> n.fbm(<span class="n">12.5</span>, <span class="n">8.0</span>)
+
+grid <span class="o">=</span> <span class="t">CostGrid</span>.new(<span class="n">20</span>, <span class="n">12</span>)
+grid.block(<span class="n">5</span>, <span class="n">5</span>)
+path <span class="o">=</span> <span class="t">Pathfinding</span>.a_star(grid, {<span class="n">0</span>, <span class="n">0</span>}, {<span class="n">19</span>, <span class="n">11</span>})
+
+seen <span class="o">=</span> <span class="t">Grid</span>.field_of_view({<span class="n">10</span>, <span class="n">8</span>}, <span class="n">8</span>) { <span class="o">|</span>x, y<span class="o">|</span> <span class="o">!</span>x.in?(<span class="n">0</span>...<span class="n">20</span>) <span class="o">||</span> <span class="o">!</span>y.in?(<span class="n">0</span>...<span class="n">12</span>) <span class="o">||</span> <span class="o">!</span>grid.passable?(x, y) }
+trees <span class="o">=</span> <span class="t">Procedural</span>.poisson_disk(<span class="n">320</span>, <span class="n">180</span>, <span class="n">16</span>, rng)</code></pre>
+<p>The <code>algorithms</code> example tabs through A*, noise terrain, Poisson-disk sampling, flocking and shadowcasting FOV. The roguelike uses <code>Grid.field_of_view</code> for its fog of war.</p>
+<pre class="code"><code class="lang-sh">crystal run examples/algorithms/main.cr
+<span class="c"># 1-5 or Tab switch scenes, click sets the A* goal, WASD moves in FOV</span></code></pre>
 <h2 id="ui">UI</h2>
 <pre class="code"><code class="lang-crystal">hud <span class="o">=</span> <span class="t">CanvasLayer</span>.new
 panel <span class="o">=</span> <span class="t">Panel</span>.new(size: v2(<span class="n">300</span>, <span class="n">0</span>)).tap(<span class="o">&amp;</span>.anchor <span class="o">=</span> <span class="t">Anchor</span><span class="t">::</span><span class="t">Center</span>).tap(<span class="o">&amp;</span>.fit_content <span class="o">=</span> <span class="n">true</span>)
@@ -98,15 +140,43 @@ root.add(cam, <span class="t">DirectionalLight3D</span>.new(v3(<span class="n">-
   cam.screen_to_ray(<span class="t">Input</span>.mouse).intersect_aabb(box) <span class="c"># distance to the cube under the mouse, or nil</span>
 <span class="k">end</span></code></pre>
 <p>Shaders use the GLSL 330 / 300 es common subset; <code>Material#shader</code> accepts a custom <code>Shader</code> using the standard uniforms (<code>u_model</code>, <code>u_view</code>, <code>u_projection</code>, lights…).</p>
+<h2 id="3d-audio">3D audio</h2>
+<pre class="code"><code class="lang-crystal">hum <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">55</span>, <span class="n">2</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Saw</span>, volume: <span class="n">0.3</span>)
+generator <span class="o">=</span> <span class="t">AudioPlayer3D</span>.new(hum, position: v3(<span class="n">4</span>, <span class="n">1</span>, <span class="n">-6</span>), loop: <span class="n">true</span>, autoplay: <span class="n">true</span>, max_distance: <span class="n">30</span>)
+generator.attenuation <span class="o">=</span> <span class="t">Attenuation</span><span class="t">::</span><span class="t">Linear</span> <span class="c"># or Inverse (default), Exponential</span>
+<span class="t">SceneTree</span>.root.add(generator)
+bang <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">80</span>, <span class="n">0.4</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Noise</span>)
+<span class="t">Audio</span>.play_at(bang, v3(<span class="n">10</span>, <span class="n">0</span>, <span class="n">-20</span>), pitch: <span class="n">0.9</span> <span class="o">+</span> rand <span class="o">*</span> <span class="n">0.2</span>) <span class="c"># one-shot, no node</span>
+<span class="t">Audio</span>.listener                                               <span class="c"># the current AudioListener3D, else Camera3D</span></code></pre>
+<p>3D voices are heard from the current <code>Camera3D</code>, or from an <code>AudioListener3D</code> when one is current (third-person cameras, cutscenes). Each voice gets distance attenuation (<code>min_distance</code>, <code>max_distance</code>, <code>rolloff</code>), equal-power panning, a small interaural delay and a head-shadow low-pass so left/right and front/back read on headphones, and optional doppler (<code>doppler = true</code>). Parameters glide across each mixed buffer, so fast movers don&#39;t click.</p>
+<h3 id="streaming-an-open-world">Streaming an open world</h3>
+<p>The <code>joyride</code> example keeps an effectively infinite world bounded in memory. Its seed maps world coordinates to deterministic road edges, zones and chunk contents, so a chunk can be discarded and later rebuilt exactly. The game keeps a five-by-five ring of rendered chunks around the player and evicts old simulation layouts. Traffic follows the generated road graph, pedestrians use generated sidewalks, and missions choose targets from that same graph.</p>
+<pre class="code"><code class="lang-sh">crystal run examples/joyride/main.cr
+<span class="c"># WASD/arrows drive, Space handbrake, M starts a new mission</span></code></pre>
+<p>The reusable, window-free generation and simulation are in <code>examples/joyride/world.cr</code> and <code>examples/joyride/sim.cr</code>; <code>main.cr</code> is the 3D presentation layer. Set <code>EAGLE_WORLD_SEED=42</code> to explore a different deterministic world.</p>
+<h3 id="first-person-shooter">First-person shooter</h3>
+<p>The <code>fps</code> example (Neon Bastion) is a compact arena shooter: mouse look, a pulse rifle and scattergun, grunt and charger AI, Waves and Deathmatch. Combat and the procedural arena live in <code>examples/fps/game.cr</code> so they can be specced without a window; <code>main.cr</code> is the first-person view, HUD and spatial audio. Click to capture the mouse (browsers require a gesture for pointer lock); native builds lock it on launch.</p>
+<pre class="code"><code class="lang-sh">crystal run examples/fps/main.cr
+<span class="c"># WASD move, Shift sprint, click/RB fire, 1/2 weapons, F1 Waves, F2 Deathmatch</span></code></pre>
 <h2 id="automated-runs">Automated runs</h2>
 <p><code>EAGLE_FRAMES=60 EAGLE_SCREENSHOT=shot.png ./game</code> runs 60 frames, saves the frame and exits. <code>EAGLE_HEADLESS=1</code> hides the window. <code>Eagle.init</code>/<code>Eagle.step</code>/ <code>Eagle.shutdown</code> drive the loop manually in tests. <code>EAGLE_GL_DEBUG=1</code> checks for GL errors after every 3D stage.</p>
 <h2 id="backends">Backends</h2>
 <p><code>Platform::Base</code> (window/input/audio/gamepads) and <code>GPU::Device</code> (rendering) are abstract. <code>Platform::SDL</code> + <code>GPU::GL33</code> are the desktop implementations. <code>Platform::Web</code> targets <code>wasm32-wasi</code> and drives WebGL2, WebAudio and DOM input through <code>web/eagle.js</code>. Shaders and formats stay within the WebGL2 subset so the same code renders identically on both.</p>
-<h2 id="exporting">Exporting</h2>
-<pre class="code"><code class="lang-sh">eagle export exe examples/snake/main.cr<span class="c">   # dist/snake/snake: release build; add Eagle.embed_assets(&quot;assets&quot;) for a true single file</span>
-eagle export web examples/snake/main.cr<span class="c">   # dist/web/snake/: index.html + eagle.js + snake.wasm, serve over HTTP</span>
-eagle export app examples/snake/main.cr<span class="c">   # dist/snake.app (macOS bundle)</span></code></pre>
-<p>Web builds need <code>lld</code> (<code>brew install lld</code>); the script downloads Crystal&#39;s wasm libraries on first use. Everything the desktop build does works in the browser except file-system access (embed assets), threads, and clipboard.</p>
+<h2 id="building-and-exporting">Building and exporting</h2>
+<p>Run these in the project folder. FILE defaults to <code>src/main.cr</code>, and <code>&lt;name&gt;</code> is the project folder&#39;s name (or FILE&#39;s base name when it isn&#39;t <code>main.cr</code>).</p>
+<pre class="code"><code class="lang-sh">eagle run<span class="c">            # debug build into bin/&lt;name&gt;, then run it (runs shards install first if needed)</span>
+eagle build<span class="c">          # release build: bin/&lt;name&gt;</span>
+eagle export exe<span class="c">     # release build: dist/&lt;name&gt;/&lt;name&gt;</span>
+eagle export web<span class="c">     # dist/web/&lt;name&gt;/: index.html + eagle.js + &lt;name&gt;.wasm; serve over HTTP</span>
+eagle export app<span class="c">     # dist/&lt;name&gt;.app (macOS bundle)</span></code></pre>
+<p>The same without the CLI:</p>
+<pre class="code"><code class="lang-sh">crystal run src/main.cr
+mkdir -p bin &amp;&amp; crystal build src/main.cr --release -o bin/mygame
+shards build --release<span class="c">                                        # every target in shard.yml, into bin/</span>
+sh lib/eagle/script/build-web.sh src/main.cr dist/web/mygame<span class="c">  # the web build eagle export web runs</span></code></pre>
+<p>Assets load from <code>assets/</code> next to the executable or in the working directory. Add <code>Eagle.embed_assets(&quot;assets&quot;)</code> to <code>src/main.cr</code> to bake them into the executable instead (<code>eagle init</code> does this unless you pass <code>--no-web</code>); then <code>dist/&lt;name&gt;/&lt;name&gt;</code> is a single file you can move anywhere. The web build needs embedded assets, since the browser can&#39;t read your disk.</p>
+<p>Web builds need <code>lld</code> (<code>brew install lld</code>, <code>apt install lld</code>); Crystal&#39;s wasm libraries are downloaded on first use (<code>eagle export web</code> keeps them in <code>~/.eagle/wasm-toolchain</code> unless the engine checkout has its own <code>.wasm-toolchain/</code>). Everything the desktop build does works in the browser except file-system access (embed assets), threads, and clipboard. Preview with <code>cd dist/web/&lt;name&gt; &amp;&amp; python3 -m http.server</code>.</p>
+<p>The same commands take a file, which is how the bundled examples are exported from an Eagle checkout: <code>eagle export web examples/snake/main.cr</code> writes <code>dist/web/snake/</code>.</p>
 <h2 id="site">Site</h2>
 <p><code>script/build-site.sh</code> compiles every example to WebAssembly, generates the API reference with <code>crystal docs</code>, and writes the marketing + docs site to <code>site/</code>. Screenshots shown on the site come from <code>docs/screenshots/</code>. <code>script/publish-site.sh</code> pushes the built <code>site/</code> to the <code>gh-pages</code> branch, which GitHub Pages serves at https://joeyrobert.github.io/eagle.cr/.</p>
 </article></main>

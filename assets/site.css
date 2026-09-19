@@ -19,10 +19,18 @@ header.top .wrap{display:flex;align-items:center;justify-content:space-between;g
 .brand img{width:30px;height:30px;align-self:center;border-radius:6px}
 .brand span:first-of-type{font:500 28px/1 var(--serif);letter-spacing:-.01em}
 .ver{font:400 12px var(--mono);color:var(--ink2)}
-nav{display:flex;gap:26px}
-nav a{color:var(--ink);text-decoration:none;font-weight:500;font-size:15px;padding:4px 0;border-bottom:2px solid transparent}
-nav a:hover{color:var(--ink);border-bottom-color:var(--rule)}
-nav a.active{border-bottom-color:var(--gold)}
+header.top nav{display:flex;gap:26px}
+header.top nav a{color:var(--ink);text-decoration:none;font-weight:500;font-size:15px;padding:4px 0;border-bottom:2px solid transparent}
+header.top nav a:hover{color:var(--ink);border-bottom-color:var(--rule)}
+header.top nav a.active{border-bottom-color:var(--gold)}
+.crumbs{font:13px/1.45 var(--mono);color:var(--ink2);padding:22px 0 0}
+.crumbs ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center}
+.crumbs li{display:flex;align-items:center}
+.crumbs li:not(:last-child)::after{content:"/";margin:0 10px;color:var(--rule);font-weight:400}
+.crumbs a{color:var(--ink2);text-decoration:none}
+.crumbs a:hover{color:var(--link);text-decoration:underline;text-underline-offset:3px}
+.crumbs [aria-current="page"]{color:var(--ink)}
+.crumbs + .doc,.crumbs + .page-head,.crumbs + .play{padding-top:16px}
 h1,h2{font-family:var(--serif);font-weight:500;letter-spacing:-.015em}
 h3{font-weight:600}
 .hero{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;align-items:center;padding:64px 0 24px}
@@ -100,6 +108,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
   .features{grid-template-columns:1fr}
   h2.section{font-size:32px}
   .doc h1,.page-head h1{font-size:40px}
-  nav{gap:18px}
+  header.top nav{gap:18px}
   .shots{grid-template-columns:1fr}
 }

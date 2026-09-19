@@ -6,197 +6,73 @@
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
 <body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
-<main class="wrap"><div class="play"><h1>Checkers</h1><p class="lead">One or two players, forced captures, multi-jumps, kings and a quiescence-searching AI.</p>
+<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Checkers</li></ol></nav>
+<div class="play"><h1>Checkers</h1><p class="lead">One or two players, forced captures, multi-jumps, kings and a quiescence-searching AI.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
 <p class="controls">Pick a mode, then click pieces. U undo · R restart · M menu</p>
-<details><summary>Source: <code>examples/checkers/main.cr</code></summary><h3>examples/checkers/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
-<span class="k">require</span> <span class="s">&quot;./checkers&quot;</span>
-<span class="k">include</span> <span class="t">Eagle</span>
-
-<span class="c"># Checkers. Red (bottom) moves first. Captures are mandatory, multi-jumps supported.</span>
-<span class="c"># Menu: pick 1 player (vs AI) or 2 players. Keys: R restart, M menu, U undo, 1-8 AI depth.</span>
-<span class="k">class</span> <span class="t">CheckersGame</span> <span class="o">&lt;</span> <span class="t">App</span>
-  <span class="t">SIZE</span> <span class="o">=</span> <span class="n">70</span>
-  <span class="t">ORIGIN</span> <span class="o">=</span> v2(<span class="n">50</span>, <span class="n">50</span>)
-
-  @board <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">Board</span>.new
-  @ai <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">AI</span>.new(<span class="n">6</span>)
-  @selected : <span class="t">Int32</span>? <span class="o">=</span> <span class="n">nil</span>
-  @legal <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">Move</span>
-  @mode : <span class="t">Symbol</span> <span class="o">=</span> <span class="n">:menu</span>
-  @last : <span class="t">Checkers</span><span class="t">::</span><span class="t">Move</span>? <span class="o">=</span> <span class="n">nil</span>
-  @menu <span class="o">=</span> <span class="t">CanvasLayer</span>.new
-  @status <span class="o">=</span> <span class="s">&quot;&quot;</span>
-  @snd : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
-
-  <span class="k">def</span> <span class="m">load</span>
-    @snd <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">330</span>, <span class="n">0.07</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Triangle</span>, <span class="n">0.35</span>)
-    <span class="t">SceneTree</span>.root.add(@menu)
-    build_menu
-    <span class="c"># `checkers ai` / `checkers two` skips the menu</span>
-    start(<span class="n">:ai</span>) <span class="k">if</span> <span class="t">ARGV</span>.includes?(<span class="s">&quot;ai&quot;</span>)
-    start(<span class="n">:two</span>) <span class="k">if</span> <span class="t">ARGV</span>.includes?(<span class="s">&quot;two&quot;</span>)
-  <span class="k">end</span>
-
-  <span class="k">def</span> <span class="m">build_menu</span>
-    @menu.clear_children
-    panel <span class="o">=</span> <span class="t">Panel</span>.new(size: v2(<span class="n">360</span>, <span class="n">0</span>))
-    panel.anchor <span class="o">=</span> <span class="t">Anchor</span><span class="t">::</span><span class="t">Center</span>
-    panel.fit_content <span class="o">=</span> <span class="n">true</span>
-    box <span class="o">=</span> <span class="t">VBox</span>.new(size: v2(<span class="n">340</span>, <span class="n">0</span>))
-    box.position <span class="o">=</span> v2(<span class="n">10</span>, <span class="n">10</span>)
-    box.fit_content <span class="o">=</span> <span class="n">true</span>
-    title <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;Checkers&quot;</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
-    title.font_scale <span class="o">=</span> <span class="n">1.5</span>
-    box.add(title)
-    box.add(<span class="t">Button</span>.new(<span class="s">&quot;1 player (vs AI)&quot;</span>) { start(<span class="n">:ai</span>) })
-    box.add(<span class="t">Button</span>.new(<span class="s">&quot;2 players&quot;</span>) { start(<span class="n">:two</span>) })
-    depth_label <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;AI depth </span><span class="i">#{</span>@ai.depth<span class="i">}</span><span class="s">&quot;</span>)
-    depth <span class="o">=</span> <span class="t">Slider</span>.new(<span class="n">1</span>, <span class="n">8</span>, @ai.depth, step: <span class="n">1</span>)
-    depth.on_value_changed { <span class="o">|</span>v<span class="o">|</span> @ai.depth <span class="o">=</span> v.to_i; depth_label.text <span class="o">=</span> <span class="s">&quot;AI depth </span><span class="i">#{</span>v.to_i<span class="i">}</span><span class="s">&quot;</span> }
-    box.add(depth_label, depth)
-    panel.add(box)
-    @menu.add(panel)
-    @menu.visible <span class="o">=</span> <span class="n">true</span>
-  <span class="k">end</span>
-
-  <span class="k">def</span> <span class="m">start</span>(mode : <span class="t">Symbol</span>)
-    @mode <span class="o">=</span> mode
-    @board <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">Board</span>.new
-    @selected <span class="o">=</span> <span class="n">nil</span>; @legal.clear; @last <span class="o">=</span> <span class="n">nil</span>
-    @menu.visible <span class="o">=</span> <span class="n">false</span>
-    update_status
-  <span class="k">end</span>
-
-  <span class="k">def</span> <span class="m">square_at</span>(p : <span class="t">Vec2</span>) : <span class="t">Int32</span>?
-    l <span class="o">=</span> p <span class="o">-</span> <span class="t">ORIGIN</span>
-    <span class="k">return</span> <span class="n">nil</span> <span class="k">if</span> l.x <span class="o">&lt;</span> <span class="n">0</span> <span class="o">||</span> l.y <span class="o">&lt;</span> <span class="n">0</span> <span class="o">||</span> l.x <span class="o">&gt;=</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">||</span> l.y <span class="o">&gt;=</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span>
-    (<span class="n">7</span> <span class="o">-</span> (l.y <span class="o">/</span> <span class="t">SIZE</span>).to_i) <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> (l.x <span class="o">/</span> <span class="t">SIZE</span>).to_i
-  <span class="k">end</span>
-
-  <span class="k">def</span> <span class="m">square_pos</span>(i : <span class="t">Int32</span>) : <span class="t">Vec2</span>
-    <span class="t">ORIGIN</span> <span class="o">+</span> v2((i <span class="o">%</span> <span class="n">8</span>) <span class="o">*</span> <span class="t">SIZE</span>, (<span class="n">7</span> <span class="o">-</span> i <span class="o">//</span> <span class="n">8</span>) <span class="o">*</span> <span class="t">SIZE</span>)
-  <span class="k">end</span>
-
-  <span class="k">def</span> <span class="m">human_turn?</span> : <span class="t">Bool</span>
-    @mode <span class="o">==</span> <span class="n">:two</span> <span class="o">||</span> @board.turn.red?
-  <span class="k">end</span>
-
-  <span class="k">def</span> <span class="m">input</span>(e : <span class="t">Event</span>)
-    <span class="k">return</span> <span class="k">if</span> @mode <span class="o">==</span> <span class="n">:menu</span>
-    <span class="k">if</span> e.<span class="k">is_a?</span>(<span class="t">MouseButtonEvent</span>) <span class="o">&amp;&amp;</span> e.pressed? <span class="o">&amp;&amp;</span> e.button.left? <span class="o">&amp;&amp;</span> human_turn? <span class="o">&amp;&amp;</span> <span class="o">!</span>@board.game_over?
-      sq <span class="o">=</span> square_at(e.position)
-      <span class="k">return</span> <span class="k">unless</span> sq
-      <span class="k">if</span> @selected <span class="o">&amp;&amp;</span> (mv <span class="o">=</span> @legal.find { <span class="o">|</span>m<span class="o">|</span> m.to <span class="o">==</span> sq })
-        @board.play(mv)
-        @last <span class="o">=</span> mv
-        @snd.try(<span class="o">&amp;</span>.play)
-        @selected <span class="o">=</span> <span class="n">nil</span>; @legal.clear
-        update_status
-      <span class="k">elsif</span> (c <span class="o">=</span> @board[sq]) <span class="o">&amp;&amp;</span> c.side <span class="o">==</span> @board.turn
-        @selected <span class="o">=</span> sq
-        @legal <span class="o">=</span> @board.legal_moves_from(sq)
-      <span class="k">else</span>
-        @selected <span class="o">=</span> <span class="n">nil</span>; @legal.clear
-      <span class="k">end</span>
-    <span class="k">elsif</span> e.<span class="k">is_a?</span>(<span class="t">KeyEvent</span>) <span class="o">&amp;&amp;</span> e.pressed?
-      <span class="k">case</span> e.key
-      <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">R</span> <span class="k">then</span> start(@mode)
-      <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">M</span> <span class="k">then</span> @mode <span class="o">=</span> <span class="n">:menu</span>; build_menu
-      <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">U</span> <span class="k">then</span> undo
-      <span class="k">end</span>
-    <span class="k">end</span>
-  <span class="k">end</span>
-
-  <span class="k">def</span> <span class="m">undo</span>
-    n <span class="o">=</span> (@mode <span class="o">==</span> <span class="n">:ai</span> <span class="o">&amp;&amp;</span> @board.history.size <span class="o">&gt;=</span> <span class="n">2</span>) ? <span class="n">2</span> : <span class="n">1</span>
-    <span class="k">return</span> <span class="k">if</span> @board.history.size <span class="o">&lt;</span> n
-    hist <span class="o">=</span> @board.history[<span class="n">0</span>...<span class="o">-</span>n]
-    @board <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">Board</span>.new
-    hist.each { <span class="o">|</span>m<span class="o">|</span> @board.apply(m) }
-    @last <span class="o">=</span> hist.last?
-    @selected <span class="o">=</span> <span class="n">nil</span>; @legal.clear
-    update_status
-  <span class="k">end</span>
-
-  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
-    <span class="k">if</span> @mode <span class="o">==</span> <span class="n">:ai</span> <span class="o">&amp;&amp;</span> @board.turn.black? <span class="o">&amp;&amp;</span> <span class="o">!</span>@board.game_over?
-      <span class="k">if</span> mv <span class="o">=</span> @ai.best_move(@board)
-        @board.apply(mv)
-        @last <span class="o">=</span> mv
-        @snd.try(<span class="o">&amp;</span>.play(pitch: <span class="n">0.8</span>))
-        update_status
-      <span class="k">end</span>
-    <span class="k">end</span>
-    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
-  <span class="k">end</span>
-
-  <span class="k">def</span> <span class="m">update_status</span>
-    @status <span class="o">=</span> <span class="k">case</span> @board.status
-              <span class="k">when</span> .red_wins? <span class="k">then</span> <span class="s">&quot;Red wins!&quot;</span>
-              <span class="k">when</span> .black_wins? <span class="k">then</span> <span class="s">&quot;Black wins!&quot;</span>
-              <span class="k">when</span> .draw? <span class="k">then</span> <span class="s">&quot;Draw&quot;</span>
-              <span class="k">else</span> <span class="s">&quot;</span><span class="i">#{</span>@board.turn.red? ? <span class="s">&quot;Red&quot;</span> : <span class="s">&quot;Black&quot;</span><span class="i">}</span><span class="s"> to move</span><span class="i">#{</span>@board.legal_moves.first?.try(<span class="o">&amp;</span>.capture?) ? <span class="s">&quot;, must capture&quot;</span> : <span class="s">&quot;&quot;</span><span class="i">}</span><span class="s">&quot;</span>
-              <span class="k">end</span>
-  <span class="k">end</span>
-
-  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
-    <span class="k">return</span> <span class="k">if</span> @mode <span class="o">==</span> <span class="n">:menu</span>
-    <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
-      p <span class="o">=</span> square_pos(i)
-      c <span class="o">=</span> <span class="t">Checkers</span>.dark?(i) ? <span class="t">Color</span>.hex(<span class="s">&quot;#6b4f3a&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#e8d8c0&quot;</span>)
-      c <span class="o">=</span> c.lerp(<span class="t">Color</span><span class="t">::</span><span class="t">YELLOW</span>, <span class="n">0.35</span>) <span class="k">if</span> (l <span class="o">=</span> @last) <span class="o">&amp;&amp;</span> (l.path.includes?(i))
-      c <span class="o">=</span> c.lerp(<span class="t">Color</span><span class="t">::</span><span class="t">GREEN</span>, <span class="n">0.4</span>) <span class="k">if</span> @selected <span class="o">==</span> i
-      g.rect(p.x, p.y, <span class="t">SIZE</span>, <span class="t">SIZE</span>, color: c)
-    <span class="k">end</span>
-    @legal.each { <span class="o">|</span>m<span class="o">|</span> p <span class="o">=</span> square_pos(m.to) <span class="o">+</span> v2(<span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>, <span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>); g.circle(p, <span class="n">10</span>, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.3</span>)) }
-    <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
-      c <span class="o">=</span> @board[i]
-      <span class="k">next</span> <span class="k">unless</span> c
-      p <span class="o">=</span> square_pos(i) <span class="o">+</span> v2(<span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>, <span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>)
-      base <span class="o">=</span> c.side.red? ? <span class="t">Color</span>.hex(<span class="s">&quot;#c0392b&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#2c2c2c&quot;</span>)
-      g.circle(p <span class="o">+</span> v2(<span class="n">2</span>, <span class="n">3</span>), <span class="t">SIZE</span> <span class="o">*</span> <span class="n">0.38</span>, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.35</span>))
-      g.circle(p, <span class="t">SIZE</span> <span class="o">*</span> <span class="n">0.38</span>, color: base)
-      g.circle(p, <span class="t">SIZE</span> <span class="o">*</span> <span class="n">0.3</span>, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, color: base.lighten(<span class="n">0.3</span>))
-      g.print(<span class="s">&quot;K&quot;</span>, p.x, p.y <span class="o">-</span> <span class="n">8</span>, <span class="t">Color</span><span class="t">::</span><span class="t">YELLOW</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>) <span class="k">if</span> c.king?
-    <span class="k">end</span>
-    g.print(@status, <span class="t">ORIGIN</span>.x, <span class="t">ORIGIN</span>.y <span class="o">+</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">14</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
-    g.print(<span class="s">&quot;red </span><span class="i">#{</span>@board.count(<span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span><span class="t">::</span><span class="t">Red</span>)<span class="i">}</span><span class="s">  black </span><span class="i">#{</span>@board.count(<span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span><span class="t">::</span><span class="t">Black</span>)<span class="i">}</span><span class="s">   </span><span class="i">#{</span>@mode <span class="o">==</span> <span class="n">:ai</span> ? <span class="s">&quot;vs AI depth </span><span class="i">#{</span>@ai.depth<span class="i">}</span><span class="s">, nodes </span><span class="i">#{</span>@ai.nodes<span class="i">}</span><span class="s">&quot;</span> : <span class="s">&quot;two players&quot;</span><span class="i">}</span><span class="s">   U undo  R restart  M menu&quot;</span>, <span class="t">ORIGIN</span>.x, <span class="t">ORIGIN</span>.y <span class="o">+</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">38</span>, <span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>)
-  <span class="k">end</span>
-<span class="k">end</span>
+<details><summary>Source: <code>examples/checkers/main.cr</code></summary><h3>examples/checkers/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;./game&quot;</span>
 
 <span class="t">Eagle</span>.run(<span class="t">CheckersGame</span>, title: <span class="s">&quot;Eagle Checkers&quot;</span>, width: <span class="n">900</span>, height: <span class="n">700</span>)
 </code></pre>
-<h3>examples/checkers/checkers.cr</h3><pre class="code"><code class="lang-crystal"><span class="c"># Checkers (English draughts) rules + AI, independent of rendering.</span>
-<span class="c"># 8x8 board, dark squares only, forced captures, multi-jumps, kings.</span>
+<h3>examples/checkers/checkers.cr</h3><pre class="code"><code class="lang-crystal"><span class="c"># Checkers (American checkers / English draughts) rules + AI, independent of rendering.</span>
+<span class="c">#</span>
+<span class="c"># Rules implemented:</span>
+<span class="c"># * 8x8 board, play on the dark squares; a1 (bottom left, Red&#39;s side) is dark. Black moves first.</span>
+<span class="c"># * Men move and capture diagonally forward only; kings move and capture both ways, one square at a time.</span>
+<span class="c"># * A capture chain is one move: after a jump the same piece must keep jumping while it can.</span>
+<span class="c"># * A man that reaches the far row is crowned and the move ends there, even mid-chain.</span>
+<span class="c"># * Forced capture (the standard rule) is a parameter. When it is off, captures are optional:</span>
+<span class="c">#   you may make a plain move instead, but once you start jumping you must finish the chain.</span>
+<span class="c"># * A side with no pieces or no legal moves loses.</span>
+<span class="c"># * Draws: 40 moves by each side with no capture and no man moved, or the same position with</span>
+<span class="c">#   the same side to move occurring three times.</span>
 <span class="k">module</span> <span class="t">Checkers</span>
   <span class="k">enum</span> <span class="t">Side</span> : <span class="t">Int8</span>
-    <span class="t">Red</span> <span class="o">=</span> <span class="n">0</span>   <span class="c"># moves up (increasing row)</span>
-    <span class="t">Black</span> <span class="o">=</span> <span class="n">1</span> <span class="c"># moves down</span>
+    <span class="t">Red</span> <span class="o">=</span> <span class="n">0</span>   <span class="c"># starts on rows 1-3 (bottom), moves up</span>
+    <span class="t">Black</span> <span class="o">=</span> <span class="n">1</span> <span class="c"># starts on rows 6-8 (top), moves down, moves first</span>
+
     <span class="k">def</span> <span class="m">other</span> : <span class="t">Side</span>; red? ? <span class="t">Black</span> : <span class="t">Red</span>; <span class="k">end</span>
   <span class="k">end</span>
 
   <span class="k">struct</span> <span class="t">Cell</span>
     getter side : <span class="t">Side</span>
     getter? king : <span class="t">Bool</span>
+
     <span class="k">def</span> <span class="m">initialize</span>(@side, @king <span class="o">=</span> <span class="n">false</span>); <span class="k">end</span>
+
     <span class="k">def</span> <span class="m">crowned</span> : <span class="t">Cell</span>; <span class="t">Cell</span>.new(@side, <span class="n">true</span>); <span class="k">end</span>
   <span class="k">end</span>
 
   <span class="k">struct</span> <span class="t">Move</span>
-    getter path : <span class="t">Array</span>(<span class="t">Int32</span>)       <span class="c"># squares visited (from ... to)</span>
-    getter captures : <span class="t">Array</span>(<span class="t">Int32</span>)   <span class="c"># captured squares</span>
+    getter path : <span class="t">Array</span>(<span class="t">Int32</span>)     <span class="c"># squares visited (from ... to)</span>
+    getter captures : <span class="t">Array</span>(<span class="t">Int32</span>) <span class="c"># captured squares, in jump order</span>
+
     <span class="k">def</span> <span class="m">initialize</span>(@path, @captures <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Int32</span>); <span class="k">end</span>
+
     <span class="k">def</span> <span class="m">from</span> : <span class="t">Int32</span>; @path.first; <span class="k">end</span>
+
     <span class="k">def</span> <span class="m">to</span> : <span class="t">Int32</span>; @path.last; <span class="k">end</span>
+
     <span class="k">def</span> <span class="m">capture?</span> : <span class="t">Bool</span>; <span class="o">!</span>@captures.empty?; <span class="k">end</span>
-    <span class="k">def</span> <span class="m">to_s</span> : <span class="t">String</span>; @path.map { <span class="o">|</span>i<span class="o">|</span> <span class="t">Checkers</span>.name(i) }.join(capture? ? <span class="s">&quot;x&quot;</span> : <span class="s">&quot;-&quot;</span>); <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">to_s</span>(io : <span class="t">IO</span>) : <span class="t">Nil</span>; io <span class="o">&lt;&lt;</span> @path.map { <span class="o">|</span>i<span class="o">|</span> <span class="t">Checkers</span>.name(i) }.join(capture? ? <span class="s">&quot;x&quot;</span> : <span class="s">&quot;-&quot;</span>); <span class="k">end</span>
+
     <span class="k">def</span> <span class="m">==</span>(o : <span class="t">Move</span>) : <span class="t">Bool</span>; @path <span class="o">==</span> o.path; <span class="k">end</span>
   <span class="k">end</span>
 
+  <span class="t">RED_DIRS</span>   <span class="o">=</span> [{<span class="n">1</span>, <span class="n">1</span>}, {<span class="n">-1</span>, <span class="n">1</span>}]
+  <span class="t">BLACK_DIRS</span> <span class="o">=</span> [{<span class="n">1</span>, <span class="n">-1</span>}, {<span class="n">-1</span>, <span class="n">-1</span>}]
+  <span class="t">KING_DIRS</span>  <span class="o">=</span> [{<span class="n">1</span>, <span class="n">1</span>}, {<span class="n">-1</span>, <span class="n">1</span>}, {<span class="n">1</span>, <span class="n">-1</span>}, {<span class="n">-1</span>, <span class="n">-1</span>}]
+  <span class="c"># 40 moves by each side without a capture or a man moving.</span>
+  <span class="t">QUIET_LIMIT</span> <span class="o">=</span> <span class="n">80</span>
+
   <span class="k">def</span> <span class="m">self</span>.name(i : <span class="t">Int32</span>) : <span class="t">String</span>; <span class="s">&quot;</span><span class="i">#{</span>(<span class="s">&#39;a&#39;</span>.ord <span class="o">+</span> i <span class="o">%</span> <span class="n">8</span>).chr<span class="i">}</span><span class="s"></span><span class="i">#{</span>i <span class="o">//</span> <span class="n">8</span> <span class="o">+</span> <span class="n">1</span><span class="i">}</span><span class="s">&quot;</span>; <span class="k">end</span>
+
   <span class="k">def</span> <span class="m">self</span>.index(name : <span class="t">String</span>) : <span class="t">Int32</span>; (name[<span class="n">0</span>].ord <span class="o">-</span> <span class="s">&#39;a&#39;</span>.ord) <span class="o">+</span> (name[<span class="n">1</span>].to_i <span class="o">-</span> <span class="n">1</span>) <span class="o">*</span> <span class="n">8</span>; <span class="k">end</span>
+
   <span class="k">def</span> <span class="m">self</span>.dark?(i : <span class="t">Int32</span>) : <span class="t">Bool</span>; (i <span class="o">%</span> <span class="n">8</span> <span class="o">+</span> i <span class="o">//</span> <span class="n">8</span>).even?; <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">self</span>.last_row(side : <span class="t">Side</span>) : <span class="t">Int32</span>; side.red? ? <span class="n">7</span> : <span class="n">0</span>; <span class="k">end</span>
 
   <span class="k">enum</span> <span class="t">Status</span>
     <span class="t">Playing</span>
@@ -209,17 +85,31 @@
     getter cells : <span class="t">Array</span>(<span class="t">Cell</span>?)
     getter turn : <span class="t">Side</span>
     getter history <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Move</span>
-    getter quiet_moves <span class="o">=</span> <span class="n">0</span> <span class="c"># moves without capture/crowning (draw at 40 each side)</span>
+    <span class="c"># Plies since the last capture or man move; the game is drawn at `QUIET_LIMIT`.</span>
+    getter quiet_moves <span class="o">=</span> <span class="n">0</span>
+    <span class="c"># :nodoc: for tests and puzzles</span>
+    setter quiet_moves
+    <span class="c"># When true a capture must be taken if one exists (standard rules). When false captures are optional.</span>
+    getter? forced_capture : <span class="t">Bool</span>
+    @keys <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">String</span>
+    @snapshots <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> {<span class="t">Array</span>(<span class="t">Cell</span>?), <span class="t">Side</span>, <span class="t">Int32</span>}
 
-    <span class="k">def</span> <span class="m">initialize</span>
+    <span class="k">def</span> <span class="m">initialize</span>(@forced_capture <span class="o">=</span> <span class="n">true</span>)
       @cells <span class="o">=</span> <span class="t">Array</span>(<span class="t">Cell</span>?).new(<span class="n">64</span>, <span class="n">nil</span>)
-      @turn <span class="o">=</span> <span class="t">Side</span><span class="t">::</span><span class="t">Red</span>
+      @turn <span class="o">=</span> <span class="t">Side</span><span class="t">::</span><span class="t">Black</span>
       setup
     <span class="k">end</span>
 
-    <span class="k">protected</span> <span class="k">def</span> <span class="m">initialize</span>(@cells, @turn, @history, @quiet_moves); <span class="k">end</span>
+    <span class="k">protected</span> <span class="k">def</span> <span class="m">initialize</span>(@cells, @turn, @history, @quiet_moves, @forced_capture, @keys, @snapshots); <span class="k">end</span>
 
-    <span class="k">def</span> <span class="m">clone</span> : <span class="t">Board</span>; <span class="t">Board</span>.new(@cells.dup, @turn, @history.dup, @quiet_moves); <span class="k">end</span>
+    <span class="k">def</span> <span class="m">clone</span> : <span class="t">Board</span>; <span class="t">Board</span>.new(@cells.dup, @turn, @history.dup, @quiet_moves, @forced_capture, @keys.dup, @snapshots.dup); <span class="k">end</span>
+
+    <span class="c"># A copy with *m* applied, without history. Used by the AI search.</span>
+    <span class="k">def</span> <span class="m">child</span>(m : <span class="t">Move</span>) : <span class="t">Board</span>
+      b <span class="o">=</span> <span class="t">Board</span>.new(@cells.dup, @turn, <span class="o">[]</span> <span class="k">of</span> <span class="t">Move</span>, @quiet_moves, @forced_capture, <span class="o">[]</span> <span class="k">of</span> <span class="t">String</span>, <span class="o">[]</span> <span class="k">of</span> {<span class="t">Array</span>(<span class="t">Cell</span>?), <span class="t">Side</span>, <span class="t">Int32</span>})
+      b.apply(m, record: <span class="n">false</span>)
+      b
+    <span class="k">end</span>
 
     <span class="k">def</span> <span class="m">setup</span> : <span class="t">Nil</span>
       @cells.fill(<span class="n">nil</span>)
@@ -229,11 +119,15 @@
         @cells[i] <span class="o">=</span> <span class="t">Cell</span>.new(<span class="t">Side</span><span class="t">::</span><span class="t">Red</span>) <span class="k">if</span> r <span class="o">&lt;</span> <span class="n">3</span>
         @cells[i] <span class="o">=</span> <span class="t">Cell</span>.new(<span class="t">Side</span><span class="t">::</span><span class="t">Black</span>) <span class="k">if</span> r <span class="o">&gt;</span> <span class="n">4</span>
       <span class="k">end</span>
+      @history.clear
+      @snapshots.clear
+      @quiet_moves <span class="o">=</span> <span class="n">0</span>
+      @keys <span class="o">=</span> [key]
     <span class="k">end</span>
 
     <span class="c"># Layout from 8 text rows, top row first: r/R red (R = king), b/B black, . empty</span>
-    <span class="k">def</span> <span class="m">self</span>.from_layout(rows : <span class="t">Array</span>(<span class="t">String</span>), turn : <span class="t">Side</span> <span class="o">=</span> <span class="t">Side</span><span class="t">::</span><span class="t">Red</span>) : <span class="t">Board</span>
-      b <span class="o">=</span> new
+    <span class="k">def</span> <span class="m">self</span>.from_layout(rows : <span class="t">Array</span>(<span class="t">String</span>), turn : <span class="t">Side</span> <span class="o">=</span> <span class="t">Side</span><span class="t">::</span><span class="t">Red</span>, forced_capture : <span class="t">Bool</span> <span class="o">=</span> <span class="n">true</span>) : <span class="t">Board</span>
+      b <span class="o">=</span> new(forced_capture)
       b.cells.fill(<span class="n">nil</span>)
       rows.each_with_index <span class="k">do</span> <span class="o">|</span>row, ri<span class="o">|</span>
         r <span class="o">=</span> <span class="n">7</span> <span class="o">-</span> ri
@@ -252,25 +146,46 @@
     <span class="k">end</span>
 
     <span class="c"># :nodoc:</span>
-    <span class="k">def</span> <span class="m">set_turn</span>(@turn); <span class="k">end</span>
-
-    <span class="k">def</span> <span class="m">[]</span>(i : <span class="t">Int32</span>) : <span class="t">Cell</span>?; @cells[i]; <span class="k">end</span>
-    <span class="k">def</span> <span class="m">count</span>(side : <span class="t">Side</span>) : <span class="t">Int32</span>; @cells.count { <span class="o">|</span>c<span class="o">|</span> c <span class="o">&amp;&amp;</span> c.side <span class="o">==</span> side }; <span class="k">end</span>
-
-    <span class="k">private</span> <span class="k">def</span> <span class="m">dirs</span>(c : <span class="t">Cell</span>) : <span class="t">Array</span>({<span class="t">Int32</span>, <span class="t">Int32</span>})
-      <span class="k">return</span> [{<span class="n">1</span>, <span class="n">1</span>}, {<span class="n">-1</span>, <span class="n">1</span>}, {<span class="n">1</span>, <span class="n">-1</span>}, {<span class="n">-1</span>, <span class="n">-1</span>}] <span class="k">if</span> c.king?
-      c.side.red? ? [{<span class="n">1</span>, <span class="n">1</span>}, {<span class="n">-1</span>, <span class="n">1</span>}] : [{<span class="n">1</span>, <span class="n">-1</span>}, {<span class="n">-1</span>, <span class="n">-1</span>}]
+    <span class="k">def</span> <span class="m">set_turn</span>(@turn)
+      @keys <span class="o">=</span> [key]
     <span class="k">end</span>
 
-    <span class="c"># All legal moves (captures are mandatory).</span>
+    <span class="k">def</span> <span class="m">[]</span>(i : <span class="t">Int32</span>) : <span class="t">Cell</span>?; @cells[i]; <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">count</span>(side : <span class="t">Side</span>) : <span class="t">Int32</span>; @cells.count { <span class="o">|</span>c<span class="o">|</span> c <span class="o">&amp;&amp;</span> c.side <span class="o">==</span> side }; <span class="k">end</span>
+
+    <span class="c"># Position fingerprint (pieces + side to move) for repetition detection.</span>
+    <span class="k">def</span> <span class="m">key</span> : <span class="t">String</span>
+      <span class="t">String</span>.build <span class="k">do</span> <span class="o">|</span>s<span class="o">|</span>
+        <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+          <span class="k">next</span> <span class="k">unless</span> <span class="t">Checkers</span>.dark?(i)
+          c <span class="o">=</span> @cells[i]
+          s <span class="o">&lt;&lt;</span> (c ? (c.side.red? ? (c.king? ? <span class="s">&#39;R&#39;</span> : <span class="s">&#39;r&#39;</span>) : (c.king? ? <span class="s">&#39;B&#39;</span> : <span class="s">&#39;b&#39;</span>)) : <span class="s">&#39;.&#39;</span>)
+        <span class="k">end</span>
+        s <span class="o">&lt;&lt;</span> (@turn.red? ? <span class="s">&#39;r&#39;</span> : <span class="s">&#39;b&#39;</span>)
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c"># How many times the current position has occurred.</span>
+    <span class="k">def</span> <span class="m">repetitions</span> : <span class="t">Int32</span>
+      k <span class="o">=</span> @keys.last? <span class="o">||</span> key
+      @keys.count(k)
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">dirs</span>(c : <span class="t">Cell</span>) : <span class="t">Array</span>({<span class="t">Int32</span>, <span class="t">Int32</span>})
+      <span class="k">return</span> <span class="t">KING_DIRS</span> <span class="k">if</span> c.king?
+      c.side.red? ? <span class="t">RED_DIRS</span> : <span class="t">BLACK_DIRS</span>
+    <span class="k">end</span>
+
+    <span class="c"># All legal moves, captures first. With forced capture only captures are returned when any exist.</span>
     <span class="k">def</span> <span class="m">legal_moves</span> : <span class="t">Array</span>(<span class="t">Move</span>)
       captures <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Move</span>
       simple <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Move</span>
       <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
         c <span class="o">=</span> @cells[i]
         <span class="k">next</span> <span class="k">unless</span> c <span class="o">&amp;&amp;</span> c.side <span class="o">==</span> @turn
-        jumps(i, c, [i], <span class="o">[]</span> <span class="k">of</span> <span class="t">Int32</span>, captures)
-        <span class="k">next</span> <span class="k">unless</span> captures.empty?
+        jumps(i, c, [i], <span class="o">[]</span> <span class="k">of</span> <span class="t">Int32</span>, captures) <span class="k">if</span> can_jump?(i, c)
+        <span class="k">next</span> <span class="k">if</span> @forced_capture <span class="o">&amp;&amp;</span> <span class="o">!</span>captures.empty?
         dirs(c).each <span class="k">do</span> <span class="o">|</span>(df, dr)<span class="o">|</span>
           f <span class="o">=</span> i <span class="o">%</span> <span class="n">8</span> <span class="o">+</span> df; r <span class="o">=</span> i <span class="o">//</span> <span class="n">8</span> <span class="o">+</span> dr
           <span class="k">next</span> <span class="k">unless</span> (<span class="n">0</span> <span class="o">&lt;=</span> f <span class="o">&lt;=</span> <span class="n">7</span>) <span class="o">&amp;&amp;</span> (<span class="n">0</span> <span class="o">&lt;=</span> r <span class="o">&lt;=</span> <span class="n">7</span>)
@@ -278,9 +193,20 @@
           simple <span class="o">&lt;&lt;</span> <span class="t">Move</span>.new([i, t]) <span class="k">if</span> @cells[t].<span class="k">nil?</span>
         <span class="k">end</span>
       <span class="k">end</span>
-      captures.empty? ? simple : captures
+      <span class="k">return</span> captures <span class="k">if</span> @forced_capture <span class="o">&amp;&amp;</span> <span class="o">!</span>captures.empty?
+      captures.empty? ? simple : captures <span class="o">+</span> simple
     <span class="k">end</span>
 
+    <span class="k">private</span> <span class="k">def</span> <span class="m">can_jump?</span>(i : <span class="t">Int32</span>, c : <span class="t">Cell</span>) : <span class="t">Bool</span>
+      dirs(c).any? <span class="k">do</span> <span class="o">|</span>(df, dr)<span class="o">|</span>
+        f2 <span class="o">=</span> i <span class="o">%</span> <span class="n">8</span> <span class="o">+</span> df <span class="o">*</span> <span class="n">2</span>; r2 <span class="o">=</span> i <span class="o">//</span> <span class="n">8</span> <span class="o">+</span> dr <span class="o">*</span> <span class="n">2</span>
+        <span class="k">next</span> <span class="n">false</span> <span class="k">unless</span> (<span class="n">0</span> <span class="o">&lt;=</span> f2 <span class="o">&lt;=</span> <span class="n">7</span>) <span class="o">&amp;&amp;</span> (<span class="n">0</span> <span class="o">&lt;=</span> r2 <span class="o">&lt;=</span> <span class="n">7</span>)
+        m <span class="o">=</span> @cells[(i <span class="o">//</span> <span class="n">8</span> <span class="o">+</span> dr) <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> i <span class="o">%</span> <span class="n">8</span> <span class="o">+</span> df]
+        <span class="o">!</span><span class="o">!</span>(m <span class="o">&amp;&amp;</span> m.side <span class="o">!=</span> c.side <span class="o">&amp;&amp;</span> @cells[r2 <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> f2].<span class="k">nil?</span>)
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c"># Capture chains from *i*. Each chain is maximal: it only ends when no further jump exists or a man is crowned.</span>
     <span class="k">private</span> <span class="k">def</span> <span class="m">jumps</span>(i, c, path, caps, out_moves)
       found <span class="o">=</span> <span class="n">false</span>
       dirs(c).each <span class="k">do</span> <span class="o">|</span>(df, dr)<span class="o">|</span>
@@ -290,11 +216,10 @@
         mid <span class="o">=</span> r <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> f; t <span class="o">=</span> r2 <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> f2
         m <span class="o">=</span> @cells[mid]
         <span class="k">next</span> <span class="k">unless</span> m <span class="o">&amp;&amp;</span> m.side <span class="o">!=</span> c.side <span class="o">&amp;&amp;</span> <span class="o">!</span>caps.includes?(mid)
+        <span class="c"># the moving piece has left its start square, so a chain may pass through it again</span>
         <span class="k">next</span> <span class="k">unless</span> @cells[t].<span class="k">nil?</span> <span class="o">||</span> t <span class="o">==</span> path.first
         found <span class="o">=</span> <span class="n">true</span>
-        <span class="c"># stop multi-jump when a man reaches the king row</span>
-        last_row <span class="o">=</span> c.side.red? ? <span class="n">7</span> : <span class="n">0</span>
-        <span class="k">if</span> <span class="o">!</span>c.king? <span class="o">&amp;&amp;</span> r2 <span class="o">==</span> last_row
+        <span class="k">if</span> <span class="o">!</span>c.king? <span class="o">&amp;&amp;</span> r2 <span class="o">==</span> <span class="t">Checkers</span>.last_row(c.side)
           out_moves <span class="o">&lt;&lt;</span> <span class="t">Move</span>.new(path <span class="o">+</span> [t], caps <span class="o">+</span> [mid])
         <span class="k">else</span>
           jumps(t, c, path <span class="o">+</span> [t], caps <span class="o">+</span> [mid], out_moves)
@@ -307,16 +232,34 @@
       legal_moves.<span class="k">select</span> { <span class="o">|</span>m<span class="o">|</span> m.from <span class="o">==</span> i }
     <span class="k">end</span>
 
-    <span class="k">def</span> <span class="m">apply</span>(m : <span class="t">Move</span>) : <span class="t">Nil</span>
+    <span class="c"># Squares holding a piece with at least one legal move.</span>
+    <span class="k">def</span> <span class="m">movable_squares</span> : <span class="t">Array</span>(<span class="t">Int32</span>)
+      legal_moves.map(<span class="o">&amp;</span>.from).uniq
+    <span class="k">end</span>
+
+    <span class="c"># Applies *m* without checking legality. Use `play` for untrusted moves.</span>
+    <span class="k">def</span> <span class="m">apply</span>(m : <span class="t">Move</span>, record : <span class="t">Bool</span> <span class="o">=</span> <span class="n">true</span>) : <span class="t">Nil</span>
+      @snapshots <span class="o">&lt;&lt;</span> {@cells.dup, @turn, @quiet_moves} <span class="k">if</span> record
       c <span class="o">=</span> @cells[m.from].not_nil!
       @cells[m.from] <span class="o">=</span> <span class="n">nil</span>
       m.captures.each { <span class="o">|</span>x<span class="o">|</span> @cells[x] <span class="o">=</span> <span class="n">nil</span> }
-      last_row <span class="o">=</span> c.side.red? ? <span class="n">7</span> : <span class="n">0</span>
-      crowned <span class="o">=</span> <span class="o">!</span>c.king? <span class="o">&amp;&amp;</span> m.to <span class="o">//</span> <span class="n">8</span> <span class="o">==</span> last_row
+      crowned <span class="o">=</span> <span class="o">!</span>c.king? <span class="o">&amp;&amp;</span> m.to <span class="o">//</span> <span class="n">8</span> <span class="o">==</span> <span class="t">Checkers</span>.last_row(c.side)
       @cells[m.to] <span class="o">=</span> crowned ? c.crowned : c
-      @quiet_moves <span class="o">=</span> (m.capture? <span class="o">||</span> crowned) ? <span class="n">0</span> : @quiet_moves <span class="o">+</span> <span class="n">1</span>
-      @history <span class="o">&lt;&lt;</span> m
+      @quiet_moves <span class="o">=</span> (m.capture? <span class="o">||</span> <span class="o">!</span>c.king?) ? <span class="n">0</span> : @quiet_moves <span class="o">+</span> <span class="n">1</span>
       @turn <span class="o">=</span> @turn.other
+      <span class="k">if</span> record
+        @history <span class="o">&lt;&lt;</span> m
+        @keys <span class="o">&lt;&lt;</span> key
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c"># Takes back the last move. Returns it, or nil when there is nothing to undo.</span>
+    <span class="k">def</span> <span class="m">undo</span> : <span class="t">Move</span>?
+      snap <span class="o">=</span> @snapshots.pop?
+      <span class="k">return</span> <span class="n">nil</span> <span class="k">unless</span> snap
+      @cells, @turn, @quiet_moves <span class="o">=</span> snap
+      @keys.pop
+      @history.pop
     <span class="k">end</span>
 
     <span class="k">def</span> <span class="m">play</span>(m : <span class="t">Move</span>) : <span class="t">Bool</span>
@@ -332,11 +275,18 @@
     <span class="k">end</span>
 
     <span class="k">def</span> <span class="m">status</span> : <span class="t">Status</span>
-      <span class="k">return</span> <span class="t">Status</span><span class="t">::</span><span class="t">Draw</span> <span class="k">if</span> @quiet_moves <span class="o">&gt;=</span> <span class="n">80</span>
       <span class="k">if</span> legal_moves.empty?
         <span class="k">return</span> @turn.red? ? <span class="t">Status</span><span class="t">::</span><span class="t">BlackWins</span> : <span class="t">Status</span><span class="t">::</span><span class="t">RedWins</span>
       <span class="k">end</span>
+      <span class="k">return</span> <span class="t">Status</span><span class="t">::</span><span class="t">Draw</span> <span class="k">if</span> draw_reason
       <span class="t">Status</span><span class="t">::</span><span class="t">Playing</span>
+    <span class="k">end</span>
+
+    <span class="c"># Why the game is drawn, or nil.</span>
+    <span class="k">def</span> <span class="m">draw_reason</span> : <span class="t">String</span>?
+      <span class="k">return</span> <span class="s">&quot;40 moves each without a capture or man move&quot;</span> <span class="k">if</span> @quiet_moves <span class="o">&gt;=</span> <span class="t">QUIET_LIMIT</span>
+      <span class="k">return</span> <span class="s">&quot;threefold repetition&quot;</span> <span class="k">if</span> repetitions <span class="o">&gt;=</span> <span class="n">3</span>
+      <span class="n">nil</span>
     <span class="k">end</span>
 
     <span class="k">def</span> <span class="m">game_over?</span> : <span class="t">Bool</span>; <span class="o">!</span>status.playing?; <span class="k">end</span>
@@ -352,61 +302,783 @@
     <span class="k">end</span>
   <span class="k">end</span>
 
+  <span class="c"># Alpha-beta AI with iterative deepening and capture quiescence.</span>
+  <span class="c">#</span>
+  <span class="c"># The search keeps its own explicit stack, so it can be paused after any node and resumed</span>
+  <span class="c"># next frame (`think`), which keeps the game responsive on the single-threaded web build.</span>
+  <span class="c"># Results depend only on the board, the level and the seed, never on how the work was sliced.</span>
   <span class="k">class</span> <span class="t">AI</span>
-    property depth : <span class="t">Int32</span>
+    <span class="k">enum</span> <span class="t">Level</span>
+      <span class="t">Beginner</span>
+      <span class="t">Medium</span>
+      <span class="t">Advanced</span>
+    <span class="k">end</span>
+
+    <span class="t">MATE</span> <span class="o">=</span> <span class="n">100_000</span>
+    <span class="t">INF</span>  <span class="o">=</span> <span class="n">1_000_000</span>
+
+    getter level : <span class="t">Level</span>
+    <span class="c"># Deepest iteration of the search.</span>
+    property max_depth : <span class="t">Int32</span>
+    <span class="c"># Search stops after this many nodes and plays the best move found so far.</span>
+    property node_limit : <span class="t">Int32</span>
+    <span class="c"># Plies of capture-only search past the nominal depth.</span>
+    property quiescence : <span class="t">Int32</span>
+    <span class="c"># Random +/- noise added to leaf evaluations (in hundredths of a man).</span>
+    property noise : <span class="t">Int32</span>
+    <span class="c"># Chance of playing a random legal move instead of searching.</span>
+    property blunder_chance : <span class="t">Float64</span>
+    <span class="c"># Nodes searched for the last move.</span>
     getter nodes <span class="o">=</span> <span class="n">0</span>
+    <span class="c"># Depth of the last completed iteration.</span>
+    getter depth_reached <span class="o">=</span> <span class="n">0</span>
 
-    <span class="k">def</span> <span class="m">initialize</span>(@depth <span class="o">=</span> <span class="n">6</span>); <span class="k">end</span>
+    <span class="k">private</span> <span class="k">class</span> <span class="t">Frame</span>
+      property board : <span class="t">Board</span>
+      property moves : <span class="t">Array</span>(<span class="t">Move</span>)
+      property index <span class="o">=</span> <span class="n">0</span>
+      property alpha : <span class="t">Int32</span>
+      property beta : <span class="t">Int32</span>
+      property depth : <span class="t">Int32</span>
+      property ply : <span class="t">Int32</span>
 
+      <span class="k">def</span> <span class="m">initialize</span>(@board, @moves, @alpha, @beta, @depth, @ply); <span class="k">end</span>
+    <span class="k">end</span>
+
+    @rng : <span class="t">Random</span>
+    @stack <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Frame</span>
+    @ret : <span class="t">Int32</span>? <span class="o">=</span> <span class="n">nil</span>
+    @root : <span class="t">Board</span>? <span class="o">=</span> <span class="n">nil</span>
+    @root_moves <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Move</span>
+    @best : <span class="t">Move</span>? <span class="o">=</span> <span class="n">nil</span>
+    @iter_best : <span class="t">Move</span>? <span class="o">=</span> <span class="n">nil</span>
+    @iter_score : <span class="t">Int32</span> <span class="o">=</span> <span class="o">-</span><span class="t">INF</span>
+    @depth : <span class="t">Int32</span> <span class="o">=</span> <span class="n">0</span>
+    @result : <span class="t">Move</span>? <span class="o">=</span> <span class="n">nil</span>
+    @done <span class="o">=</span> <span class="n">true</span>
+
+    <span class="k">def</span> <span class="m">initialize</span>(@level : <span class="t">Level</span> <span class="o">=</span> <span class="t">Level</span><span class="t">::</span><span class="t">Medium</span>, seed : <span class="t">Int</span> <span class="o">=</span> <span class="t">Random</span>.new.rand(<span class="t">UInt32</span>))
+      @rng <span class="o">=</span> <span class="t">Random</span>.new(seed.to_u64)
+      @max_depth, @node_limit, @quiescence, @noise, @blunder_chance <span class="o">=</span> <span class="k">case</span> @level
+                                                                      <span class="k">in</span> .beginner? <span class="k">then</span> {<span class="n">2</span>, <span class="n">2_000</span>, <span class="n">0</span>, <span class="n">60</span>, <span class="n">0.3</span>}
+                                                                      <span class="k">in</span> .medium?   <span class="k">then</span> {<span class="n">4</span>, <span class="n">20_000</span>, <span class="n">4</span>, <span class="n">10</span>, <span class="n">0.0</span>}
+                                                                      <span class="k">in</span> .advanced? <span class="k">then</span> {<span class="n">24</span>, <span class="n">200_000</span>, <span class="n">10</span>, <span class="n">0</span>, <span class="n">0.0</span>}
+                                                                      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c"># Starts a search for *b*. Drive it with `think` or `step` until `thinking?` is false, then read `result`.</span>
+    <span class="k">def</span> <span class="m">start</span>(b : <span class="t">Board</span>) : <span class="t">Nil</span>
+      @nodes <span class="o">=</span> <span class="n">0</span>; @depth_reached <span class="o">=</span> <span class="n">0</span>
+      @stack.clear; @ret <span class="o">=</span> <span class="n">nil</span>
+      @result <span class="o">=</span> <span class="n">nil</span>; @best <span class="o">=</span> <span class="n">nil</span>; @iter_best <span class="o">=</span> <span class="n">nil</span>
+      @root <span class="o">=</span> b
+      moves <span class="o">=</span> order(b.legal_moves)
+      @root_moves <span class="o">=</span> moves
+      @done <span class="o">=</span> <span class="n">false</span>
+      <span class="k">if</span> moves.size <span class="o">&lt;=</span> <span class="n">1</span>
+        finish(moves.first?)
+      <span class="k">elsif</span> @blunder_chance <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> @rng.rand <span class="o">&lt;</span> @blunder_chance
+        finish(moves.sample(@rng))
+      <span class="k">else</span>
+        @best <span class="o">=</span> moves.first
+        @depth <span class="o">=</span> <span class="n">1</span>
+        push_root
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="m">thinking?</span> : <span class="t">Bool</span>; <span class="o">!</span>@done; <span class="k">end</span>
+
+    <span class="c"># The chosen move once thinking is done (nil when there are no legal moves).</span>
+    <span class="k">def</span> <span class="m">result</span> : <span class="t">Move</span>?; @result; <span class="k">end</span>
+
+    <span class="c"># Runs the search for at most *seconds* of wall time. Returns true when finished.</span>
+    <span class="k">def</span> <span class="m">think</span>(seconds : <span class="t">Float64</span>) : <span class="t">Bool</span>
+      deadline <span class="o">=</span> <span class="t">Time</span>.instant <span class="o">+</span> seconds.seconds
+      <span class="k">until</span> @done
+        step(<span class="n">256</span>)
+        <span class="k">break</span> <span class="k">if</span> <span class="t">Time</span>.instant <span class="o">&gt;=</span> deadline
+      <span class="k">end</span>
+      @done
+    <span class="k">end</span>
+
+    <span class="c"># Runs at most *budget* search steps. Returns true when finished.</span>
+    <span class="k">def</span> <span class="m">step</span>(budget : <span class="t">Int32</span>) : <span class="t">Bool</span>
+      budget.times <span class="k">do</span>
+        <span class="k">break</span> <span class="k">if</span> @done
+        advance
+      <span class="k">end</span>
+      @done
+    <span class="k">end</span>
+
+    <span class="c"># Searches synchronously and returns the best move.</span>
+    <span class="k">def</span> <span class="m">best_move</span>(b : <span class="t">Board</span>) : <span class="t">Move</span>?
+      start(b)
+      <span class="k">until</span> @done
+        step(<span class="t">Int32</span><span class="t">::</span><span class="t">MAX</span>)
+      <span class="k">end</span>
+      @result
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">finish</span>(m : <span class="t">Move</span>?) : <span class="t">Nil</span>
+      @result <span class="o">=</span> m
+      @done <span class="o">=</span> <span class="n">true</span>
+      @stack.clear
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">push_root</span> : <span class="t">Nil</span>
+      root <span class="o">=</span> @root.not_nil!
+      @iter_best <span class="o">=</span> <span class="n">nil</span>; @iter_score <span class="o">=</span> <span class="o">-</span><span class="t">INF</span>
+      @stack <span class="o">&lt;&lt;</span> <span class="t">Frame</span>.new(root, @root_moves, <span class="o">-</span><span class="t">INF</span>, <span class="t">INF</span>, @depth, <span class="n">0</span>)
+    <span class="k">end</span>
+
+    <span class="c"># One unit of work: consume a child&#39;s value or expand the next child.</span>
+    <span class="k">private</span> <span class="k">def</span> <span class="m">advance</span> : <span class="t">Nil</span>
+      <span class="k">if</span> @nodes <span class="o">&gt;=</span> @node_limit
+        <span class="k">return</span> finish(@iter_best <span class="o">||</span> @best)
+      <span class="k">end</span>
+      f <span class="o">=</span> @stack.last
+      <span class="k">if</span> v <span class="o">=</span> @ret
+        @ret <span class="o">=</span> <span class="n">nil</span>
+        s <span class="o">=</span> <span class="o">-</span>v
+        <span class="k">if</span> f.ply <span class="o">==</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> s <span class="o">&gt;</span> @iter_score
+          @iter_score <span class="o">=</span> s; @iter_best <span class="o">=</span> f.moves[f.index]
+        <span class="k">end</span>
+        <span class="k">return</span> pop(f.beta) <span class="k">if</span> s <span class="o">&gt;=</span> f.beta
+        f.alpha <span class="o">=</span> s <span class="k">if</span> s <span class="o">&gt;</span> f.alpha
+        f.index <span class="o">+=</span> <span class="n">1</span>
+      <span class="k">end</span>
+      <span class="k">return</span> pop(f.alpha) <span class="k">if</span> f.index <span class="o">&gt;=</span> f.moves.size
+      child <span class="o">=</span> f.board.child(f.moves[f.index])
+      <span class="k">if</span> leaf <span class="o">=</span> enter(child, f.depth <span class="o">-</span> <span class="n">1</span>, <span class="o">-</span>f.beta, <span class="o">-</span>f.alpha, f.ply <span class="o">+</span> <span class="n">1</span>)
+        @ret <span class="o">=</span> leaf
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">pop</span>(value : <span class="t">Int32</span>) : <span class="t">Nil</span>
+      @stack.pop
+      <span class="k">return</span> @ret <span class="o">=</span> value <span class="k">unless</span> @stack.empty?
+      <span class="c"># a root iteration finished</span>
+      @best <span class="o">=</span> @iter_best <span class="o">||</span> @best
+      @depth_reached <span class="o">=</span> @depth
+      <span class="k">if</span> @depth <span class="o">&gt;=</span> @max_depth <span class="o">||</span> @iter_score.abs <span class="o">&gt;=</span> <span class="t">MATE</span> <span class="o">-</span> <span class="n">1000</span>
+        <span class="k">return</span> finish(@best)
+      <span class="k">end</span>
+      <span class="c"># search the previous best first next time</span>
+      <span class="k">if</span> b <span class="o">=</span> @best
+        @root_moves <span class="o">=</span> [b] <span class="o">+</span> @root_moves.reject { <span class="o">|</span>m<span class="o">|</span> m <span class="o">==</span> b }
+      <span class="k">end</span>
+      @depth <span class="o">+=</span> <span class="n">1</span>
+      push_root
+    <span class="k">end</span>
+
+    <span class="c"># Evaluates a leaf or pushes a frame for an interior node. Returns the value for leaves.</span>
+    <span class="k">private</span> <span class="k">def</span> <span class="m">enter</span>(b : <span class="t">Board</span>, depth : <span class="t">Int32</span>, alpha : <span class="t">Int32</span>, beta : <span class="t">Int32</span>, ply : <span class="t">Int32</span>) : <span class="t">Int32</span>?
+      @nodes <span class="o">+=</span> <span class="n">1</span>
+      moves <span class="o">=</span> b.legal_moves
+      <span class="k">return</span> <span class="o">-</span>(<span class="t">MATE</span> <span class="o">-</span> ply) <span class="k">if</span> moves.empty?
+      <span class="k">if</span> depth <span class="o">&lt;=</span> <span class="n">0</span>
+        stand <span class="o">=</span> evaluate(b) <span class="o">+</span> jitter
+        <span class="k">return</span> stand <span class="k">if</span> depth <span class="o">&lt;=</span> <span class="o">-</span>@quiescence
+        caps <span class="o">=</span> moves.<span class="k">select</span>(<span class="o">&amp;</span>.capture?)
+        <span class="k">return</span> stand <span class="k">if</span> caps.empty?
+        <span class="k">unless</span> b.forced_capture?
+          <span class="c"># captures are optional, so the side to move can decline them (stand pat)</span>
+          <span class="k">return</span> stand <span class="k">if</span> stand <span class="o">&gt;=</span> beta
+          alpha <span class="o">=</span> stand <span class="k">if</span> stand <span class="o">&gt;</span> alpha
+        <span class="k">end</span>
+        moves <span class="o">=</span> caps
+      <span class="k">end</span>
+      @stack <span class="o">&lt;&lt;</span> <span class="t">Frame</span>.new(b, order(moves), alpha, beta, depth, ply)
+      <span class="n">nil</span>
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">jitter</span> : <span class="t">Int32</span>
+      @noise <span class="o">&gt;</span> <span class="n">0</span> ? @rng.rand(<span class="o">-</span>@noise..@noise) : <span class="n">0</span>
+    <span class="k">end</span>
+
+    <span class="c"># Longest captures first, then the generator&#39;s order.</span>
+    <span class="k">private</span> <span class="k">def</span> <span class="m">order</span>(moves : <span class="t">Array</span>(<span class="t">Move</span>)) : <span class="t">Array</span>(<span class="t">Move</span>)
+      <span class="k">return</span> moves <span class="k">if</span> moves.none?(<span class="o">&amp;</span>.capture?)
+      moves.each_with_index.to_a.sort_by { <span class="o">|</span>(m, i)<span class="o">|</span> {<span class="o">-</span>m.captures.size, i} }.map(<span class="o">&amp;</span>.[<span class="n">0</span>])
+    <span class="k">end</span>
+
+    <span class="c"># Static evaluation from the point of view of the side to move.</span>
     <span class="k">def</span> <span class="m">evaluate</span>(b : <span class="t">Board</span>) : <span class="t">Int32</span>
+      score <span class="o">=</span> @level.advanced? ? evaluate_advanced(b) : evaluate_basic(b)
+      b.turn.red? ? score : <span class="o">-</span>score
+    <span class="k">end</span>
+
+    <span class="c"># Material plus a small bonus for advancing men (Red positive).</span>
+    <span class="k">def</span> <span class="m">evaluate_basic</span>(b : <span class="t">Board</span>) : <span class="t">Int32</span>
       score <span class="o">=</span> <span class="n">0</span>
       <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
         c <span class="o">=</span> b[i]
         <span class="k">next</span> <span class="k">unless</span> c
-        v <span class="o">=</span> c.king? ? <span class="n">300</span> : <span class="n">100</span>
-        <span class="c"># advancement bonus for men</span>
-        r <span class="o">=</span> i <span class="o">//</span> <span class="n">8</span>
-        v <span class="o">+=</span> (c.side.red? ? r : <span class="n">7</span> <span class="o">-</span> r) <span class="o">*</span> <span class="n">3</span> <span class="k">unless</span> c.king?
-        <span class="c"># edge safety</span>
-        v <span class="o">+=</span> <span class="n">4</span> <span class="k">if</span> i <span class="o">%</span> <span class="n">8</span> <span class="o">==</span> <span class="n">0</span> <span class="o">||</span> i <span class="o">%</span> <span class="n">8</span> <span class="o">==</span> <span class="n">7</span>
+        v <span class="o">=</span> c.king? ? <span class="n">150</span> : <span class="n">100</span> <span class="o">+</span> progress(c.side, i) <span class="o">*</span> <span class="n">3</span>
         score <span class="o">+=</span> c.side.red? ? v : <span class="o">-</span>v
       <span class="k">end</span>
-      b.turn.red? ? score : <span class="o">-</span>score
+      score
     <span class="k">end</span>
 
-    <span class="k">def</span> <span class="m">best_move</span>(b : <span class="t">Board</span>) : <span class="t">Move</span>?
-      @nodes <span class="o">=</span> <span class="n">0</span>
-      moves <span class="o">=</span> b.legal_moves
-      <span class="k">return</span> <span class="n">nil</span> <span class="k">if</span> moves.empty?
-      <span class="k">return</span> moves[<span class="n">0</span>] <span class="k">if</span> moves.size <span class="o">==</span> <span class="n">1</span>
-      best <span class="o">=</span> moves[<span class="n">0</span>]; best_score <span class="o">=</span> <span class="t">Int32</span><span class="t">::</span><span class="t">MIN</span>
-      alpha <span class="o">=</span> <span class="n">-1_000_000</span>; beta <span class="o">=</span> <span class="n">1_000_000</span>
-      moves.each <span class="k">do</span> <span class="o">|</span>m<span class="o">|</span>
-        c <span class="o">=</span> b.clone; c.apply(m)
-        s <span class="o">=</span> <span class="o">-</span>search(c, @depth <span class="o">-</span> <span class="n">1</span>, <span class="o">-</span>beta, <span class="o">-</span>alpha)
-        <span class="k">if</span> s <span class="o">&gt;</span> best_score
-          best_score <span class="o">=</span> s; best <span class="o">=</span> m
+    <span class="t">CENTER</span> <span class="o">=</span> (<span class="n">0</span>..<span class="n">63</span>).map { <span class="o">|</span>i<span class="o">|</span> {<span class="n">18</span>, <span class="n">20</span>, <span class="n">27</span>, <span class="n">29</span>, <span class="n">34</span>, <span class="n">36</span>, <span class="n">43</span>, <span class="n">45</span>}.includes?(i) }
+
+    <span class="c"># Material, advancement, back-row guard, centre control, mobility, and trading down when ahead (Red positive).</span>
+    <span class="k">def</span> <span class="m">evaluate_advanced</span>(b : <span class="t">Board</span>) : <span class="t">Int32</span>
+      mat <span class="o">=</span> <span class="t">StaticArray</span>(<span class="t">Int32</span>, <span class="n">2</span>).new(<span class="n">0</span>)
+      pos <span class="o">=</span> <span class="t">StaticArray</span>(<span class="t">Int32</span>, <span class="n">2</span>).new(<span class="n">0</span>)
+      men <span class="o">=</span> <span class="n">0</span>
+      <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+        c <span class="o">=</span> b[i]
+        <span class="k">next</span> <span class="k">unless</span> c
+        s <span class="o">=</span> c.side.value
+        f <span class="o">=</span> i <span class="o">%</span> <span class="n">8</span>; r <span class="o">=</span> i <span class="o">//</span> <span class="n">8</span>
+        <span class="k">if</span> c.king?
+          mat[s] <span class="o">+=</span> <span class="n">160</span>
+          pos[s] <span class="o">-=</span> <span class="n">8</span> <span class="k">if</span> f <span class="o">==</span> <span class="n">0</span> <span class="o">||</span> f <span class="o">==</span> <span class="n">7</span> <span class="o">||</span> r <span class="o">==</span> <span class="n">0</span> <span class="o">||</span> r <span class="o">==</span> <span class="n">7</span>
+        <span class="k">else</span>
+          mat[s] <span class="o">+=</span> <span class="n">100</span>
+          men <span class="o">+=</span> <span class="n">1</span>
+          p <span class="o">=</span> s <span class="o">==</span> <span class="n">0</span> ? r : <span class="n">7</span> <span class="o">-</span> r
+          pos[s] <span class="o">+=</span> p <span class="o">*</span> <span class="n">4</span>
+          pos[s] <span class="o">+=</span> <span class="n">12</span> <span class="k">if</span> p <span class="o">==</span> <span class="n">0</span> <span class="c"># guarding the back row keeps the opponent from crowning</span>
+          pos[s] <span class="o">+=</span> <span class="n">6</span> <span class="k">if</span> <span class="t">CENTER</span>[i]
         <span class="k">end</span>
-        alpha <span class="o">=</span> <span class="t">Math</span>.max(alpha, s)
+        pos[s] <span class="o">+=</span> mobility(b, i, c) <span class="o">*</span> <span class="n">2</span>
+      <span class="k">end</span>
+      score <span class="o">=</span> mat[<span class="n">0</span>] <span class="o">-</span> mat[<span class="n">1</span>] <span class="o">+</span> pos[<span class="n">0</span>] <span class="o">-</span> pos[<span class="n">1</span>]
+      <span class="c"># when ahead, trading pieces makes the advantage bigger</span>
+      score <span class="o">+=</span> (mat[<span class="n">0</span>] <span class="o">-</span> mat[<span class="n">1</span>]) <span class="o">*</span> <span class="n">400</span> <span class="o">//</span> (mat[<span class="n">0</span>] <span class="o">+</span> mat[<span class="n">1</span>] <span class="o">+</span> <span class="n">200</span>)
+      <span class="c"># in the endgame the side ahead hunts with its kings</span>
+      <span class="k">if</span> men <span class="o">&lt;=</span> <span class="n">4</span> <span class="o">&amp;&amp;</span> mat[<span class="n">0</span>] <span class="o">!=</span> mat[<span class="n">1</span>]
+        ahead <span class="o">=</span> mat[<span class="n">0</span>] <span class="o">&gt;</span> mat[<span class="n">1</span>] ? <span class="t">Side</span><span class="t">::</span><span class="t">Red</span> : <span class="t">Side</span><span class="t">::</span><span class="t">Black</span>
+        <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>k<span class="o">|</span>
+          c <span class="o">=</span> b[k]
+          <span class="k">next</span> <span class="k">unless</span> c <span class="o">&amp;&amp;</span> c.king? <span class="o">&amp;&amp;</span> c.side <span class="o">==</span> ahead
+          d <span class="o">=</span> nearest_enemy(b, k, ahead) <span class="o">*</span> <span class="n">3</span>
+          score <span class="o">+=</span> ahead.red? ? <span class="o">-</span>d : d
+        <span class="k">end</span>
+      <span class="k">end</span>
+      score
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">progress</span>(side : <span class="t">Side</span>, i : <span class="t">Int32</span>) : <span class="t">Int32</span>
+      side.red? ? i <span class="o">//</span> <span class="n">8</span> : <span class="n">7</span> <span class="o">-</span> i <span class="o">//</span> <span class="n">8</span>
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">mobility</span>(b : <span class="t">Board</span>, i : <span class="t">Int32</span>, c : <span class="t">Cell</span>) : <span class="t">Int32</span>
+      n <span class="o">=</span> <span class="n">0</span>
+      f <span class="o">=</span> i <span class="o">%</span> <span class="n">8</span>; r <span class="o">=</span> i <span class="o">//</span> <span class="n">8</span>
+      up <span class="o">=</span> c.king? <span class="o">||</span> c.side.red?
+      down <span class="o">=</span> c.king? <span class="o">||</span> c.side.black?
+      n <span class="o">+=</span> <span class="n">1</span> <span class="k">if</span> up <span class="o">&amp;&amp;</span> r <span class="o">&lt;</span> <span class="n">7</span> <span class="o">&amp;&amp;</span> f <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> b[i <span class="o">+</span> <span class="n">7</span>].<span class="k">nil?</span>
+      n <span class="o">+=</span> <span class="n">1</span> <span class="k">if</span> up <span class="o">&amp;&amp;</span> r <span class="o">&lt;</span> <span class="n">7</span> <span class="o">&amp;&amp;</span> f <span class="o">&lt;</span> <span class="n">7</span> <span class="o">&amp;&amp;</span> b[i <span class="o">+</span> <span class="n">9</span>].<span class="k">nil?</span>
+      n <span class="o">+=</span> <span class="n">1</span> <span class="k">if</span> down <span class="o">&amp;&amp;</span> r <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> f <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> b[i <span class="o">-</span> <span class="n">9</span>].<span class="k">nil?</span>
+      n <span class="o">+=</span> <span class="n">1</span> <span class="k">if</span> down <span class="o">&amp;&amp;</span> r <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> f <span class="o">&lt;</span> <span class="n">7</span> <span class="o">&amp;&amp;</span> b[i <span class="o">-</span> <span class="n">7</span>].<span class="k">nil?</span>
+      n
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">nearest_enemy</span>(b : <span class="t">Board</span>, k : <span class="t">Int32</span>, side : <span class="t">Side</span>) : <span class="t">Int32</span>
+      best <span class="o">=</span> <span class="n">14</span>
+      <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>j<span class="o">|</span>
+        c <span class="o">=</span> b[j]
+        <span class="k">next</span> <span class="k">unless</span> c <span class="o">&amp;&amp;</span> c.side <span class="o">!=</span> side
+        d <span class="o">=</span> <span class="t">Math</span>.max((j <span class="o">%</span> <span class="n">8</span> <span class="o">-</span> k <span class="o">%</span> <span class="n">8</span>).abs, (j <span class="o">//</span> <span class="n">8</span> <span class="o">-</span> k <span class="o">//</span> <span class="n">8</span>).abs)
+        best <span class="o">=</span> d <span class="k">if</span> d <span class="o">&lt;</span> best
       <span class="k">end</span>
       best
     <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre>
+<h3>examples/checkers/game.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./checkers&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
 
-    <span class="k">private</span> <span class="k">def</span> <span class="m">search</span>(b : <span class="t">Board</span>, depth : <span class="t">Int32</span>, alpha : <span class="t">Int32</span>, beta : <span class="t">Int32</span>) : <span class="t">Int32</span>
-      @nodes <span class="o">+=</span> <span class="n">1</span>
-      moves <span class="o">=</span> b.legal_moves
-      <span class="k">return</span> <span class="n">-100_000</span> <span class="o">-</span> depth <span class="k">if</span> moves.empty?
-      <span class="c"># extend search while captures are available (quiescence)</span>
-      <span class="k">return</span> evaluate(b) <span class="k">if</span> depth <span class="o">&lt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="o">!</span>moves[<span class="n">0</span>].capture?
-      <span class="k">return</span> evaluate(b) <span class="k">if</span> depth <span class="o">&lt;=</span> <span class="n">-4</span>
-      moves.each <span class="k">do</span> <span class="o">|</span>m<span class="o">|</span>
-        c <span class="o">=</span> b.clone; c.apply(m)
-        s <span class="o">=</span> <span class="o">-</span>search(c, depth <span class="o">-</span> <span class="n">1</span>, <span class="o">-</span>beta, <span class="o">-</span>alpha)
-        <span class="k">return</span> beta <span class="k">if</span> s <span class="o">&gt;=</span> beta
-        alpha <span class="o">=</span> <span class="t">Math</span>.max(alpha, s)
-      <span class="k">end</span>
-      alpha
+<span class="c"># Checkers. Black moves first. The setup screen picks 1 or 2 players, your color, the AI level</span>
+<span class="c"># and whether captures are forced.</span>
+<span class="c">#</span>
+<span class="c"># Capture rule: with forced capture off (the default) jumping is optional, but once a piece</span>
+<span class="c"># starts jumping it must take every jump the chain offers; with it on, standard rules apply</span>
+<span class="c"># and you must capture whenever you can.</span>
+<span class="c">#</span>
+<span class="c"># Click a glowing piece, then a highlighted square. In a multi-jump, click each landing square</span>
+<span class="c"># in turn. Keys: U undo, R restart, M setup screen.</span>
+<span class="k">class</span> <span class="t">CheckersGame</span> <span class="o">&lt;</span> <span class="t">App</span>
+  <span class="t">SIZE</span>      <span class="o">=</span> <span class="n">66</span>
+  <span class="t">ORIGIN</span>    <span class="o">=</span> v2(<span class="n">36</span>, <span class="n">60</span>)
+  <span class="t">PANEL_X</span>   <span class="o">=</span> <span class="t">ORIGIN</span>.x <span class="o">+</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">28</span>
+  <span class="t">SLIDE</span>     <span class="o">=</span> <span class="n">0.2</span>  <span class="c"># seconds for a plain move</span>
+  <span class="t">HOP</span>       <span class="o">=</span> <span class="n">0.32</span> <span class="c"># seconds per jump</span>
+  <span class="t">AI_SLICE</span>  <span class="o">=</span> <span class="n">0.008</span> <span class="c"># seconds of AI search per frame</span>
+  <span class="t">AI_PAUSE</span>  <span class="o">=</span> <span class="n">0.35</span>  <span class="c"># minimum pause before the AI moves, so its moves are easy to follow</span>
+  <span class="t">RED</span>       <span class="o">=</span> <span class="t">Color</span>.hex(<span class="s">&quot;#c0392b&quot;</span>)
+  <span class="t">BLACK</span>     <span class="o">=</span> <span class="t">Color</span>.hex(<span class="s">&quot;#2c2c2c&quot;</span>)
+  <span class="t">GLOW</span>      <span class="o">=</span> <span class="t">Color</span>.hex(<span class="s">&quot;#ffd54a&quot;</span>)
+  <span class="t">LEVELS</span>    <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">AI</span><span class="t">::</span><span class="t">Level</span>.values
+
+  getter board <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">Board</span>.new(<span class="n">false</span>)
+  getter screen : <span class="t">Symbol</span> <span class="o">=</span> <span class="n">:setup</span>
+  getter players <span class="o">=</span> <span class="n">1</span>
+  getter human_side <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span><span class="t">::</span><span class="t">Black</span>
+  getter level <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">AI</span><span class="t">::</span><span class="t">Level</span><span class="t">::</span><span class="t">Medium</span>
+  getter? forced <span class="o">=</span> <span class="n">false</span>
+  getter last : <span class="t">Checkers</span><span class="t">::</span><span class="t">Move</span>? <span class="o">=</span> <span class="n">nil</span>
+  getter selected : <span class="t">Int32</span>? <span class="o">=</span> <span class="n">nil</span>
+  <span class="c"># Squares visited so far by the selected piece (more than one while a jump chain is in progress).</span>
+  getter partial <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Int32</span>
+  getter? animating <span class="o">=</span> <span class="n">false</span>
+  <span class="c"># Where the moving piece is drawn during an animation, and how high it is lifted (0..1).</span>
+  getter moving_pos : <span class="t">Vec2</span>? <span class="o">=</span> <span class="n">nil</span>
+  getter lift <span class="o">=</span> <span class="n">0_f32</span>
+  <span class="c"># Captured squares fading out, with progress 0..1.</span>
+  getter fading <span class="o">=</span> {} <span class="k">of</span> <span class="t">Int32</span> <span class="o">=&gt;</span> <span class="t">Float32</span>
+  getter ai : <span class="t">Checkers</span><span class="t">::</span><span class="t">AI</span>
+
+  @candidates <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">Move</span>
+  @legal <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">Move</span>
+  @moving_from : <span class="t">Int32</span>? <span class="o">=</span> <span class="n">nil</span>
+  @moving_cell : <span class="t">Checkers</span><span class="t">::</span><span class="t">Cell</span>? <span class="o">=</span> <span class="n">nil</span>
+  @gen <span class="o">=</span> <span class="n">0</span>
+  @ai_busy <span class="o">=</span> <span class="n">false</span>
+  @ai_wait <span class="o">=</span> <span class="n">0_f32</span>
+  @menu <span class="o">=</span> <span class="t">CanvasLayer</span>.new
+  @buttons <span class="o">=</span> {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">Button</span>
+  @rule_label : <span class="t">Label</span>? <span class="o">=</span> <span class="n">nil</span>
+  @move_snd : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @hop_snd : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @pop_snd : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+
+  <span class="k">def</span> <span class="m">initialize</span>(@args : <span class="t">Array</span>(<span class="t">String</span>) <span class="o">=</span> <span class="t">ARGV</span>)
+    @ai <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">AI</span>.new(@level)
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">load</span>
+    @move_snd <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">330</span>, <span class="n">0.07</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Triangle</span>, <span class="n">0.35</span>)
+    @hop_snd <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">440</span>, <span class="n">0.06</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Triangle</span>, <span class="n">0.3</span>)
+    @pop_snd <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">700</span>, <span class="n">0.05</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Square</span>, <span class="n">0.18</span>)
+    <span class="t">SceneTree</span>.root.add(@menu)
+    <span class="c"># `checkers ai` / `checkers two` skips the setup screen</span>
+    <span class="k">if</span> @args.includes?(<span class="s">&quot;two&quot;</span>)
+      @players <span class="o">=</span> <span class="n">2</span>; start
+    <span class="k">elsif</span> @args.includes?(<span class="s">&quot;ai&quot;</span>)
+      start
+    <span class="k">else</span>
+      show_setup
     <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c"># --- setup screen ---</span>
+
+  <span class="k">def</span> <span class="m">show_setup</span>
+    cancel_motion
+    @screen <span class="o">=</span> <span class="n">:setup</span>
+    @menu.clear_children
+    @buttons.clear
+    panel <span class="o">=</span> <span class="t">Panel</span>.new(size: v2(<span class="n">460</span>, <span class="n">0</span>))
+    panel.anchor <span class="o">=</span> <span class="t">Anchor</span><span class="t">::</span><span class="t">Center</span>
+    panel.fit_content <span class="o">=</span> <span class="n">true</span>
+    box <span class="o">=</span> <span class="t">VBox</span>.new(size: v2(<span class="n">440</span>, <span class="n">0</span>))
+    box.position <span class="o">=</span> v2(<span class="n">10</span>, <span class="n">10</span>)
+    box.fit_content <span class="o">=</span> <span class="n">true</span>
+    title <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;Checkers&quot;</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+    title.font_scale <span class="o">=</span> <span class="n">1.5</span>
+    box.add(title)
+    grid <span class="o">=</span> <span class="t">GridContainer</span>.new(<span class="n">2</span>)
+    box.add(grid)
+    option_row(grid, <span class="s">&quot;Players&quot;</span>, {<span class="s">&quot;1 player&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;p1&quot;</span>, <span class="s">&quot;2 players&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;p2&quot;</span>}) { <span class="o">|</span>id<span class="o">|</span> @players <span class="o">=</span> id <span class="o">==</span> <span class="s">&quot;p1&quot;</span> ? <span class="n">1</span> : <span class="n">2</span> }
+    option_row(grid, <span class="s">&quot;You play&quot;</span>, {<span class="s">&quot;Black (first)&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;black&quot;</span>, <span class="s">&quot;Red&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;red&quot;</span>}) { <span class="o">|</span>id<span class="o">|</span> @human_side <span class="o">=</span> id <span class="o">==</span> <span class="s">&quot;red&quot;</span> ? <span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span><span class="t">::</span><span class="t">Red</span> : <span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span><span class="t">::</span><span class="t">Black</span> }
+    option_row(grid, <span class="s">&quot;AI&quot;</span>, {<span class="s">&quot;Beginner&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;Beginner&quot;</span>, <span class="s">&quot;Medium&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;Medium&quot;</span>, <span class="s">&quot;Advanced&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;Advanced&quot;</span>}) { <span class="o">|</span>id<span class="o">|</span> @level <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">AI</span><span class="t">::</span><span class="t">Level</span>.parse(id) }
+    option_row(grid, <span class="s">&quot;Forced capture&quot;</span>, {<span class="s">&quot;Off&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;off&quot;</span>, <span class="s">&quot;On&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;on&quot;</span>}) { <span class="o">|</span>id<span class="o">|</span> @forced <span class="o">=</span> id <span class="o">==</span> <span class="s">&quot;on&quot;</span> }
+    rule <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;&quot;</span>, color: <span class="t">Color</span>.gray(<span class="n">0.75</span>), size: v2(<span class="n">420</span>, <span class="n">0</span>))
+    rule.wrap <span class="o">=</span> <span class="n">true</span>
+    @rule_label <span class="o">=</span> rule
+    box.add(rule)
+    box.add(<span class="t">Button</span>.new(<span class="s">&quot;Start game&quot;</span>) { start }.tap { <span class="o">|</span>b<span class="o">|</span> @buttons[<span class="s">&quot;start&quot;</span>] <span class="o">=</span> b })
+    box.add(<span class="t">Label</span>.new(<span class="s">&quot;Keys: 1/2 players, C color, D difficulty,&quot;</span>, color: <span class="t">Color</span>.gray(<span class="n">0.6</span>)))
+    box.add(<span class="t">Label</span>.new(<span class="s">&quot;F forced capture, Enter start; Tab + Space pick&quot;</span>, color: <span class="t">Color</span>.gray(<span class="n">0.6</span>)))
+    panel.add(box)
+    @menu.add(panel)
+    refresh_setup
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">option_row</span>(grid, title, options : <span class="t">Hash</span>(<span class="t">String</span>, <span class="t">String</span>), <span class="o">&amp;</span>pick : <span class="t">String</span> <span class="o">-&gt;</span>)
+    row <span class="o">=</span> <span class="t">HBox</span>.new
+    options.each <span class="k">do</span> <span class="o">|</span>text, id<span class="o">|</span>
+      b <span class="o">=</span> <span class="t">Button</span>.new(text) { pick.call(id); refresh_setup }
+      @buttons[id] <span class="o">=</span> b
+      row.add(b)
+    <span class="k">end</span>
+    grid.add(<span class="t">Label</span>.new(title, size: v2(<span class="n">0</span>, <span class="n">32</span>)).tap(<span class="o">&amp;</span>.valign <span class="o">=</span> <span class="n">:center</span>), row)
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">refresh_setup</span>
+    sel <span class="o">=</span> {<span class="s">&quot;p1&quot;</span> <span class="o">=&gt;</span> @players <span class="o">==</span> <span class="n">1</span>, <span class="s">&quot;p2&quot;</span> <span class="o">=&gt;</span> @players <span class="o">==</span> <span class="n">2</span>, <span class="s">&quot;black&quot;</span> <span class="o">=&gt;</span> @human_side.black?, <span class="s">&quot;red&quot;</span> <span class="o">=&gt;</span> @human_side.red?, <span class="s">&quot;on&quot;</span> <span class="o">=&gt;</span> @forced, <span class="s">&quot;off&quot;</span> <span class="o">=&gt;</span> <span class="o">!</span>@forced}
+    <span class="t">LEVELS</span>.each { <span class="o">|</span>l<span class="o">|</span> sel[l.to_s] <span class="o">=</span> @level <span class="o">==</span> l }
+    <span class="c"># the chosen option in each row is drawn in the accent color</span>
+    sel.each { <span class="o">|</span>id, on<span class="o">|</span> @buttons[id]?.try(<span class="o">&amp;</span>.color <span class="o">=</span> on ? <span class="t">Theme</span>.default.accent : <span class="n">nil</span>) }
+    {<span class="s">&quot;black&quot;</span>, <span class="s">&quot;red&quot;</span>, <span class="s">&quot;Beginner&quot;</span>, <span class="s">&quot;Medium&quot;</span>, <span class="s">&quot;Advanced&quot;</span>}.each { <span class="o">|</span>id<span class="o">|</span> @buttons[id]?.try(<span class="o">&amp;</span>.disabled <span class="o">=</span> @players <span class="o">==</span> <span class="n">2</span>) }
+    @rule_label.try(<span class="o">&amp;</span>.text <span class="o">=</span> @forced ? <span class="s">&quot;You must capture when you can.&quot;</span> : <span class="s">&quot;Captures are optional, but a jump chain you start must be finished.&quot;</span>)
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">setup_key</span>(e : <span class="t">KeyEvent</span>)
+    <span class="k">case</span> e.key
+    <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">Num1</span> <span class="k">then</span> @players <span class="o">=</span> <span class="n">1</span>
+    <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">Num2</span> <span class="k">then</span> @players <span class="o">=</span> <span class="n">2</span>
+    <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">P</span>    <span class="k">then</span> @players <span class="o">=</span> <span class="n">3</span> <span class="o">-</span> @players
+    <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">C</span>    <span class="k">then</span> @human_side <span class="o">=</span> @human_side.other
+    <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">D</span>    <span class="k">then</span> @level <span class="o">=</span> <span class="t">LEVELS</span>[(<span class="t">LEVELS</span>.index(@level).not_nil! <span class="o">+</span> <span class="n">1</span>) <span class="o">%</span> <span class="t">LEVELS</span>.size]
+    <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">F</span>    <span class="k">then</span> @forced <span class="o">=</span> <span class="o">!</span>@forced
+    <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">Enter</span>, <span class="t">Key</span><span class="t">::</span><span class="t">KpEnter</span>
+      e.handled <span class="o">=</span> <span class="n">true</span>
+      <span class="k">return</span> start
+    <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">Space</span>
+      <span class="c"># Space activates the focused button, if any</span>
+      <span class="k">return</span> <span class="k">if</span> <span class="t">Control</span>.focused
+      e.handled <span class="o">=</span> <span class="n">true</span>
+      <span class="k">return</span> start
+    <span class="k">else</span> <span class="k">return</span>
+    <span class="k">end</span>
+    e.handled <span class="o">=</span> <span class="n">true</span>
+    refresh_setup
+  <span class="k">end</span>
+
+  <span class="c"># --- game flow ---</span>
+
+  <span class="k">def</span> <span class="m">start</span>
+    cancel_motion
+    <span class="c"># the setup widgets are removed, not hidden: hidden controls would still take clicks and keys</span>
+    @menu.clear_children
+    @buttons.clear
+    @screen <span class="o">=</span> <span class="n">:play</span>
+    @board <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">Board</span>.new(@forced)
+    @ai <span class="o">=</span> <span class="t">Checkers</span><span class="t">::</span><span class="t">AI</span>.new(@level)
+    @last <span class="o">=</span> <span class="n">nil</span>
+    refresh
+  <span class="k">end</span>
+
+  <span class="c"># Starts from a given position (for puzzles and tests).</span>
+  <span class="k">def</span> <span class="m">start_position</span>(b : <span class="t">Checkers</span><span class="t">::</span><span class="t">Board</span>)
+    start
+    @board <span class="o">=</span> b
+    @forced <span class="o">=</span> b.forced_capture?
+    refresh
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">vs_ai?</span> : <span class="t">Bool</span>; @players <span class="o">==</span> <span class="n">1</span>; <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">human_turn?</span> : <span class="t">Bool</span>; <span class="o">!</span>vs_ai? <span class="o">||</span> @board.turn <span class="o">==</span> @human_side; <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">busy?</span> : <span class="t">Bool</span>; @animating <span class="o">||</span> @ai_busy; <span class="k">end</span>
+
+  <span class="c"># The side drawn at the bottom of the board.</span>
+  <span class="k">def</span> <span class="m">bottom_side</span> : <span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span>; vs_ai? ? @human_side : <span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span><span class="t">::</span><span class="t">Red</span>; <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">refresh</span>
+    @selected <span class="o">=</span> <span class="n">nil</span>
+    @partial.clear
+    @candidates.clear
+    @legal <span class="o">=</span> @board.legal_moves
+    @ai_wait <span class="o">=</span> <span class="t">AI_PAUSE</span>.to_f32
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">cancel_motion</span>
+    @gen <span class="o">+=</span> <span class="n">1</span>
+    @animating <span class="o">=</span> <span class="n">false</span>
+    @ai_busy <span class="o">=</span> <span class="n">false</span>
+    @moving_pos <span class="o">=</span> <span class="n">nil</span>; @moving_from <span class="o">=</span> <span class="n">nil</span>; @moving_cell <span class="o">=</span> <span class="n">nil</span>
+    @lift <span class="o">=</span> <span class="n">0_f32</span>
+    @fading.clear
+  <span class="k">end</span>
+
+  <span class="c"># Takes back the last move (in 1-player mode, back to your previous turn).</span>
+  <span class="k">def</span> <span class="m">undo</span>
+    cancel_motion
+    <span class="k">if</span> @partial.size <span class="o">&gt;</span> <span class="n">1</span>
+      <span class="k">return</span> refresh
+    <span class="k">end</span>
+    <span class="k">if</span> vs_ai?
+      <span class="k">return</span> <span class="k">unless</span> @board.history.each_with_index.any? { <span class="o">|</span>_, i<span class="o">|</span> side_of_ply(i) <span class="o">==</span> @human_side }
+      loop <span class="k">do</span>
+        popped_side <span class="o">=</span> side_of_ply(@board.history.size <span class="o">-</span> <span class="n">1</span>)
+        @board.undo
+        <span class="k">break</span> <span class="k">if</span> popped_side <span class="o">==</span> @human_side
+      <span class="k">end</span>
+    <span class="k">else</span>
+      @board.undo
+    <span class="k">end</span>
+    @last <span class="o">=</span> @board.history.last?
+    refresh
+  <span class="k">end</span>
+
+  <span class="c"># Which side made the ply at *index* of the history.</span>
+  <span class="k">private</span> <span class="k">def</span> <span class="m">side_of_ply</span>(index : <span class="t">Int32</span>) : <span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span>
+    first <span class="o">=</span> @board.history.size.even? ? @board.turn : @board.turn.other
+    index.even? ? first : first.other
+  <span class="k">end</span>
+
+  <span class="c"># --- coordinates ---</span>
+
+  <span class="k">def</span> <span class="m">square_pos</span>(i : <span class="t">Int32</span>) : <span class="t">Vec2</span>
+    f <span class="o">=</span> i <span class="o">%</span> <span class="n">8</span>; r <span class="o">=</span> i <span class="o">//</span> <span class="n">8</span>
+    <span class="k">if</span> bottom_side.black?
+      f <span class="o">=</span> <span class="n">7</span> <span class="o">-</span> f; r <span class="o">=</span> <span class="n">7</span> <span class="o">-</span> r
+    <span class="k">end</span>
+    <span class="t">ORIGIN</span> <span class="o">+</span> v2(f <span class="o">*</span> <span class="t">SIZE</span>, (<span class="n">7</span> <span class="o">-</span> r) <span class="o">*</span> <span class="t">SIZE</span>)
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">square_center</span>(i : <span class="t">Int32</span>) : <span class="t">Vec2</span>; square_pos(i) <span class="o">+</span> v2(<span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>, <span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>); <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">square_at</span>(p : <span class="t">Vec2</span>) : <span class="t">Int32</span>?
+    l <span class="o">=</span> p <span class="o">-</span> <span class="t">ORIGIN</span>
+    <span class="k">return</span> <span class="n">nil</span> <span class="k">if</span> l.x <span class="o">&lt;</span> <span class="n">0</span> <span class="o">||</span> l.y <span class="o">&lt;</span> <span class="n">0</span> <span class="o">||</span> l.x <span class="o">&gt;=</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">||</span> l.y <span class="o">&gt;=</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span>
+    f <span class="o">=</span> (l.x <span class="o">/</span> <span class="t">SIZE</span>).to_i; r <span class="o">=</span> <span class="n">7</span> <span class="o">-</span> (l.y <span class="o">/</span> <span class="t">SIZE</span>).to_i
+    <span class="k">if</span> bottom_side.black?
+      f <span class="o">=</span> <span class="n">7</span> <span class="o">-</span> f; r <span class="o">=</span> <span class="n">7</span> <span class="o">-</span> r
+    <span class="k">end</span>
+    r <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> f
+  <span class="k">end</span>
+
+  <span class="c"># --- hints ---</span>
+
+  <span class="c"># Pieces the human can move right now (all glow while nothing is selected).</span>
+  <span class="k">def</span> <span class="m">hint_squares</span> : <span class="t">Array</span>(<span class="t">Int32</span>)
+    <span class="k">return</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Int32</span> <span class="k">unless</span> @screen <span class="o">==</span> <span class="n">:play</span> <span class="o">&amp;&amp;</span> human_turn? <span class="o">&amp;&amp;</span> <span class="o">!</span>busy? <span class="o">&amp;&amp;</span> <span class="o">!</span>@board.game_over?
+    <span class="k">return</span> [@partial.first] <span class="k">if</span> @partial.size <span class="o">&gt;</span> <span class="n">1</span>
+    @legal.map(<span class="o">&amp;</span>.from).uniq
+  <span class="k">end</span>
+
+  <span class="c"># Squares the selected piece can go to next.</span>
+  <span class="k">def</span> <span class="m">target_squares</span> : <span class="t">Array</span>(<span class="t">Int32</span>)
+    <span class="k">return</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Int32</span> <span class="k">if</span> @selected.<span class="k">nil?</span> <span class="o">||</span> busy?
+    n <span class="o">=</span> @partial.size
+    @candidates.<span class="k">select</span> { <span class="o">|</span>m<span class="o">|</span> m.path.size <span class="o">&gt;</span> n }.map { <span class="o">|</span>m<span class="o">|</span> m.path[n] }.uniq
+  <span class="k">end</span>
+
+  <span class="c"># --- input ---</span>
+
+  <span class="k">def</span> <span class="m">input</span>(e : <span class="t">Event</span>)
+    <span class="k">if</span> @screen <span class="o">==</span> <span class="n">:setup</span>
+      setup_key(e) <span class="k">if</span> e.<span class="k">is_a?</span>(<span class="t">KeyEvent</span>) <span class="o">&amp;&amp;</span> e.pressed?
+      <span class="k">return</span>
+    <span class="k">end</span>
+    <span class="k">if</span> e.<span class="k">is_a?</span>(<span class="t">MouseButtonEvent</span>) <span class="o">&amp;&amp;</span> e.pressed? <span class="o">&amp;&amp;</span> e.button.left?
+      click(e.position)
+    <span class="k">elsif</span> e.<span class="k">is_a?</span>(<span class="t">KeyEvent</span>) <span class="o">&amp;&amp;</span> e.pressed?
+      <span class="k">case</span> e.key
+      <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">R</span> <span class="k">then</span> start
+      <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">M</span> <span class="k">then</span> show_setup
+      <span class="k">when</span> <span class="t">Key</span><span class="t">::</span><span class="t">U</span> <span class="k">then</span> undo <span class="k">unless</span> @animating
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">click</span>(p : <span class="t">Vec2</span>)
+    <span class="k">return</span> <span class="k">unless</span> human_turn? <span class="o">&amp;&amp;</span> <span class="o">!</span>busy? <span class="o">&amp;&amp;</span> <span class="o">!</span>@board.game_over?
+    sq <span class="o">=</span> square_at(p)
+    <span class="k">return</span> <span class="k">unless</span> sq
+    <span class="k">if</span> @selected <span class="o">&amp;&amp;</span> target_squares.includes?(sq)
+      extend_path(sq)
+    <span class="k">elsif</span> @partial.size <span class="o">&gt;</span> <span class="n">1</span>
+      <span class="c"># a jump chain in progress must be finished with the same piece</span>
+    <span class="k">elsif</span> @legal.any? { <span class="o">|</span>m<span class="o">|</span> m.from <span class="o">==</span> sq }
+      @selected <span class="o">=</span> sq
+      @partial <span class="o">=</span> [sq]
+      @candidates <span class="o">=</span> @legal.<span class="k">select</span> { <span class="o">|</span>m<span class="o">|</span> m.from <span class="o">==</span> sq }
+    <span class="k">else</span>
+      @selected <span class="o">=</span> <span class="n">nil</span>; @partial.clear; @candidates.clear
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">extend_path</span>(sq : <span class="t">Int32</span>)
+    @partial <span class="o">&lt;&lt;</span> sq
+    n <span class="o">=</span> @partial.size
+    @candidates.select! { <span class="o">|</span>m<span class="o">|</span> m.path.size <span class="o">&gt;=</span> n <span class="o">&amp;&amp;</span> m.path[<span class="n">0</span>, n] <span class="o">==</span> @partial }
+    <span class="k">if</span> @candidates.size <span class="o">==</span> <span class="n">1</span>
+      mv <span class="o">=</span> @candidates.first
+      @selected <span class="o">=</span> <span class="n">nil</span>
+      animate(mv, n <span class="o">-</span> <span class="n">2</span>) { commit(mv) }
+    <span class="k">else</span>
+      <span class="c"># several chains share this landing square: animate this hop and wait for the next click</span>
+      mv <span class="o">=</span> @candidates.first
+      @selected <span class="o">=</span> <span class="n">nil</span>
+      animate(mv, n <span class="o">-</span> <span class="n">2</span>, n <span class="o">-</span> <span class="n">1</span>) { @selected <span class="o">=</span> @partial.first }
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">commit</span>(m : <span class="t">Checkers</span><span class="t">::</span><span class="t">Move</span>)
+    @board.apply(m)
+    @last <span class="o">=</span> m
+    @moving_pos <span class="o">=</span> <span class="n">nil</span>; @moving_from <span class="o">=</span> <span class="n">nil</span>; @moving_cell <span class="o">=</span> <span class="n">nil</span>
+    @lift <span class="o">=</span> <span class="n">0_f32</span>
+    @fading.clear
+    (@board.game_over? ? @pop_snd : @move_snd).try(<span class="o">&amp;</span>.play)
+    refresh
+  <span class="k">end</span>
+
+  <span class="c"># Animates hops *first*...*last* of *m*: a slide for plain moves, a hop arc for jumps with</span>
+  <span class="c"># the captured piece popping away, one hop after another. Input waits until it finishes.</span>
+  <span class="k">def</span> <span class="m">animate</span>(m : <span class="t">Checkers</span><span class="t">::</span><span class="t">Move</span>, first : <span class="t">Int32</span> <span class="o">=</span> <span class="n">0</span>, last : <span class="t">Int32</span> <span class="o">=</span> m.path.size <span class="o">-</span> <span class="n">1</span>, <span class="o">&amp;</span>done : <span class="o">-&gt;</span>)
+    gen <span class="o">=</span> @gen <span class="o">+=</span> <span class="n">1</span>
+    @animating <span class="o">=</span> <span class="n">true</span>
+    @moving_from <span class="o">=</span> m.from
+    @moving_cell <span class="o">||=</span> @board[m.from]
+    <span class="t">Tween</span>.sequence <span class="k">do</span> <span class="o">|</span>s<span class="o">|</span>
+      (first...last).each <span class="k">do</span> <span class="o">|</span>h<span class="o">|</span>
+        a <span class="o">=</span> square_center(m.path[h]); b <span class="o">=</span> square_center(m.path[h <span class="o">+</span> <span class="n">1</span>])
+        mid <span class="o">=</span> m.capture? ? m.captures[h] : <span class="n">nil</span>
+        s.to(mid ? <span class="t">HOP</span> : <span class="t">SLIDE</span>, <span class="n">:quad_in_out</span>) <span class="k">do</span> <span class="o">|</span>t<span class="o">|</span>
+          <span class="k">next</span> <span class="k">unless</span> gen <span class="o">==</span> @gen
+          @moving_pos <span class="o">=</span> a.lerp(b, t)
+          @lift <span class="o">=</span> mid ? <span class="t">Math</span>.sin(t <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">PI</span>).to_f32 : <span class="n">0_f32</span>
+          @fading[mid] <span class="o">=</span> ((t <span class="o">-</span> <span class="n">0.4_f32</span>) <span class="o">/</span> <span class="n">0.6_f32</span>).clamp(<span class="n">0_f32</span>, <span class="n">1_f32</span>) <span class="k">if</span> mid
+        <span class="k">end</span>
+        s.call { (mid ? @hop_snd : <span class="n">nil</span>).try(<span class="o">&amp;</span>.play) <span class="k">if</span> gen <span class="o">==</span> @gen }
+      <span class="k">end</span>
+      s.call <span class="k">do</span>
+        <span class="k">if</span> gen <span class="o">==</span> @gen
+          @animating <span class="o">=</span> <span class="n">false</span>
+          done.call
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c"># --- AI ---</span>
+
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>) <span class="o">&amp;&amp;</span> @screen <span class="o">==</span> <span class="n">:play</span>
+    <span class="k">return</span> <span class="k">unless</span> @screen <span class="o">==</span> <span class="n">:play</span> <span class="o">&amp;&amp;</span> vs_ai? <span class="o">&amp;&amp;</span> <span class="o">!</span>human_turn? <span class="o">&amp;&amp;</span> <span class="o">!</span>@animating <span class="o">&amp;&amp;</span> <span class="o">!</span>@board.game_over?
+    <span class="k">unless</span> @ai_busy
+      @ai.start(@board.clone)
+      @ai_busy <span class="o">=</span> <span class="n">true</span>
+    <span class="k">end</span>
+    @ai_wait <span class="o">-=</span> dt
+    <span class="k">return</span> <span class="k">unless</span> @ai.think(<span class="t">AI_SLICE</span>) <span class="o">&amp;&amp;</span> @ai_wait <span class="o">&lt;=</span> <span class="n">0</span>
+    @ai_busy <span class="o">=</span> <span class="n">false</span>
+    <span class="k">if</span> mv <span class="o">=</span> @ai.result
+      animate(mv) { commit(mv) }
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c"># --- drawing ---</span>
+
+  <span class="k">def</span> <span class="m">status_text</span> : <span class="t">String</span>
+    <span class="k">case</span> @board.status
+    <span class="k">when</span> .red_wins?   <span class="k">then</span> winner_text(<span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span><span class="t">::</span><span class="t">Red</span>)
+    <span class="k">when</span> .black_wins? <span class="k">then</span> winner_text(<span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span><span class="t">::</span><span class="t">Black</span>)
+    <span class="k">when</span> .draw?       <span class="k">then</span> <span class="s">&quot;Draw: </span><span class="i">#{</span>@board.draw_reason<span class="i">}</span><span class="s">&quot;</span>
+    <span class="k">else</span>
+      who <span class="o">=</span> side_name(@board.turn)
+      text <span class="o">=</span> vs_ai? ? (human_turn? ? <span class="s">&quot;Your move (</span><span class="i">#{</span>who<span class="i">}</span><span class="s">)&quot;</span> : <span class="s">&quot;AI (</span><span class="i">#{</span>who<span class="i">}</span><span class="s">) is thinking...&quot;</span>) : <span class="s">&quot;</span><span class="i">#{</span>who<span class="i">}</span><span class="s"> to move&quot;</span>
+      text <span class="o">+=</span> @forced ? <span class="s">&quot;, must capture&quot;</span> : <span class="s">&quot;, capture available&quot;</span> <span class="k">if</span> @legal.any?(<span class="o">&amp;</span>.capture?) <span class="o">&amp;&amp;</span> human_turn?
+      text <span class="o">+=</span> <span class="s">&quot;, keep jumping&quot;</span> <span class="k">if</span> @partial.size <span class="o">&gt;</span> <span class="n">1</span>
+      text
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">winner_text</span>(side : <span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span>) : <span class="t">String</span>
+    <span class="k">return</span> <span class="s">&quot;</span><span class="i">#{</span>side_name(side)<span class="i">}</span><span class="s"> wins!&quot;</span> <span class="k">unless</span> vs_ai?
+    side <span class="o">==</span> @human_side ? <span class="s">&quot;You win!&quot;</span> : <span class="s">&quot;The AI wins&quot;</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">side_name</span>(s : <span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span>) : <span class="t">String</span>; s.red? ? <span class="s">&quot;Red&quot;</span> : <span class="s">&quot;Black&quot;</span>; <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    <span class="k">return</span> <span class="k">unless</span> @screen <span class="o">==</span> <span class="n">:play</span>
+    pulse <span class="o">=</span> (<span class="n">0.5</span> <span class="o">+</span> <span class="n">0.5</span> <span class="o">*</span> <span class="t">Math</span>.sin(<span class="t">Clock</span>.elapsed <span class="o">*</span> <span class="n">5</span>)).to_f32
+    draw_board(g)
+    targets <span class="o">=</span> target_squares
+    targets.each <span class="k">do</span> <span class="o">|</span>t<span class="o">|</span>
+      c <span class="o">=</span> square_center(t)
+      g.circle(c, <span class="t">SIZE</span> <span class="o">*</span> <span class="n">0.2</span> <span class="o">+</span> pulse <span class="o">*</span> <span class="n">3</span>, color: <span class="t">GLOW</span>.with_alpha(<span class="n">0.35</span> <span class="o">+</span> <span class="n">0.25</span> <span class="o">*</span> pulse))
+      g.circle(c, <span class="t">SIZE</span> <span class="o">*</span> <span class="n">0.2</span> <span class="o">+</span> pulse <span class="o">*</span> <span class="n">3</span>, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, color: <span class="t">GLOW</span>)
+    <span class="k">end</span>
+    hints <span class="o">=</span> hint_squares
+    <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+      c <span class="o">=</span> @board[i]
+      <span class="k">next</span> <span class="k">unless</span> c
+      <span class="k">next</span> <span class="k">if</span> i <span class="o">==</span> @moving_from
+      <span class="k">next</span> <span class="k">if</span> @partial.size <span class="o">&gt;</span> <span class="n">1</span> <span class="o">&amp;&amp;</span> i <span class="o">==</span> @partial.first
+      f <span class="o">=</span> @fading[i]? <span class="o">||</span> <span class="n">0_f32</span>
+      <span class="k">next</span> <span class="k">if</span> f <span class="o">&gt;=</span> <span class="n">1</span>
+      center <span class="o">=</span> square_center(i)
+      <span class="k">if</span> hints.includes?(i) <span class="o">&amp;&amp;</span> @partial.size <span class="o">&lt;=</span> <span class="n">1</span>
+        strong <span class="o">=</span> @selected <span class="o">==</span> i
+        g.circle(center, <span class="t">SIZE</span> <span class="o">*</span> <span class="n">0.46</span> <span class="o">+</span> (strong ? <span class="n">2</span> : pulse <span class="o">*</span> <span class="n">2</span>), color: <span class="t">GLOW</span>.with_alpha(strong ? <span class="n">0.8</span> : <span class="n">0.25</span> <span class="o">+</span> <span class="n">0.3</span> <span class="o">*</span> pulse))
+      <span class="k">end</span>
+      draw_piece(g, center, c, <span class="n">0_f32</span>, <span class="n">1</span> <span class="o">-</span> f, <span class="n">1</span> <span class="o">+</span> f <span class="o">*</span> <span class="n">0.5_f32</span>)
+    <span class="k">end</span>
+    <span class="k">if</span> cell <span class="o">=</span> moving_cell
+      pos <span class="o">=</span> @moving_pos <span class="o">||</span> square_center(@partial.last? <span class="o">||</span> @moving_from <span class="o">||</span> <span class="n">0</span>)
+      <span class="k">if</span> @partial.size <span class="o">&gt;</span> <span class="n">1</span> <span class="o">&amp;&amp;</span> <span class="o">!</span>@animating
+        g.circle(pos, <span class="t">SIZE</span> <span class="o">*</span> <span class="n">0.46</span> <span class="o">+</span> <span class="n">2</span>, color: <span class="t">GLOW</span>.with_alpha(<span class="n">0.8</span>))
+      <span class="k">end</span>
+      draw_piece(g, pos, cell, @lift, <span class="n">1_f32</span>, <span class="n">1_f32</span>)
+    <span class="k">end</span>
+    draw_panel(g)
+    draw_game_over(g) <span class="k">if</span> @board.game_over? <span class="o">&amp;&amp;</span> <span class="o">!</span>@animating
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">moving_cell</span> : <span class="t">Checkers</span><span class="t">::</span><span class="t">Cell</span>?
+    <span class="k">return</span> @moving_cell <span class="k">if</span> @moving_cell
+    <span class="k">return</span> @board[@partial.first] <span class="k">if</span> @partial.size <span class="o">&gt;</span> <span class="n">1</span>
+    <span class="n">nil</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_board</span>(g : <span class="t">Graphics</span>)
+    g.rect(<span class="t">ORIGIN</span>.x <span class="o">-</span> <span class="n">6</span>, <span class="t">ORIGIN</span>.y <span class="o">-</span> <span class="n">6</span>, <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">12</span>, <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">12</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#3b2a1e&quot;</span>))
+    last <span class="o">=</span> @last
+    <span class="n">64</span>.times <span class="k">do</span> <span class="o">|</span>i<span class="o">|</span>
+      p <span class="o">=</span> square_pos(i)
+      c <span class="o">=</span> <span class="t">Checkers</span>.dark?(i) ? <span class="t">Color</span>.hex(<span class="s">&quot;#6b4f3a&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#e8d8c0&quot;</span>)
+      c <span class="o">=</span> c.lerp(<span class="t">Color</span><span class="t">::</span><span class="t">YELLOW</span>, <span class="n">0.3</span>) <span class="k">if</span> last <span class="o">&amp;&amp;</span> last.path.includes?(i)
+      g.rect(p.x, p.y, <span class="t">SIZE</span>, <span class="t">SIZE</span>, color: c)
+    <span class="k">end</span>
+    <span class="c"># file letters and rank numbers from the bottom player&#39;s view</span>
+    <span class="n">8</span>.times <span class="k">do</span> <span class="o">|</span>k<span class="o">|</span>
+      f <span class="o">=</span> square_pos(k).x <span class="o">+</span> <span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>
+      r <span class="o">=</span> square_pos(k <span class="o">*</span> <span class="n">8</span>).y <span class="o">+</span> <span class="t">SIZE</span> <span class="o">/</span> <span class="n">2</span>
+      g.print((<span class="s">&#39;a&#39;</span> <span class="o">+</span> k).to_s, f, <span class="t">ORIGIN</span>.y <span class="o">+</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">8</span> <span class="o">+</span> <span class="n">8</span>, <span class="t">Color</span>.gray(<span class="n">0.5</span>), align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+      g.print((k <span class="o">+</span> <span class="n">1</span>).to_s, <span class="t">ORIGIN</span>.x <span class="o">-</span> <span class="n">20</span>, r <span class="o">-</span> <span class="n">7</span>, <span class="t">Color</span>.gray(<span class="n">0.5</span>))
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_piece</span>(g : <span class="t">Graphics</span>, p : <span class="t">Vec2</span>, c : <span class="t">Checkers</span><span class="t">::</span><span class="t">Cell</span>, lift : <span class="t">Float32</span>, alpha : <span class="t">Float32</span>, scale : <span class="t">Float32</span>)
+    base <span class="o">=</span> c.side.red? ? <span class="t">RED</span> : <span class="t">BLACK</span>
+    r <span class="o">=</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">0.38</span> <span class="o">*</span> scale <span class="o">*</span> (<span class="n">1</span> <span class="o">+</span> lift <span class="o">*</span> <span class="n">0.18</span>)
+    up <span class="o">=</span> v2(<span class="n">0</span>, <span class="o">-</span>lift <span class="o">*</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">0.35</span>)
+    g.circle(p <span class="o">+</span> v2(<span class="n">2</span> <span class="o">+</span> lift <span class="o">*</span> <span class="n">6</span>, <span class="n">3</span> <span class="o">+</span> lift <span class="o">*</span> <span class="n">10</span>), r, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.35</span> <span class="o">*</span> alpha <span class="o">*</span> (<span class="n">1</span> <span class="o">-</span> lift <span class="o">*</span> <span class="n">0.5</span>)))
+    g.circle(p <span class="o">+</span> up, r, color: base.with_alpha(alpha))
+    g.circle(p <span class="o">+</span> up, r <span class="o">*</span> <span class="n">0.78</span>, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, color: base.lighten(<span class="n">0.3</span>).with_alpha(alpha))
+    <span class="k">if</span> c.king?
+      g.circle(p <span class="o">+</span> up, r <span class="o">*</span> <span class="n">0.45</span>, color: <span class="t">GLOW</span>.with_alpha(alpha))
+      g.print(<span class="s">&quot;K&quot;</span>, p.x <span class="o">+</span> up.x, p.y <span class="o">+</span> up.y <span class="o">-</span> <span class="n">7</span>, <span class="t">BLACK</span>.with_alpha(alpha), align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_panel</span>(g : <span class="t">Graphics</span>)
+    x <span class="o">=</span> <span class="t">PANEL_X</span>; y <span class="o">=</span> <span class="t">ORIGIN</span>.y.to_f32
+    w <span class="o">=</span> <span class="n">900</span> <span class="o">-</span> x <span class="o">-</span> <span class="n">16</span>
+    g.print(<span class="s">&quot;Checkers&quot;</span>, x, y, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, scale: <span class="n">1.5</span>)
+    y <span class="o">+=</span> <span class="n">40</span>
+    mode <span class="o">=</span> vs_ai? ? <span class="s">&quot;You (</span><span class="i">#{</span>side_name(@human_side)<span class="i">}</span><span class="s">) vs AI, </span><span class="i">#{</span>@level.to_s.downcase<span class="i">}</span><span class="s">&quot;</span> : <span class="s">&quot;Two players&quot;</span>
+    g.printf(mode, x, y, w, color: <span class="t">Color</span>.gray(<span class="n">0.8</span>)); y <span class="o">+=</span> <span class="n">44</span>
+    turn_color <span class="o">=</span> @board.turn.red? ? <span class="t">RED</span> : <span class="t">BLACK</span>
+    g.circle(x <span class="o">+</span> <span class="n">10</span>, y <span class="o">+</span> <span class="n">9</span>, <span class="n">9</span>, color: turn_color)
+    g.circle(x <span class="o">+</span> <span class="n">10</span>, y <span class="o">+</span> <span class="n">9</span>, <span class="n">9</span>, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, color: <span class="t">Color</span>.gray(<span class="n">0.7</span>))
+    g.printf(status_text, x <span class="o">+</span> <span class="n">28</span>, y, w <span class="o">-</span> <span class="n">28</span>, color: <span class="t">GLOW</span>); y <span class="o">+=</span> <span class="n">70</span>
+    g.print(<span class="s">&quot;Red </span><span class="i">#{</span>@board.count(<span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span><span class="t">::</span><span class="t">Red</span>)<span class="i">}</span><span class="s">   Black </span><span class="i">#{</span>@board.count(<span class="t">Checkers</span><span class="t">::</span><span class="t">Side</span><span class="t">::</span><span class="t">Black</span>)<span class="i">}</span><span class="s">&quot;</span>, x, y, <span class="t">Color</span>.gray(<span class="n">0.8</span>)); y <span class="o">+=</span> <span class="n">34</span>
+    rule <span class="o">=</span> @forced ? <span class="s">&quot;Forced capture ON: you must jump when you can.&quot;</span> : <span class="s">&quot;Forced capture OFF: jumping is optional, but a chain you start must be finished.&quot;</span>
+    g.printf(rule, x, y, w, color: <span class="t">Color</span>.gray(<span class="n">0.65</span>)); y <span class="o">+=</span> <span class="n">92</span>
+    g.printf(<span class="s">&quot;Click a glowing piece, then a glowing square. For a multi-jump click each landing square.&quot;</span>, x, y, w, color: <span class="t">Color</span>.gray(<span class="n">0.55</span>)); y <span class="o">+=</span> <span class="n">112</span>
+    [<span class="s">&quot;U  undo&quot;</span>, <span class="s">&quot;R  restart&quot;</span>, <span class="s">&quot;M  setup screen&quot;</span>].each { <span class="o">|</span>k<span class="o">|</span> g.print(k, x, y, <span class="t">Color</span>.gray(<span class="n">0.55</span>)); y <span class="o">+=</span> <span class="n">22</span> }
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_game_over</span>(g : <span class="t">Graphics</span>)
+    cx <span class="o">=</span> <span class="t">ORIGIN</span>.x <span class="o">+</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">4</span>; cy <span class="o">=</span> <span class="t">ORIGIN</span>.y <span class="o">+</span> <span class="t">SIZE</span> <span class="o">*</span> <span class="n">4</span>
+    g.rounded_rect(cx <span class="o">-</span> <span class="n">200</span>, cy <span class="o">-</span> <span class="n">56</span>, <span class="n">400</span>, <span class="n">112</span>, <span class="n">12</span>, color: <span class="t">Color</span>.new(<span class="n">0.05</span>, <span class="n">0.05</span>, <span class="n">0.07</span>, <span class="n">0.88</span>))
+    g.print(status_text, cx, cy <span class="o">-</span> <span class="n">36</span>, <span class="t">GLOW</span>, scale: <span class="n">1.5</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+    g.print(<span class="s">&quot;R play again   U undo   M setup&quot;</span>, cx, cy <span class="o">+</span> <span class="n">16</span>, <span class="t">Color</span>.gray(<span class="n">0.8</span>), align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
   <span class="k">end</span>
 <span class="k">end</span>
 </code></pre>

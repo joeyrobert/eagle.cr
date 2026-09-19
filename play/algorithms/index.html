@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Algorithms · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Algorithms</li></ol></nav>
+<div class="play"><h1>Algorithms</h1><p class="lead">A* pathfinding, fBm terrain, Poisson-disk sampling, flocking and shadowcasting field of view.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">1-5 or Tab switch scenes · click sets the A* goal · WASD moves in FOV</p>
+<details><summary>Source: <code>examples/algorithms/main.cr</code></summary><h3>examples/algorithms/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
+
+<span class="c"># Playable tour of Eagle&#39;s common game algorithms. Number keys and Tab switch</span>
+<span class="c"># scenes: A* pathfinding, fBm terrain, Poisson-disk sampling, flocking and</span>
+<span class="c"># shadowcasting field of view. No external assets.</span>
+<span class="k">class</span> <span class="t">AlgorithmsDemo</span> <span class="o">&lt;</span> <span class="t">App</span>
+  <span class="k">enum</span> <span class="t">Scene</span>
+    <span class="t">Path</span>
+    <span class="t">Noise</span>
+    <span class="t">Poisson</span>
+    <span class="t">Flock</span>
+    <span class="t">Fov</span>
+  <span class="k">end</span>
+
+  <span class="t">TAB_H</span> <span class="o">=</span> <span class="n">36_f32</span>
+  <span class="t">BG</span>    <span class="o">=</span> <span class="t">Color</span>.hex(<span class="s">&quot;#16141c&quot;</span>)
+
+  @scene <span class="o">=</span> <span class="t">Scene</span><span class="t">::</span><span class="t">Path</span>
+  @cycle <span class="o">=</span> <span class="n">0_f32</span>
+  @auto <span class="o">=</span> <span class="n">false</span>
+  @rng <span class="o">=</span> <span class="t">Rng</span>.new(<span class="n">2026</span>)
+
+  @path_grid <span class="o">=</span> <span class="t">CostGrid</span>.new(<span class="n">1</span>, <span class="n">1</span>)
+  @path_start <span class="o">=</span> {<span class="n">1</span>, <span class="n">1</span>}
+  @path_goal <span class="o">=</span> {<span class="n">3</span>, <span class="n">3</span>}
+  @path <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Grid</span><span class="t">::</span><span class="t">Point</span>
+  @path_walk <span class="o">=</span> <span class="n">0_f32</span>
+  @mud <span class="o">=</span> <span class="t">Set</span>(<span class="t">Grid</span><span class="t">::</span><span class="t">Point</span>).new
+
+  @noise <span class="o">=</span> <span class="t">Noise</span>.new(<span class="n">11</span>)
+  @noise_z <span class="o">=</span> <span class="n">0_f32</span>
+
+  @points <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Vec2</span>
+
+  @boids_pos <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Vec2</span>
+  @boids_vel <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Vec2</span>
+
+  @fov_open <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Bool</span>
+  @fov_w <span class="o">=</span> <span class="n">1</span>
+  @fov_h <span class="o">=</span> <span class="n">1</span>
+  @fov_origin <span class="o">=</span> {<span class="n">1</span>, <span class="n">1</span>}
+  @fov_visible <span class="o">=</span> <span class="t">Set</span>(<span class="t">Grid</span><span class="t">::</span><span class="t">Point</span>).new
+  @fov_explored <span class="o">=</span> <span class="t">Set</span>(<span class="t">Grid</span><span class="t">::</span><span class="t">Point</span>).new
+  @fov_pace <span class="o">=</span> <span class="n">0_f32</span>
+  @fov_cool <span class="o">=</span> <span class="n">0_f32</span>
+
+  <span class="k">def</span> <span class="m">load</span> : <span class="t">Nil</span>
+    @auto <span class="o">=</span> <span class="t">ENV</span>.has_key?(<span class="s">&quot;EAGLE_FRAMES&quot;</span>) <span class="o">||</span> <span class="t">ENV</span>[<span class="s">&quot;EAGLE_DEMO&quot;</span>]? <span class="o">==</span> <span class="s">&quot;1&quot;</span>
+    <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>
+    <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Right</span>
+    <span class="t">Input</span>.map <span class="s">&quot;up&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">W</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Up</span>
+    <span class="t">Input</span>.map <span class="s">&quot;down&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">S</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Down</span>
+    <span class="t">Input</span>.map <span class="s">&quot;next&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Tab</span>, <span class="t">Key</span><span class="t">::</span><span class="t">RightBracket</span>
+    enter_scene
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>) : <span class="t">Nil</span>
+    dt <span class="o">=</span> <span class="t">Math</span>.min(dt, <span class="n">0.05_f32</span>)
+    <span class="k">if</span> @auto
+      @cycle <span class="o">+=</span> dt
+      <span class="k">if</span> @cycle <span class="o">&gt;=</span> <span class="n">0.28</span>
+        @cycle <span class="o">=</span> <span class="n">0</span>
+        @scene <span class="o">=</span> <span class="t">Scene</span>.from_value((@scene.value <span class="o">+</span> <span class="n">1</span>) <span class="o">%</span> <span class="t">Scene</span>.values.size)
+        enter_scene
+      <span class="k">end</span>
+    <span class="k">else</span>
+      <span class="t">Scene</span>.values.each <span class="k">do</span> <span class="o">|</span>scene<span class="o">|</span>
+        select_scene(scene) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span>.from_value(<span class="t">Key</span><span class="t">::</span><span class="t">Num1</span>.value <span class="o">+</span> scene.value))
+      <span class="k">end</span>
+      <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;next&quot;</span>)
+        select_scene(<span class="t">Scene</span>.from_value((@scene.value <span class="o">+</span> <span class="n">1</span>) <span class="o">%</span> <span class="t">Scene</span>.values.size))
+      <span class="k">end</span>
+      <span class="k">if</span> <span class="t">Input</span>.mouse_pressed? <span class="o">&amp;&amp;</span> <span class="t">Input</span>.mouse.y <span class="o">&lt;</span> <span class="t">TAB_H</span>
+        i <span class="o">=</span> (<span class="t">Input</span>.mouse.x <span class="o">/</span> (<span class="t">Window</span>.width <span class="o">/</span> <span class="t">Scene</span>.values.size)).to_i.clamp(<span class="n">0</span>, <span class="t">Scene</span>.values.size <span class="o">-</span> <span class="n">1</span>)
+        select_scene(<span class="t">Scene</span>.from_value(i))
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">case</span> @scene
+    <span class="k">when</span> .path?    <span class="k">then</span> update_path(dt)
+    <span class="k">when</span> .noise?   <span class="k">then</span> @noise_z <span class="o">+=</span> dt <span class="o">*</span> <span class="n">0.35</span>
+    <span class="k">when</span> .poisson? <span class="k">then</span> update_poisson
+    <span class="k">when</span> .flock?   <span class="k">then</span> update_flock(dt)
+    <span class="k">when</span> .fov?     <span class="k">then</span> update_fov(dt)
+    <span class="k">end</span>
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>) : <span class="t">Nil</span>
+    g.clear(<span class="t">BG</span>)
+    draw_tabs(g)
+    <span class="k">case</span> @scene
+    <span class="k">when</span> .path?    <span class="k">then</span> draw_path(g)
+    <span class="k">when</span> .noise?   <span class="k">then</span> draw_noise(g)
+    <span class="k">when</span> .poisson? <span class="k">then</span> draw_poisson(g)
+    <span class="k">when</span> .flock?   <span class="k">then</span> draw_flock(g)
+    <span class="k">when</span> .fov?     <span class="k">then</span> draw_fov(g)
+    <span class="k">end</span>
+    g.print(help_text, <span class="n">12</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">22</span>, <span class="t">Color</span>.new(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>, <span class="n">0.65</span>))
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">select_scene</span>(scene : <span class="t">Scene</span>) : <span class="t">Nil</span>
+    <span class="k">return</span> <span class="k">if</span> scene <span class="o">==</span> @scene
+    @scene <span class="o">=</span> scene
+    enter_scene
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">enter_scene</span> : <span class="t">Nil</span>
+    <span class="k">case</span> @scene
+    <span class="k">when</span> .path?    <span class="k">then</span> setup_path
+    <span class="k">when</span> .poisson? <span class="k">then</span> setup_poisson
+    <span class="k">when</span> .flock?   <span class="k">then</span> setup_flock
+    <span class="k">when</span> .fov?     <span class="k">then</span> setup_fov
+    <span class="k">else</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">setup_path</span> : <span class="t">Nil</span>
+    width, height <span class="o">=</span> <span class="n">41</span>, <span class="n">25</span>
+    maze <span class="o">=</span> <span class="t">Procedural</span>.maze(width, height, <span class="t">Rng</span>.new(<span class="n">9</span>))
+    grid <span class="o">=</span> <span class="t">CostGrid</span>.new(width, height)
+    mud <span class="o">=</span> <span class="t">Set</span>(<span class="t">Grid</span><span class="t">::</span><span class="t">Point</span>).new
+    rng <span class="o">=</span> <span class="t">Rng</span>.new(<span class="n">3</span>)
+    height.times <span class="k">do</span> <span class="o">|</span>y<span class="o">|</span>
+      width.times <span class="k">do</span> <span class="o">|</span>x<span class="o">|</span>
+        <span class="k">if</span> maze[y <span class="o">*</span> width <span class="o">+</span> x]
+          <span class="k">if</span> rng.chance?(<span class="n">0.08</span>)
+            grid[x, y] <span class="o">=</span> <span class="n">4</span>
+            mud <span class="o">&lt;&lt;</span> {x, y}
+          <span class="k">end</span>
+        <span class="k">else</span>
+          grid.block(x, y)
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    @path_grid <span class="o">=</span> grid
+    @mud <span class="o">=</span> mud
+    @path_start <span class="o">=</span> {<span class="n">1</span>, <span class="n">1</span>}
+    @path_goal <span class="o">=</span> farthest_open({<span class="n">1</span>, <span class="n">1</span>})
+    @path_walk <span class="o">=</span> <span class="n">0</span>
+    rebuild_path
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">farthest_open</span>(from : <span class="t">Grid</span><span class="t">::</span><span class="t">Point</span>) : <span class="t">Grid</span><span class="t">::</span><span class="t">Point</span>
+    best <span class="o">=</span> from
+    best_d <span class="o">=</span> <span class="n">0</span>
+    @path_grid.height.times <span class="k">do</span> <span class="o">|</span>y<span class="o">|</span>
+      @path_grid.width.times <span class="k">do</span> <span class="o">|</span>x<span class="o">|</span>
+        <span class="k">next</span> <span class="k">unless</span> @path_grid.passable?(x, y)
+        d <span class="o">=</span> (x <span class="o">-</span> from[<span class="n">0</span>]).abs <span class="o">+</span> (y <span class="o">-</span> from[<span class="n">1</span>]).abs
+        <span class="k">if</span> d <span class="o">&gt;</span> best_d
+          best_d <span class="o">=</span> d
+          best <span class="o">=</span> {x, y}
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    best
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">rebuild_path</span> : <span class="t">Nil</span>
+    result <span class="o">=</span> <span class="t">Pathfinding</span>.a_star(@path_grid, @path_start, @path_goal, diagonal: <span class="n">true</span>)
+    @path <span class="o">=</span> result.path
+    @path_walk <span class="o">=</span> <span class="n">0</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">cell_size</span> : <span class="t">Float32</span>
+    <span class="t">Math</span>.min((<span class="t">Window</span>.width <span class="o">-</span> <span class="n">24</span>) <span class="o">/</span> @path_grid.width, (<span class="t">Window</span>.height <span class="o">-</span> <span class="t">TAB_H</span> <span class="o">-</span> <span class="n">48</span>) <span class="o">/</span> @path_grid.height).to_f32
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">grid_origin</span> : <span class="t">Vec2</span>
+    size <span class="o">=</span> cell_size
+    v2((<span class="t">Window</span>.width <span class="o">-</span> @path_grid.width <span class="o">*</span> size) <span class="o">/</span> <span class="n">2</span>,
+      <span class="t">TAB_H</span> <span class="o">+</span> <span class="n">8</span> <span class="o">+</span> (<span class="t">Window</span>.height <span class="o">-</span> <span class="t">TAB_H</span> <span class="o">-</span> <span class="n">40</span> <span class="o">-</span> @path_grid.height <span class="o">*</span> size) <span class="o">/</span> <span class="n">2</span>)
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">cell_at</span>(mouse : <span class="t">Vec2</span>) : <span class="t">Grid</span><span class="t">::</span><span class="t">Point</span>?
+    size <span class="o">=</span> cell_size
+    origin <span class="o">=</span> grid_origin
+    x <span class="o">=</span> ((mouse.x <span class="o">-</span> origin.x) <span class="o">/</span> size).floor.to_i
+    y <span class="o">=</span> ((mouse.y <span class="o">-</span> origin.y) <span class="o">/</span> size).floor.to_i
+    @path_grid.in_bounds?(x, y) ? {x, y} : <span class="n">nil</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">update_path</span>(dt : <span class="t">Float32</span>) : <span class="t">Nil</span>
+    <span class="k">if</span> <span class="t">Input</span>.mouse_pressed? <span class="o">&amp;&amp;</span> <span class="t">Input</span>.mouse.y <span class="o">&gt;=</span> <span class="t">TAB_H</span>
+      <span class="k">if</span> cell <span class="o">=</span> cell_at(<span class="t">Input</span>.mouse)
+        <span class="k">if</span> @path_grid.passable?(cell[<span class="n">0</span>], cell[<span class="n">1</span>])
+          @path_goal <span class="o">=</span> cell
+          rebuild_path
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="k">return</span> <span class="k">if</span> @path.size <span class="o">&lt;</span> <span class="n">2</span>
+    @path_walk <span class="o">+=</span> dt <span class="o">*</span> <span class="n">8</span>
+    <span class="k">while</span> @path_walk <span class="o">&gt;=</span> <span class="n">1</span> <span class="o">&amp;&amp;</span> @path.size <span class="o">&gt;=</span> <span class="n">2</span>
+      @path_walk <span class="o">-=</span> <span class="n">1</span>
+      @path_start <span class="o">=</span> @path[<span class="n">1</span>]
+      @path.shift
+    <span class="k">end</span>
+    <span class="k">if</span> @path.size <span class="o">&lt;=</span> <span class="n">1</span>
+      @path_goal <span class="o">=</span> farthest_open(@path_start)
+      @path_goal <span class="o">=</span> {<span class="n">1</span>, <span class="n">1</span>} <span class="k">if</span> @path_goal <span class="o">==</span> @path_start
+      rebuild_path
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_path</span>(g : <span class="t">Graphics</span>) : <span class="t">Nil</span>
+    size <span class="o">=</span> cell_size
+    origin <span class="o">=</span> grid_origin
+    @path_grid.height.times <span class="k">do</span> <span class="o">|</span>y<span class="o">|</span>
+      @path_grid.width.times <span class="k">do</span> <span class="o">|</span>x<span class="o">|</span>
+        px <span class="o">=</span> origin.x <span class="o">+</span> x <span class="o">*</span> size
+        py <span class="o">=</span> origin.y <span class="o">+</span> y <span class="o">*</span> size
+        color <span class="o">=</span> <span class="k">if</span> <span class="o">!</span>@path_grid.passable?(x, y)
+                  <span class="t">Color</span>.hex(<span class="s">&quot;#2a2733&quot;</span>)
+                <span class="k">elsif</span> @mud.includes?({x, y})
+                  <span class="t">Color</span>.hex(<span class="s">&quot;#5c4328&quot;</span>)
+                <span class="k">else</span>
+                  <span class="t">Color</span>.hex(<span class="s">&quot;#3d4658&quot;</span>)
+                <span class="k">end</span>
+        g.rect(px, py, size <span class="o">-</span> <span class="n">1</span>, size <span class="o">-</span> <span class="n">1</span>, color: color)
+      <span class="k">end</span>
+    <span class="k">end</span>
+    @path.each_cons_pair <span class="k">do</span> <span class="o">|</span>a, b<span class="o">|</span>
+      g.line(origin <span class="o">+</span> v2(a[<span class="n">0</span>] <span class="o">+</span> <span class="n">0.5</span>, a[<span class="n">1</span>] <span class="o">+</span> <span class="n">0.5</span>) <span class="o">*</span> size, origin <span class="o">+</span> v2(b[<span class="n">0</span>] <span class="o">+</span> <span class="n">0.5</span>, b[<span class="n">1</span>] <span class="o">+</span> <span class="n">0.5</span>) <span class="o">*</span> size,
+        <span class="t">Color</span>.hex(<span class="s">&quot;#e3a537&quot;</span>), <span class="n">2</span>)
+    <span class="k">end</span>
+    start <span class="o">=</span> origin <span class="o">+</span> v2(@path_start[<span class="n">0</span>] <span class="o">+</span> <span class="n">0.5</span>, @path_start[<span class="n">1</span>] <span class="o">+</span> <span class="n">0.5</span>) <span class="o">*</span> size
+    goal <span class="o">=</span> origin <span class="o">+</span> v2(@path_goal[<span class="n">0</span>] <span class="o">+</span> <span class="n">0.5</span>, @path_goal[<span class="n">1</span>] <span class="o">+</span> <span class="n">0.5</span>) <span class="o">*</span> size
+    g.circle(start, size <span class="o">*</span> <span class="n">0.32</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#7bed9f&quot;</span>))
+    g.circle(goal, size <span class="o">*</span> <span class="n">0.32</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#ff5d73&quot;</span>))
+    g.print(<span class="s">&quot;click a floor tile to set the goal   mud is slower&quot;</span>, origin.x, origin.y <span class="o">-</span> <span class="n">16</span>, <span class="t">Color</span>.new(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>, <span class="n">0.7</span>))
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_noise</span>(g : <span class="t">Graphics</span>) : <span class="t">Nil</span>
+    cols <span class="o">=</span> <span class="n">80</span>
+    rows <span class="o">=</span> <span class="n">42</span>
+    cw <span class="o">=</span> <span class="t">Window</span>.width <span class="o">/</span> cols
+    ch <span class="o">=</span> (<span class="t">Window</span>.height <span class="o">-</span> <span class="t">TAB_H</span> <span class="o">-</span> <span class="n">28</span>) <span class="o">/</span> rows
+    rows.times <span class="k">do</span> <span class="o">|</span>y<span class="o">|</span>
+      cols.times <span class="k">do</span> <span class="o">|</span>x<span class="o">|</span>
+        h <span class="o">=</span> @noise.fbm(x <span class="o">*</span> <span class="n">0.08</span>, y <span class="o">*</span> <span class="n">0.08</span> <span class="o">+</span> @noise_z, octaves: <span class="n">4</span>)
+        color <span class="o">=</span> <span class="k">if</span> h <span class="o">&lt;</span> <span class="n">-0.15</span>
+                  <span class="t">Color</span>.hex(<span class="s">&quot;#1d4e89&quot;</span>).lerp(<span class="t">Color</span>.hex(<span class="s">&quot;#3d7ea6&quot;</span>), (h <span class="o">+</span> <span class="n">0.5</span>).clamp(<span class="n">0</span>, <span class="n">1</span>))
+                <span class="k">elsif</span> h <span class="o">&lt;</span> <span class="n">0.05</span>
+                  <span class="t">Color</span>.hex(<span class="s">&quot;#c9b896&quot;</span>)
+                <span class="k">elsif</span> h <span class="o">&lt;</span> <span class="n">0.35</span>
+                  <span class="t">Color</span>.hex(<span class="s">&quot;#3f7d4e&quot;</span>).lerp(<span class="t">Color</span>.hex(<span class="s">&quot;#7daf6a&quot;</span>), (h <span class="o">-</span> <span class="n">0.05</span>) <span class="o">/</span> <span class="n">0.3</span>)
+                <span class="k">elsif</span> h <span class="o">&lt;</span> <span class="n">0.55</span>
+                  <span class="t">Color</span>.hex(<span class="s">&quot;#6b6e70&quot;</span>)
+                <span class="k">else</span>
+                  <span class="t">Color</span>.hex(<span class="s">&quot;#e8eef5&quot;</span>)
+                <span class="k">end</span>
+        g.rect(x <span class="o">*</span> cw, <span class="t">TAB_H</span> <span class="o">+</span> y <span class="o">*</span> ch, cw <span class="o">+</span> <span class="n">0.5</span>, ch <span class="o">+</span> <span class="n">0.5</span>, color: color)
+      <span class="k">end</span>
+    <span class="k">end</span>
+    g.print(<span class="s">&quot;simplex fBm   seed 11&quot;</span>, <span class="n">12</span>, <span class="t">TAB_H</span> <span class="o">+</span> <span class="n">8</span>, <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.55</span>))
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">setup_poisson</span> : <span class="t">Nil</span>
+    @points <span class="o">=</span> <span class="t">Procedural</span>.poisson_disk(<span class="t">Window</span>.width <span class="o">-</span> <span class="n">40</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="t">TAB_H</span> <span class="o">-</span> <span class="n">60</span>, <span class="n">22</span>, <span class="t">Rng</span>.new(<span class="n">5</span>))
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">update_poisson</span> : <span class="t">Nil</span>
+    setup_poisson <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">R</span>)
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_poisson</span>(g : <span class="t">Graphics</span>) : <span class="t">Nil</span>
+    origin <span class="o">=</span> v2(<span class="n">20</span>, <span class="t">TAB_H</span> <span class="o">+</span> <span class="n">28</span>)
+    g.print(<span class="s">&quot;</span><span class="i">#{</span>@points.size<span class="i">}</span><span class="s"> points, minimum distance 22   R reseeds&quot;</span>, origin.x, <span class="t">TAB_H</span> <span class="o">+</span> <span class="n">8</span>, <span class="t">Color</span>.new(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>, <span class="n">0.7</span>))
+    @points.each <span class="k">do</span> <span class="o">|</span>point<span class="o">|</span>
+      p <span class="o">=</span> origin <span class="o">+</span> point
+      g.circle(p, <span class="n">11</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#2f6f44&quot;</span>))
+      g.circle(p, <span class="n">5</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#7daf6a&quot;</span>))
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">setup_flock</span> : <span class="t">Nil</span>
+    rng <span class="o">=</span> <span class="t">Rng</span>.new(<span class="n">21</span>)
+    @boids_pos <span class="o">=</span> <span class="t">Array</span>.new(<span class="n">48</span>) { rng.in_rect(<span class="t">Rect</span>.new(<span class="n">40</span>, <span class="t">TAB_H</span> <span class="o">+</span> <span class="n">40</span>, <span class="t">Window</span>.width <span class="o">-</span> <span class="n">80</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="t">TAB_H</span> <span class="o">-</span> <span class="n">80</span>)) }
+    @boids_vel <span class="o">=</span> <span class="t">Array</span>.new(<span class="n">48</span>) { rng.direction <span class="o">*</span> rng.float(<span class="n">40</span>, <span class="n">90</span>) }
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">update_flock</span>(dt : <span class="t">Float32</span>) : <span class="t">Nil</span>
+    radius <span class="o">=</span> <span class="n">46_f32</span>
+    max_speed <span class="o">=</span> <span class="n">110_f32</span>
+    hash <span class="o">=</span> <span class="t">SpatialHash</span>(<span class="t">Int32</span>).new(radius)
+    @boids_pos.each_with_index { <span class="o">|</span>pos, i<span class="o">|</span> hash.insert(i, pos) }
+    @boids_pos.each_with_index <span class="k">do</span> <span class="o">|</span>pos, i<span class="o">|</span>
+      nearby_p <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Vec2</span>
+      nearby_v <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Vec2</span>
+      hash.query(pos, radius).each <span class="k">do</span> <span class="o">|</span>j<span class="o">|</span>
+        <span class="k">next</span> <span class="k">if</span> i <span class="o">==</span> j
+        nearby_p <span class="o">&lt;&lt;</span> @boids_pos[j]
+        nearby_v <span class="o">&lt;&lt;</span> @boids_vel[j]
+      <span class="k">end</span>
+      force <span class="o">=</span> <span class="t">Steering</span>.flock(pos, @boids_vel[i], nearby_p, nearby_v, radius).limit(<span class="n">220</span>)
+      force <span class="o">+=</span> <span class="t">Steering</span>.seek(pos, <span class="t">Input</span>.mouse, max_speed) <span class="o">*</span> <span class="n">0.35</span> <span class="k">if</span> <span class="t">Input</span>.mouse.y <span class="o">&gt;</span> <span class="t">TAB_H</span>
+      vel <span class="o">=</span> (@boids_vel[i] <span class="o">+</span> force <span class="o">*</span> dt).limit(max_speed)
+      pos <span class="o">=</span> pos <span class="o">+</span> vel <span class="o">*</span> dt
+      pos <span class="o">=</span> v2(pos.x <span class="o">&lt;</span> <span class="n">0</span> ? <span class="t">Window</span>.width : (pos.x <span class="o">&gt;</span> <span class="t">Window</span>.width ? <span class="n">0</span> : pos.x),
+        pos.y <span class="o">&lt;</span> <span class="t">TAB_H</span> ? <span class="t">Window</span>.height : (pos.y <span class="o">&gt;</span> <span class="t">Window</span>.height ? <span class="t">TAB_H</span> : pos.y))
+      @boids_pos[i] <span class="o">=</span> pos
+      @boids_vel[i] <span class="o">=</span> vel
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_flock</span>(g : <span class="t">Graphics</span>) : <span class="t">Nil</span>
+    g.print(<span class="s">&quot;mouse attracts   wrapping world&quot;</span>, <span class="n">12</span>, <span class="t">TAB_H</span> <span class="o">+</span> <span class="n">8</span>, <span class="t">Color</span>.new(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>, <span class="n">0.7</span>))
+    @boids_pos.each_with_index <span class="k">do</span> <span class="o">|</span>pos, i<span class="o">|</span>
+      dir <span class="o">=</span> @boids_vel[i].normalized
+      tip <span class="o">=</span> pos <span class="o">+</span> dir <span class="o">*</span> <span class="n">10</span>
+      left <span class="o">=</span> pos <span class="o">-</span> dir <span class="o">*</span> <span class="n">6</span> <span class="o">+</span> dir.perpendicular <span class="o">*</span> <span class="n">5</span>
+      right <span class="o">=</span> pos <span class="o">-</span> dir <span class="o">*</span> <span class="n">6</span> <span class="o">-</span> dir.perpendicular <span class="o">*</span> <span class="n">5</span>
+      g.polygon([tip, left, right], color: <span class="t">Color</span>.hsv(i <span class="o">*</span> <span class="n">17</span>, <span class="n">0.55</span>, <span class="n">0.95</span>))
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">setup_fov</span> : <span class="t">Nil</span>
+    @fov_w, @fov_h <span class="o">=</span> <span class="n">45</span>, <span class="n">27</span>
+    maze <span class="o">=</span> <span class="t">Procedural</span>.maze(@fov_w, @fov_h, <span class="t">Rng</span>.new(<span class="n">14</span>))
+    @fov_open <span class="o">=</span> maze
+    @fov_origin <span class="o">=</span> {<span class="n">1</span>, <span class="n">1</span>}
+    @fov_explored.clear
+    recompute_fov
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">recompute_fov</span> : <span class="t">Nil</span>
+    @fov_visible <span class="o">=</span> <span class="t">Grid</span>.field_of_view(@fov_origin, <span class="n">9</span>) <span class="k">do</span> <span class="o">|</span>x, y<span class="o">|</span>
+      <span class="o">!</span>x.in?(<span class="n">0</span>...@fov_w) <span class="o">||</span> <span class="o">!</span>y.in?(<span class="n">0</span>...@fov_h) <span class="o">||</span> <span class="o">!</span>@fov_open[y <span class="o">*</span> @fov_w <span class="o">+</span> x]
+    <span class="k">end</span>
+    @fov_visible.each { <span class="o">|</span>cell<span class="o">|</span> @fov_explored <span class="o">&lt;&lt;</span> cell }
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">update_fov</span>(dt : <span class="t">Float32</span>) : <span class="t">Nil</span>
+    @fov_cool <span class="o">-=</span> dt
+    move <span class="o">=</span> <span class="t">Input</span>.vector(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>, <span class="s">&quot;up&quot;</span>, <span class="s">&quot;down&quot;</span>)
+    <span class="k">if</span> @fov_cool <span class="o">&lt;=</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> move.length_squared <span class="o">&gt;</span> <span class="n">0.25</span>
+      dx <span class="o">=</span> <span class="t">Mathf</span>.sign(move.x)
+      dy <span class="o">=</span> dx <span class="o">!=</span> <span class="n">0</span> ? <span class="n">0</span> : <span class="t">Mathf</span>.sign(move.y)
+      nx <span class="o">=</span> @fov_origin[<span class="n">0</span>] <span class="o">+</span> dx
+      ny <span class="o">=</span> @fov_origin[<span class="n">1</span>] <span class="o">+</span> dy
+      <span class="k">if</span> nx.in?(<span class="n">0</span>...@fov_w) <span class="o">&amp;&amp;</span> ny.in?(<span class="n">0</span>...@fov_h) <span class="o">&amp;&amp;</span> @fov_open[ny <span class="o">*</span> @fov_w <span class="o">+</span> nx]
+        @fov_origin <span class="o">=</span> {nx, ny}
+        recompute_fov
+        @fov_cool <span class="o">=</span> <span class="n">0.12</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="k">if</span> @auto
+      @fov_pace <span class="o">+=</span> dt
+      <span class="k">if</span> @fov_pace <span class="o">&gt;</span> <span class="n">0.1</span>
+        @fov_pace <span class="o">=</span> <span class="n">0</span>
+        choices <span class="o">=</span> <span class="t">Grid</span><span class="t">::</span><span class="t">CARDINAL</span>.map { <span class="o">|</span>(dx, dy)<span class="o">|</span> {@fov_origin[<span class="n">0</span>] <span class="o">+</span> dx, @fov_origin[<span class="n">1</span>] <span class="o">+</span> dy} }
+          .<span class="k">select</span> { <span class="o">|</span>n<span class="o">|</span> n[<span class="n">0</span>].in?(<span class="n">0</span>...@fov_w) <span class="o">&amp;&amp;</span> n[<span class="n">1</span>].in?(<span class="n">0</span>...@fov_h) <span class="o">&amp;&amp;</span> @fov_open[n[<span class="n">1</span>] <span class="o">*</span> @fov_w <span class="o">+</span> n[<span class="n">0</span>]] }
+        <span class="k">if</span> cell <span class="o">=</span> @rng.pick?(choices)
+          @fov_origin <span class="o">=</span> cell
+          recompute_fov
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">elsif</span> <span class="t">Input</span>.mouse_pressed? <span class="o">&amp;&amp;</span> <span class="t">Input</span>.mouse.y <span class="o">&gt;=</span> <span class="t">TAB_H</span>
+      size <span class="o">=</span> <span class="t">Math</span>.min((<span class="t">Window</span>.width <span class="o">-</span> <span class="n">24</span>) <span class="o">/</span> @fov_w, (<span class="t">Window</span>.height <span class="o">-</span> <span class="t">TAB_H</span> <span class="o">-</span> <span class="n">48</span>) <span class="o">/</span> @fov_h)
+      origin <span class="o">=</span> v2((<span class="t">Window</span>.width <span class="o">-</span> @fov_w <span class="o">*</span> size) <span class="o">/</span> <span class="n">2</span>, <span class="t">TAB_H</span> <span class="o">+</span> <span class="n">20</span>)
+      x <span class="o">=</span> ((<span class="t">Input</span>.mouse.x <span class="o">-</span> origin.x) <span class="o">/</span> size).floor.to_i
+      y <span class="o">=</span> ((<span class="t">Input</span>.mouse.y <span class="o">-</span> origin.y) <span class="o">/</span> size).floor.to_i
+      <span class="k">if</span> x.in?(<span class="n">0</span>...@fov_w) <span class="o">&amp;&amp;</span> y.in?(<span class="n">0</span>...@fov_h) <span class="o">&amp;&amp;</span> @fov_open[y <span class="o">*</span> @fov_w <span class="o">+</span> x]
+        @fov_origin <span class="o">=</span> {x, y}
+        recompute_fov
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_fov</span>(g : <span class="t">Graphics</span>) : <span class="t">Nil</span>
+    size <span class="o">=</span> <span class="t">Math</span>.min((<span class="t">Window</span>.width <span class="o">-</span> <span class="n">24</span>) <span class="o">/</span> @fov_w, (<span class="t">Window</span>.height <span class="o">-</span> <span class="t">TAB_H</span> <span class="o">-</span> <span class="n">48</span>) <span class="o">/</span> @fov_h)
+    origin <span class="o">=</span> v2((<span class="t">Window</span>.width <span class="o">-</span> @fov_w <span class="o">*</span> size) <span class="o">/</span> <span class="n">2</span>, <span class="t">TAB_H</span> <span class="o">+</span> <span class="n">20</span>)
+    @fov_h.times <span class="k">do</span> <span class="o">|</span>y<span class="o">|</span>
+      @fov_w.times <span class="k">do</span> <span class="o">|</span>x<span class="o">|</span>
+        cell <span class="o">=</span> {x, y}
+        open <span class="o">=</span> @fov_open[y <span class="o">*</span> @fov_w <span class="o">+</span> x]
+        color <span class="o">=</span> <span class="k">if</span> @fov_visible.includes?(cell)
+                  open ? <span class="t">Color</span>.hex(<span class="s">&quot;#d7c9a3&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#6b6560&quot;</span>)
+                <span class="k">elsif</span> @fov_explored.includes?(cell)
+                  open ? <span class="t">Color</span>.hex(<span class="s">&quot;#3c3a48&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#24222c&quot;</span>)
+                <span class="k">else</span>
+                  <span class="t">Color</span>.hex(<span class="s">&quot;#0c0b10&quot;</span>)
+                <span class="k">end</span>
+        g.rect(origin.x <span class="o">+</span> x <span class="o">*</span> size, origin.y <span class="o">+</span> y <span class="o">*</span> size, size <span class="o">-</span> <span class="n">1</span>, size <span class="o">-</span> <span class="n">1</span>, color: color)
+      <span class="k">end</span>
+    <span class="k">end</span>
+    px <span class="o">=</span> origin.x <span class="o">+</span> (@fov_origin[<span class="n">0</span>] <span class="o">+</span> <span class="n">0.5</span>) <span class="o">*</span> size
+    py <span class="o">=</span> origin.y <span class="o">+</span> (@fov_origin[<span class="n">1</span>] <span class="o">+</span> <span class="n">0.5</span>) <span class="o">*</span> size
+    g.circle(px, py, size <span class="o">*</span> <span class="n">0.32</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#e3a537&quot;</span>))
+    g.print(<span class="s">&quot;WASD move   click to teleport&quot;</span>, origin.x, <span class="t">TAB_H</span> <span class="o">+</span> <span class="n">6</span>, <span class="t">Color</span>.new(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>, <span class="n">0.7</span>))
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">draw_tabs</span>(g : <span class="t">Graphics</span>) : <span class="t">Nil</span>
+    n <span class="o">=</span> <span class="t">Scene</span>.values.size
+    w <span class="o">=</span> <span class="t">Window</span>.width <span class="o">/</span> n
+    <span class="t">Scene</span>.values.each_with_index <span class="k">do</span> <span class="o">|</span>scene, i<span class="o">|</span>
+      on <span class="o">=</span> scene <span class="o">==</span> @scene
+      g.rect(i <span class="o">*</span> w, <span class="n">0</span>, w, <span class="t">TAB_H</span>, color: on ? <span class="t">Color</span>.hex(<span class="s">&quot;#2b241c&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#1c1a22&quot;</span>))
+      g.rect(i <span class="o">*</span> w, <span class="t">TAB_H</span> <span class="o">-</span> <span class="n">3</span>, w, <span class="n">3</span>, color: on ? <span class="t">Color</span>.hex(<span class="s">&quot;#e3a537&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#2a2733&quot;</span>))
+      g.print(<span class="s">&quot;</span><span class="i">#{</span>i <span class="o">+</span> <span class="n">1</span><span class="i">}</span><span class="s">  </span><span class="i">#{</span>scene_name(scene)<span class="i">}</span><span class="s">&quot;</span>, i <span class="o">*</span> w <span class="o">+</span> w <span class="o">/</span> <span class="n">2</span>, <span class="n">10</span>, on ? <span class="t">Color</span>.hex(<span class="s">&quot;#f4efe6&quot;</span>) : <span class="t">Color</span>.hex(<span class="s">&quot;#8a8278&quot;</span>),
+        align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">scene_name</span>(scene : <span class="t">Scene</span>) : <span class="t">String</span>
+    <span class="k">case</span> scene
+    <span class="k">in</span> .path?    <span class="k">then</span> <span class="s">&quot;A* path&quot;</span>
+    <span class="k">in</span> .noise?   <span class="k">then</span> <span class="s">&quot;Noise&quot;</span>
+    <span class="k">in</span> .poisson? <span class="k">then</span> <span class="s">&quot;Poisson&quot;</span>
+    <span class="k">in</span> .flock?   <span class="k">then</span> <span class="s">&quot;Flocking&quot;</span>
+    <span class="k">in</span> .fov?     <span class="k">then</span> <span class="s">&quot;FOV&quot;</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">help_text</span> : <span class="t">String</span>
+    <span class="s">&quot;1-5 or Tab switch scenes   Esc quits&quot;</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="t">Eagle</span>.run(<span class="t">AlgorithmsDemo</span>, title: <span class="s">&quot;Eagle Algorithms&quot;</span>, width: <span class="n">960</span>, height: <span class="n">600</span>)
+</code></pre>
+</details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./algorithms.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
+</body></html>

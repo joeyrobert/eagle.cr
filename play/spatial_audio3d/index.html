@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spatial audio (3D) · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Spatial audio (3D)</li></ol></nav>
+<div class="play"><h1>Spatial audio (3D)</h1><p class="lead">Looping sound sources you can fly around: panning, distance models, interaural delay, head shadow and doppler.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">WASD/QE move · right-drag look · click fires a shot · 1-3 distance model · M mute</p>
+<details><summary>Source: <code>examples/spatial_audio3d/main.cr</code></summary><h3>examples/spatial_audio3d/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
+
+<span class="c"># Spatial audio demo: looping procedural sound sources placed around a 3D scene. Put on</span>
+<span class="c"># headphones and fly around; sources pan between the ears, reach the far ear a little later,</span>
+<span class="c"># sound duller from behind and fade with distance. The blue drone orbits with doppler on.</span>
+<span class="c"># Controls: WASD/QE move, right-drag or arrows look, left click fires a shot where you point,</span>
+<span class="c"># 1-3 switch the distance model, M mutes.</span>
+<span class="k">class</span> <span class="t">SpatialAudio</span> <span class="o">&lt;</span> <span class="t">App</span>
+  record <span class="t">Source</span>, name : <span class="t">String</span>, mesh : <span class="t">MeshInstance3D</span>, player : <span class="t">AudioPlayer3D</span>, color : <span class="t">Color</span>
+
+  @cam <span class="o">=</span> <span class="t">Camera3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">1.7</span>, <span class="n">12</span>))
+  @sources <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Source</span>
+  @drone <span class="o">=</span> <span class="t">Node3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">2.5</span>, <span class="n">0</span>))
+  @drone_angle <span class="o">=</span> <span class="n">0_f32</span>
+  @shot : <span class="t">Sound</span> <span class="o">=</span> <span class="t">SpatialAudio</span>.shot_sound
+  @shots <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> {<span class="t">Vec3</span>, <span class="t">Float32</span>}
+  @model <span class="o">=</span> <span class="t">Attenuation</span><span class="t">::</span><span class="t">Inverse</span>
+
+  <span class="c"># A two-second loop: every frequency is a whole number of cycles, so it loops seamlessly.</span>
+  <span class="k">def</span> <span class="m">self</span>.hum : <span class="t">Sound</span>
+    <span class="t">Sound</span>.generate(<span class="n">2.0</span>) <span class="k">do</span> <span class="o">|</span>t<span class="o">|</span>
+      (<span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">55</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="n">0.35</span> <span class="o">+</span> <span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">110</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="n">0.15</span> <span class="o">+</span> ((t <span class="o">*</span> <span class="n">165</span>) <span class="o">%</span> <span class="n">1</span> <span class="o">-</span> <span class="n">0.5</span>) <span class="o">*</span> <span class="n">0.12</span>).to_f32
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c"># Radio beeps: two short pips each second.</span>
+  <span class="k">def</span> <span class="m">self</span>.beeper : <span class="t">Sound</span>
+    <span class="t">Sound</span>.generate(<span class="n">1.0</span>) <span class="k">do</span> <span class="o">|</span>t<span class="o">|</span>
+      local <span class="o">=</span> t <span class="o">%</span> <span class="n">0.5</span>
+      local <span class="o">&lt;</span> <span class="n">0.08</span> ? (<span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">1200</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="n">0.4</span> <span class="o">*</span> <span class="t">Math</span>.min(<span class="n">1</span>, (<span class="n">0.08</span> <span class="o">-</span> local) <span class="o">*</span> <span class="n">200</span>)).to_f32 : <span class="n">0_f32</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c"># A crackling fire: filtered noise with random pops.</span>
+  <span class="k">def</span> <span class="m">self</span>.fire : <span class="t">Sound</span>
+    rng <span class="o">=</span> <span class="t">Random</span>.new(<span class="n">3</span>)
+    lp <span class="o">=</span> <span class="n">0.0</span>
+    <span class="t">Sound</span>.generate(<span class="n">3.0</span>) <span class="k">do</span> <span class="o">|</span>t<span class="o">|</span>
+      lp <span class="o">+=</span> (rng.rand(<span class="n">-1.0</span>..<span class="n">1.0</span>) <span class="o">-</span> lp) <span class="o">*</span> <span class="n">0.2</span>
+      pop <span class="o">=</span> rng.rand <span class="o">&lt;</span> <span class="n">0.0015</span> ? rng.rand(<span class="n">-0.9</span>..<span class="n">0.9</span>) : <span class="n">0.0</span>
+      edge <span class="o">=</span> <span class="t">Math</span>.min(<span class="n">1.0</span>, <span class="t">Math</span>.min(t, <span class="n">3</span> <span class="o">-</span> t) <span class="o">*</span> <span class="n">20</span>) <span class="c"># fade the loop seam</span>
+      ((lp <span class="o">*</span> <span class="n">0.5</span> <span class="o">+</span> pop) <span class="o">*</span> edge).to_f32
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c"># The drone&#39;s buzz: a triangle with a slow wobble.</span>
+  <span class="k">def</span> <span class="m">self</span>.buzz : <span class="t">Sound</span>
+    <span class="t">Sound</span>.generate(<span class="n">2.0</span>) <span class="k">do</span> <span class="o">|</span>t<span class="o">|</span>
+      ph <span class="o">=</span> (t <span class="o">*</span> <span class="n">220</span> <span class="o">+</span> <span class="t">Math</span>.sin(t <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span> <span class="o">*</span> <span class="n">3</span>) <span class="o">*</span> <span class="n">0.8</span>) <span class="o">%</span> <span class="n">1</span>
+      tri <span class="o">=</span> ph <span class="o">&lt;</span> <span class="n">0.5</span> ? ph <span class="o">*</span> <span class="n">4</span> <span class="o">-</span> <span class="n">1</span> : <span class="n">3</span> <span class="o">-</span> ph <span class="o">*</span> <span class="n">4</span>
+      (tri <span class="o">*</span> <span class="n">0.3</span>).to_f32
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="c"># A gunshot: a noise burst with a fast decay and a low thump.</span>
+  <span class="k">def</span> <span class="m">self</span>.shot_sound : <span class="t">Sound</span>
+    rng <span class="o">=</span> <span class="t">Random</span>.new(<span class="n">9</span>)
+    <span class="t">Sound</span>.generate(<span class="n">0.5</span>) <span class="k">do</span> <span class="o">|</span>t<span class="o">|</span>
+      ((rng.rand(<span class="n">-1.0</span>..<span class="n">1.0</span>) <span class="o">*</span> <span class="n">0.8</span> <span class="o">+</span> <span class="t">Math</span>.sin(t <span class="o">*</span> <span class="n">70</span> <span class="o">*</span> <span class="t">Math</span><span class="t">::</span><span class="t">TAU</span>) <span class="o">*</span> <span class="n">0.6</span>) <span class="o">*</span> <span class="t">Math</span>.exp(<span class="o">-</span>t <span class="o">*</span> <span class="n">14</span>)).to_f32
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">load</span>
+    root <span class="o">=</span> <span class="t">SceneTree</span>.root
+    env <span class="o">=</span> <span class="t">Scene3D</span>.environment
+    env.fog(<span class="n">25</span>, <span class="n">70</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#1b2230&quot;</span>))
+    env.sky_colors(<span class="t">Color</span>.hex(<span class="s">&quot;#0f1522&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#2a3550&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#111418&quot;</span>))
+    env.ambient <span class="o">=</span> <span class="t">Color</span>.new(<span class="n">0.22</span>, <span class="n">0.24</span>, <span class="n">0.3</span>)
+    checker <span class="o">=</span> <span class="t">Texture</span>.new(<span class="t">Image</span>.checkerboard(<span class="n">64</span>, <span class="n">64</span>, <span class="n">8</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#3a4250&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#2c323d&quot;</span>)), wrap: <span class="t">GPU</span><span class="t">::</span><span class="t">Wrap</span><span class="t">::</span><span class="t">Repeat</span>)
+    root.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.plane(<span class="n">80</span>, <span class="n">80</span>, <span class="n">8</span>, uv_scale: <span class="n">16</span>), <span class="t">Material</span>.new(texture: checker, shininess: <span class="n">16</span>, specular: <span class="n">0.05</span>)))
+    root.add(<span class="t">DirectionalLight3D</span>.new(v3(<span class="n">-0.4</span>, <span class="n">-1</span>, <span class="n">-0.5</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#c8d4ff&quot;</span>), <span class="n">0.5</span>))
+
+    add_source(<span class="s">&quot;generator&quot;</span>, <span class="t">SpatialAudio</span>.hum, v3(<span class="n">-8</span>, <span class="n">0.75</span>, <span class="n">-4</span>), <span class="t">Mesh</span>.cube(<span class="n">1.5</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#ff5a4f&quot;</span>), root)
+    add_source(<span class="s">&quot;radio&quot;</span>, <span class="t">SpatialAudio</span>.beeper, v3(<span class="n">8</span>, <span class="n">0.5</span>, <span class="n">-2</span>), <span class="t">Mesh</span>.box(<span class="n">1.2</span>, <span class="n">1</span>, <span class="n">0.6</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#5aff8a&quot;</span>), root)
+    add_source(<span class="s">&quot;fire&quot;</span>, <span class="t">SpatialAudio</span>.fire, v3(<span class="n">0</span>, <span class="n">0.6</span>, <span class="n">-14</span>), <span class="t">Mesh</span>.cone(<span class="n">0.8</span>, <span class="n">1.4</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#ffa640&quot;</span>), root)
+    root.add(@drone)
+    add_source(<span class="s">&quot;drone&quot;</span>, <span class="t">SpatialAudio</span>.buzz, <span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>, <span class="t">Mesh</span>.sphere(<span class="n">0.45</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#5ab4ff&quot;</span>), @drone)
+    @sources.last.player.doppler <span class="o">=</span> <span class="n">true</span>
+    @sources.last.player.doppler_scale <span class="o">=</span> <span class="n">2</span>
+
+    root.add(@cam)
+    @cam.look_at(v3(<span class="n">0</span>, <span class="n">1</span>, <span class="n">0</span>))
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">add_source</span>(name : <span class="t">String</span>, sound : <span class="t">Sound</span>, pos : <span class="t">Vec3</span>, mesh : <span class="t">Mesh</span>, color : <span class="t">Color</span>, parent : <span class="t">Node</span>) : <span class="t">Nil</span>
+    body <span class="o">=</span> <span class="t">MeshInstance3D</span>.new(mesh, <span class="t">Material</span>.new(color, emissive: color <span class="o">*</span> <span class="n">0.35</span>), position: pos)
+    player <span class="o">=</span> <span class="t">AudioPlayer3D</span>.new(sound, loop: <span class="n">true</span>, autoplay: <span class="n">true</span>, max_distance: <span class="n">40</span>, volume: <span class="n">0.8</span>)
+    player.min_distance <span class="o">=</span> <span class="n">3</span>
+    body.add(player)
+    body.add(<span class="t">PointLight3D</span>.new(v3(<span class="n">0</span>, <span class="n">1.2</span>, <span class="n">0</span>), color, <span class="n">1.5</span>, <span class="n">7</span>))
+    parent.add(body)
+    @sources <span class="o">&lt;&lt;</span> <span class="t">Source</span>.new(name, body, player, color)
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    @cam.fly(dt, <span class="n">6</span>)
+    @drone_angle <span class="o">+=</span> dt <span class="o">*</span> <span class="n">0.6</span>
+    @drone.position <span class="o">=</span> v3(<span class="t">Math</span>.cos(@drone_angle) <span class="o">*</span> <span class="n">9</span>, <span class="n">2.5</span>, <span class="t">Math</span>.sin(@drone_angle) <span class="o">*</span> <span class="n">9</span> <span class="o">-</span> <span class="n">3</span>)
+    @sources.each_with_index <span class="k">do</span> <span class="o">|</span>s, i<span class="o">|</span>
+      level <span class="o">=</span> s.player.voice.try(<span class="o">&amp;</span>.spatial).try { <span class="o">|</span>sp<span class="o">|</span> sp.gain_left <span class="o">+</span> sp.gain_right } <span class="o">||</span> <span class="n">0_f32</span>
+      s.mesh.scale <span class="o">=</span> <span class="n">1</span> <span class="o">+</span> <span class="t">Math</span>.sin(<span class="t">Clock</span>.elapsed <span class="o">*</span> (<span class="n">3</span> <span class="o">+</span> i)).to_f32 <span class="o">*</span> <span class="n">0.04</span> <span class="o">+</span> level <span class="o">*</span> <span class="n">0.1</span>
+    <span class="k">end</span>
+    {<span class="t">Key</span><span class="t">::</span><span class="t">Num1</span> <span class="o">=&gt;</span> <span class="t">Attenuation</span><span class="t">::</span><span class="t">Inverse</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num2</span> <span class="o">=&gt;</span> <span class="t">Attenuation</span><span class="t">::</span><span class="t">Linear</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Num3</span> <span class="o">=&gt;</span> <span class="t">Attenuation</span><span class="t">::</span><span class="t">Exponential</span>}.each <span class="k">do</span> <span class="o">|</span>k, m<span class="o">|</span>
+      <span class="k">if</span> <span class="t">Input</span>.pressed?(k)
+        @model <span class="o">=</span> m
+        @sources.each { <span class="o">|</span>s<span class="o">|</span> s.player.attenuation <span class="o">=</span> m }
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="t">Audio</span>.master.muted <span class="o">=</span> <span class="o">!</span><span class="t">Audio</span>.master.muted? <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">M</span>)
+    <span class="k">if</span> <span class="t">Input</span>.mouse_pressed?(<span class="t">MouseButton</span><span class="t">::</span><span class="t">Left</span>)
+      ray <span class="o">=</span> @cam.mouse_ray
+      t <span class="o">=</span> ray.intersect_plane(<span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>, <span class="t">Vec3</span><span class="t">::</span><span class="t">UP</span>) <span class="o">||</span> <span class="n">20_f32</span>
+      hit <span class="o">=</span> ray.origin <span class="o">+</span> ray.direction <span class="o">*</span> <span class="t">Math</span>.min(t, <span class="n">40_f32</span>)
+      <span class="t">Audio</span>.play_at(@shot, hit, volume: <span class="n">0.9</span>, pitch: <span class="n">0.9</span> <span class="o">+</span> rand <span class="o">*</span> <span class="n">0.2</span>, min_distance: <span class="n">2</span>, max_distance: <span class="n">80</span>, attenuation: @model)
+      @shots <span class="o">&lt;&lt;</span> {hit, <span class="n">0.4_f32</span>}
+    <span class="k">end</span>
+    @shots <span class="o">=</span> @shots.compact_map { <span class="o">|</span>(p, life)<span class="o">|</span> life <span class="o">&gt;</span> dt ? {p, life <span class="o">-</span> dt} : <span class="n">nil</span> }
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    @shots.each <span class="k">do</span> <span class="o">|</span>(p, life)<span class="o">|</span>
+      <span class="t">Scene3D</span>.debug_sphere(p, <span class="n">0.2_f32</span> <span class="o">+</span> (<span class="n">0.4_f32</span> <span class="o">-</span> life) <span class="o">*</span> <span class="n">4</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    <span class="k">end</span>
+    @sources.each <span class="k">do</span> <span class="o">|</span>s<span class="o">|</span>
+      sp <span class="o">=</span> s.player.voice.try(<span class="o">&amp;</span>.spatial)
+      <span class="k">next</span> <span class="k">unless</span> sp
+      <span class="k">next</span> <span class="k">unless</span> pt <span class="o">=</span> @cam.world_to_screen(s.mesh.global_position <span class="o">+</span> v3(<span class="n">0</span>, <span class="n">1.4</span>, <span class="n">0</span>))
+      g.print(s.name, pt.x, pt.y <span class="o">-</span> <span class="n">30</span>, s.color, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+      meter(g, pt.x <span class="o">-</span> <span class="n">42</span>, pt.y <span class="o">-</span> <span class="n">10</span>, sp.gain_left, <span class="s">&quot;L&quot;</span>)
+      meter(g, pt.x <span class="o">+</span> <span class="n">4</span>, pt.y <span class="o">-</span> <span class="n">10</span>, sp.gain_right, <span class="s">&quot;R&quot;</span>)
+    <span class="k">end</span>
+    g.rect(<span class="n">0</span>, <span class="n">0</span>, <span class="t">Window</span>.width, <span class="n">96</span>, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.55</span>))
+    g.print(<span class="s">&quot;Spatial audio: wear headphones and fly around. Sources pan, fade with distance,&quot;</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.print(<span class="s">&quot;reach the far ear later and sound duller from behind. The drone has doppler.&quot;</span>, <span class="n">10</span>, <span class="n">28</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.print(<span class="s">&quot;WASD/QE move, right-drag look, click fires a shot, 1-3 distance model, M mute&quot;</span>, <span class="n">10</span>, <span class="n">48</span>, <span class="t">Color</span>.gray(<span class="n">0.8</span>))
+    g.print(<span class="s">&quot;model </span><span class="i">#{</span>@model<span class="i">}</span><span class="s">   voices </span><span class="i">#{</span><span class="t">Audio</span>.voice_count<span class="i">}</span><span class="s">   </span><span class="i">#{</span><span class="t">Audio</span>.master.muted? ? <span class="s">&quot;MUTED&quot;</span> : <span class="s">&quot;click once in a browser to start audio&quot;</span><span class="i">}</span><span class="s">&quot;</span>, <span class="n">10</span>, <span class="n">70</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#ffd166&quot;</span>))
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">meter</span>(g : <span class="t">Graphics</span>, x : <span class="t">Float32</span>, y : <span class="t">Float32</span>, gain : <span class="t">Float32</span>, label : <span class="t">String</span>) : <span class="t">Nil</span>
+    g.rect(x, y, <span class="n">38</span>, <span class="n">8</span>, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.6</span>))
+    g.rect(x, y, <span class="n">38</span> <span class="o">*</span> <span class="t">Math</span>.sqrt(gain.clamp(<span class="n">0_f32</span>, <span class="n">1_f32</span>)), <span class="n">8</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#ffd166&quot;</span>)) <span class="c"># sqrt so distant sources still show</span>
+    g.print(label, label <span class="o">==</span> <span class="s">&quot;L&quot;</span> ? x <span class="o">-</span> <span class="n">12</span> : x <span class="o">+</span> <span class="n">42</span>, y <span class="o">-</span> <span class="n">1</span>, <span class="t">Color</span>.gray(<span class="n">0.85</span>))
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="t">Eagle</span>.run(<span class="t">SpatialAudio</span>, title: <span class="s">&quot;Eagle spatial audio&quot;</span>, width: <span class="n">1024</span>, height: <span class="n">640</span>, msaa: <span class="n">4</span>)
+</code></pre>
+</details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./spatial_audio3d.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
+</body></html>
