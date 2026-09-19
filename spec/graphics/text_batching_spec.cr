@@ -32,16 +32,23 @@ private def pixels(img : Image) : Array(Color)
 end
 
 describe "text batching" do
-  gpu_it "draws shapes and default-font text in one draw call" do
+  # The first shape reuses whichever atlas an earlier example left bound, so the count is 1 or 2 depending on order.
+  gpu_it "draws shapes and default-font text in at most two draw calls" do
     GPUSpec.render(100, 90) { |g| interleaved(g, Font.default) }
-    Eagle.graphics.stats_draw_calls.should eq 2
+    batched = Eagle.graphics.stats_draw_calls
+    GPUSpec.render(100, 90) { |g| unbatched(g, Font.default) }
+    batched.should be <= 2
+    Eagle.graphics.stats_draw_calls.should be > batched
   end
 
-  gpu_it "draws shapes and TrueType text in one draw call" do
+  gpu_it "draws shapes and TrueType text in at most two draw calls" do
     pending!("no system TTF found") unless BATCH_TTF
     font = TrueTypeFont.new(File.read(BATCH_TTF.not_nil!).to_slice, 14).preload
     GPUSpec.render(100, 90) { |g| interleaved(g, font) }
-    Eagle.graphics.stats_draw_calls.should eq 2
+    batched = Eagle.graphics.stats_draw_calls
+    GPUSpec.render(100, 90) { |g| unbatched(g, font) }
+    batched.should be <= 2
+    Eagle.graphics.stats_draw_calls.should be > batched
   end
 
   gpu_it "keeps pixels identical to drawing shapes on the white texture" do
