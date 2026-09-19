@@ -658,4 +658,827 @@ module Eagle
       g.draw(t, dest, g.color * @tint)
     end
   end
+
+  # A closed field that shows the current item, and an open list for picking another.
+  # The list is a popup overlay (high `z_index`) so it draws above sibling controls.
+  # Click an item or use the arrow keys and Enter while focused.
+  #
+  # ```
+  # biome = OptionButton.new(["Forest", "Desert", "Ocean"])
+  # biome.on_item_selected { |i| puts biome.items[i] }
+  # ```
+  class OptionButton < Control
+    # :nodoc:
+    class Overlay < Control
+      def initialize(@owner : OptionButton)
+        super("OptionOverlay")
+        @anchor = Anchor::Fill
+        @z_index = 1000
+        @focusable = false
+      end
+
+      def gui_input(event : Event) : Bool
+        case event
+        when MouseButtonEvent
+          if event.pressed? && event.button.left?
+            @owner.close unless @owner.popup_contains?(event.position)
+            return true
+          end
+        end
+        false
+      end
+
+      def draw(g : Graphics) : Nil
+      end
+    end
+
+    # :nodoc:
+    class Item < Control
+      getter index : Int32
+      getter text : String
+
+      def initialize(@owner : OptionButton, @index : Int32, @text : String)
+        super("OptionItem")
+        @focusable = false
+      end
+
+      def content_min_size : Vec2
+        t = theme_or_inherited
+        ts = font.measure(@text)
+        Vec2.new(ts.x + t.padding * 2, Math.max(ts.y, t.control_height))
+      end
+
+      def gui_input(event : Event) : Bool
+        case event
+        when MouseButtonEvent
+          if event.button.left? && event.released? && @pressed && contains_global?(event.position)
+            @owner.pick(@index)
+            return true
+          end
+          return event.pressed?
+        when MouseMotionEvent
+          @owner.highlight = @index if contains_global?(event.position)
+        end
+        false
+      end
+
+      def draw(g : Graphics) : Nil
+        t = theme_or_inherited
+        hi = @owner.highlight == @index
+        sel = @owner.selected == @index
+        bg = t.input_bg
+        bg = t.button_hover if hi
+        bg = t.button_pressed if sel && !hi
+        bg = t.accent if sel && hi
+        draw_panel(g, rect, bg, nil, 0)
+        tc = (sel && hi) ? t.accent_text : (@disabled ? t.text_disabled : t.text)
+        ts = font.measure(@text)
+        g.print(@text, t.padding, (@size.y - ts.y) / 2, g.color * tc, font)
+      end
+    end
+
+    # Entries shown in the closed field and in the open list.
+    getter items : Array(String)
+    # Index of the current item, or `-1` when the list is empty.
+    getter selected : Int32
+    # Index drawn as the keyboard or mouse highlight in the open list.
+    property highlight : Int32 = 0
+    # True while the popup list is shown.
+    getter? open = false
+    # Background color. `nil` uses the theme.
+    property color : Color? = nil
+    # Text color. `nil` uses the theme.
+    property text_color : Color? = nil
+
+    @popup : {Overlay, Panel, VBox}? = nil
+
+    # Emitted when an item is picked, with its index. Connect with `on_item_selected { |i| ... }`.
+    signal item_selected(index : Int32)
+
+    # Creates a drop-down from *items*. The first item is selected by default.
+    def initialize(@items : Array(String) = [] of String, position : Vec2 = Vec2::ZERO, name : String = "", size : Vec2? = nil)
+      super(name, position, size)
+      @focusable = true
+      @selected = @items.empty? ? -1 : 0
+      @highlight = @selected < 0 ? 0 : @selected
+      @size = size || content_min_size
+      on_focus_exited { close }
+    end
+
+    # Replaces the item list. Keeps `selected` when it is still in range.
+    def items=(v : Array(String))
+      @items = v
+      @selected = v.empty? ? -1 : @selected.clamp(0, v.size - 1)
+      @highlight = @selected < 0 ? 0 : @selected
+      close
+    end
+
+    # Sets the selected index without emitting `item_selected`.
+    def selected=(i : Int32)
+      @selected = @items.empty? ? -1 : i.clamp(0, @items.size - 1)
+      @highlight = @selected < 0 ? 0 : @selected
+    end
+
+    # The current item's text, or `""` when nothing is selected.
+    def selected_text : String
+      @selected >= 0 && @selected < @items.size ? @items[@selected] : ""
+    end
+
+    # Appends an item.
+    def add_item(text : String) : Nil
+      @items << text
+      @selected = 0 if @selected < 0
+    end
+
+    # Removes every item and closes the popup.
+    def clear : Nil
+      @items = [] of String
+      @selected = -1
+      close
+    end
+
+    # Size needed for the current text and the chevron.
+    def content_min_size : Vec2
+      t = theme_or_inherited
+      label = selected_text.empty? ? " " : selected_text
+      ts = font.measure(label)
+      Vec2.new(ts.x + t.padding * 2 + 16, Math.max(ts.y + t.padding, t.control_height))
+    end
+
+    # Resizes to fit the content when needed.
+    def layout : Nil
+      super
+      self.size = @size.max(content_min_size)
+      update_popup_transform if @open
+    end
+
+    # :nodoc:
+    def process(dt : Float32) : Nil
+      super
+      update_popup_transform if @open
+    end
+
+    # Opens the list. Does nothing when empty or disabled.
+    def open : Nil
+      return if @open || @disabled || @items.empty?
+      rebuild_items
+      host = popup_host
+      overlay = popup[0]
+      host.add(overlay) unless overlay.parent
+      @open = true
+      @highlight = @selected < 0 ? 0 : @selected
+      grab_focus
+      update_popup_transform
+    end
+
+    # Hides the list.
+    def close : Nil
+      return unless @open
+      @open = false
+      @popup.try { |p| p[0].remove_from_parent }
+    end
+
+    # Selects *index*, closes the list, and emits `item_selected`.
+    def pick(index : Int32) : Nil
+      return if @disabled || @items.empty?
+      close
+      @selected = index.clamp(0, @items.size - 1)
+      @highlight = @selected
+      emit_item_selected(@selected)
+    end
+
+    # :nodoc:
+    def popup_contains?(p : Vec2) : Bool
+      @popup.try { |pp| pp[1].contains_global?(p) } || false
+    end
+
+    # Handles click-to-toggle and keyboard picking.
+    def gui_input(event : Event) : Bool
+      case event
+      when MouseButtonEvent
+        if event.button.left? && event.released? && @pressed && contains_global?(event.position)
+          @open ? close : self.open
+          return true
+        end
+        return event.pressed?
+      when KeyEvent
+        return false unless event.pressed?
+        if @open
+          case event.key
+          when Key::Up
+            @highlight = Math.max(0, @highlight - 1)
+            return true
+          when Key::Down
+            @highlight = Math.min(@items.size - 1, @highlight + 1)
+            return true
+          when Key::Home
+            @highlight = 0
+            return true
+          when Key::End
+            @highlight = Math.max(0, @items.size - 1)
+            return true
+          when Key::Enter, Key::Space, Key::KpEnter
+            pick(@highlight)
+            return true
+          when Key::Escape
+            close
+            return true
+          end
+        else
+          case event.key
+          when Key::Enter, Key::Space, Key::KpEnter, Key::Down, Key::Up
+            self.open
+            return true
+          end
+        end
+      end
+      false
+    end
+
+    # :nodoc:
+    def exit_tree : Nil
+      close
+      super
+    end
+
+    # Draws the closed field and chevron.
+    def draw(g : Graphics) : Nil
+      t = theme_or_inherited
+      bg = @color || t.button
+      bg = t.button_hover if @hovered && !@pressed
+      bg = t.button_pressed if @pressed || @open
+      bg = bg.lerp(t.panel, 0.5) if @disabled
+      draw_panel(g, rect, bg, t.button_border)
+      draw_focus_ring(g)
+      tc = @text_color || (@disabled ? t.text_disabled : t.text)
+      ts = font.measure(selected_text)
+      g.print(selected_text, t.padding, (@size.y - ts.y) / 2, g.color * tc, font)
+      ax = @size.x - t.padding - 5
+      ay = @size.y / 2
+      g.triangle(Vec2.new(ax - 5, ay - 3), Vec2.new(ax + 5, ay - 3), Vec2.new(ax, ay + 4), color: g.color * tc)
+    end
+
+    # The overlay, its panel and the item column, built on first use.
+    private def popup : {Overlay, Panel, VBox}
+      @popup ||= begin
+        overlay = Overlay.new(self)
+        panel = Panel.new
+        panel.fit_content = true
+        panel.z_index = 1
+        list = VBox.new
+        list.fit_content = true
+        list.spacing = 0
+        list.padding = 0
+        panel.add(list)
+        overlay.add(panel)
+        {overlay, panel, list}
+      end
+    end
+
+    private def popup_host : Node
+      each_ancestor { |n| return n if n.is_a?(CanvasLayer) }
+      SceneTree.root
+    end
+
+    private def rebuild_items : Nil
+      list = popup[2]
+      list.children.dup.each(&.remove_from_parent)
+      @items.each_with_index do |text, i|
+        row = Item.new(self, i, text)
+        row.min_size = Vec2.new(@size.x, theme_or_inherited.control_height)
+        list.add(row)
+      end
+    end
+
+    private def update_popup_transform : Nil
+      overlay, panel, _ = popup
+      return unless overlay.parent
+      panel.position = global_position + Vec2.new(0, @size.y) - overlay.global_position
+      panel.width = Math.max(@size.x, panel.size.x)
+    end
+  end
+
+  # Shows part of one large child and scrolls it with the mouse wheel or draggable bars.
+  # The child is usually a `VBox`. Its size follows the container's width unless
+  # `horizontal` is set. Content outside the viewport is clipped and does not get clicks.
+  #
+  # ```
+  # list = VBox.new
+  # 30.times { |i| list.add(Label.new("Row #{i}")) }
+  # scroller = ScrollContainer.new(size: v2(200, 120))
+  # scroller.add(list)
+  # scroller.on_scrolled { |offset| puts offset.y }
+  # scroller.scroll_to(v2(0, 64))
+  # ```
+  class ScrollContainer < Container
+    # Thickness of the scroll bars.
+    BAR = 10_f32
+
+    # Allow scrolling left and right.
+    property? horizontal = false
+    # Allow scrolling up and down.
+    property? vertical = true
+    # Points scrolled per wheel notch.
+    property wheel_step : Float32 = 32_f32
+    # Background color. `nil` uses the theme's field color.
+    property color : Color? = nil
+    # Current scroll offset in points.
+    getter scroll : Vec2 = Vec2::ZERO
+    # Size of the visible area, excluding the bars, after the last layout.
+    getter viewport : Vec2 = Vec2::ZERO
+
+    @bar_v = false
+    @bar_h = false
+    @drag = -1
+    @drag_grab = 0_f32
+
+    # Emitted when the offset changes, with the new offset. Connect with `on_scrolled { |offset| ... }`.
+    signal scrolled(offset : Vec2)
+
+    # Creates a scroll container.
+    def initialize(position : Vec2 = Vec2::ZERO, name : String = "", size : Vec2? = nil)
+      super(name, position, size || Vec2.new(200, 150))
+      @viewport = @size
+    end
+
+    # The scrolled child: the first visible control.
+    def content : Control?
+      control_children.first?
+    end
+
+    # Largest valid scroll offset.
+    def max_scroll : Vec2
+      update_metrics
+      return Vec2::ZERO unless c = content
+      Vec2.new(@horizontal ? Math.max(0_f32, c.size.x - @viewport.x) : 0_f32, @vertical ? Math.max(0_f32, c.size.y - @viewport.y) : 0_f32)
+    end
+
+    # Scrolls to *offset*, clamped to the content. Emits `scrolled` when it changes.
+    def scroll_to(offset : Vec2) : Nil
+      m = max_scroll
+      v = Vec2.new(offset.x.clamp(0_f32, m.x), offset.y.clamp(0_f32, m.y))
+      return if v == @scroll
+      @scroll = v
+      place_content
+      emit_scrolled(v)
+    end
+
+    # Scrolls the least amount that brings *child* fully into view.
+    def ensure_visible(child : Control) : Nil
+      return unless c = content
+      top_left = child.global_position - c.global_position
+      o = @scroll
+      x = top_left.x < o.x ? top_left.x : (top_left.x + child.size.x > o.x + @viewport.x ? top_left.x + child.size.x - @viewport.x : o.x)
+      y = top_left.y < o.y ? top_left.y : (top_left.y + child.size.y > o.y + @viewport.y ? top_left.y + child.size.y - @viewport.y : o.y)
+      scroll_to(Vec2.new(x, y))
+    end
+
+    # Sizes and positions the content, and clamps the offset.
+    def arrange : Nil
+      update_metrics
+      m = max_scroll
+      @scroll = Vec2.new(@scroll.x.clamp(0_f32, m.x), @scroll.y.clamp(0_f32, m.y))
+      place_content
+    end
+
+    # Scroll containers position only their content.
+    def manages_children? : Bool; true; end
+
+    # Routes wheel scrolling and bar dragging.
+    def gui_input(event : Event) : Bool
+      case event
+      when MouseWheelEvent
+        m = max_scroll
+        d = event.delta * @wheel_step
+        d = Vec2.new(d.y, 0) if m.y <= 0 && m.x > 0 && d.x == 0
+        before = @scroll
+        scroll_to(Vec2.new(@scroll.x - d.x, @scroll.y - d.y))
+        return @scroll != before
+      when MouseButtonEvent
+        if event.button.left? && event.pressed?
+          p = to_local(event.position)
+          2.times do |axis|
+            next unless bar_shown?(axis)
+            if thumb_rect(axis).contains?(p)
+              @drag = axis
+              @drag_grab = (axis == 1 ? p.y : p.x) - (axis == 1 ? thumb_rect(axis).y : thumb_rect(axis).x)
+              return true
+            elsif bar_rect(axis).contains?(p)
+              page = axis == 1 ? @viewport.y : @viewport.x
+              before = axis == 1 ? thumb_rect(axis).y : thumb_rect(axis).x
+              dir = (axis == 1 ? p.y : p.x) < before ? -1 : 1
+              scroll_to(axis == 1 ? Vec2.new(@scroll.x, @scroll.y + dir * page) : Vec2.new(@scroll.x + dir * page, @scroll.y))
+              return true
+            end
+          end
+        elsif event.button.left? && event.released?
+          @drag = -1
+        end
+      when MouseMotionEvent
+        if @drag >= 0
+          p = to_local(event.position)
+          axis = @drag
+          range = track_length(axis) - thumb_length(axis)
+          m = max_scroll
+          if range > 0
+            pos = ((axis == 1 ? p.y : p.x) - @drag_grab).clamp(0_f32, range)
+            scroll_to(axis == 1 ? Vec2.new(@scroll.x, pos / range * m.y) : Vec2.new(pos / range * m.x, @scroll.y))
+          end
+          return true
+        end
+      end
+      false
+    end
+
+    # Skips clipped content for clicks and wheel events outside the container.
+    def input_tree(event : Event) : Nil
+      outside = case event
+                when MouseButtonEvent, MouseWheelEvent then !contains_global?(event.position)
+                else false
+                end
+      if outside
+        input(event) if can_process?
+      else
+        super
+      end
+    end
+
+    # Draws the background and scroll bars.
+    def draw(g : Graphics) : Nil
+      t = theme_or_inherited
+      draw_panel(g, rect, @color || t.input_bg, t.panel_border)
+      2.times do |axis|
+        next unless bar_shown?(axis)
+        g.rect(bar_rect(axis), color: g.color * t.track)
+        tr = thumb_rect(axis)
+        g.rect(tr, color: g.color * ((@drag == axis || @hovered) ? t.button_hover : t.button_border))
+      end
+    end
+
+    # Clips the children to the viewport.
+    protected def draw_children(g : Graphics) : Nil
+      gp = global_position
+      clip = Rect.new(gp.x, gp.y, @viewport.x, @viewport.y)
+      outer = g.scissor_rect
+      g.with_scissor(outer ? clip.intersection(outer) : clip) { super(g) }
+    end
+
+    private def bar_shown?(axis : Int32) : Bool
+      axis == 1 ? @bar_v : @bar_h
+    end
+
+    private def track_length(axis : Int32) : Float32
+      axis == 1 ? @viewport.y : @viewport.x
+    end
+
+    private def thumb_length(axis : Int32) : Float32
+      c = content
+      return 0_f32 unless c
+      tl = track_length(axis)
+      total = axis == 1 ? c.size.y : c.size.x
+      return tl if total <= 0
+      (tl * tl / total).clamp(Math.min(BAR * 2, tl), tl)
+    end
+
+    private def thumb_pos(axis : Int32) : Float32
+      m = max_scroll
+      max = axis == 1 ? m.y : m.x
+      return 0_f32 if max <= 0
+      (axis == 1 ? @scroll.y : @scroll.x) / max * (track_length(axis) - thumb_length(axis))
+    end
+
+    private def bar_rect(axis : Int32) : Rect
+      axis == 1 ? Rect.new(@viewport.x, 0, BAR, @viewport.y) : Rect.new(0, @viewport.y, @viewport.x, BAR)
+    end
+
+    private def thumb_rect(axis : Int32) : Rect
+      axis == 1 ? Rect.new(@viewport.x + 1, thumb_pos(axis), BAR - 2, thumb_length(axis)) : Rect.new(thumb_pos(axis), @viewport.y + 1, thumb_length(axis), BAR - 2)
+    end
+
+    private def update_metrics : Nil
+      c = content
+      @bar_v = false
+      @bar_h = false
+      @viewport = @size
+      return unless c
+      min = c.effective_min_size
+      2.times do
+        @bar_v = @vertical && min.y > @size.y - (@bar_h ? BAR : 0)
+        @bar_h = @horizontal && min.x > @size.x - (@bar_v ? BAR : 0)
+      end
+      @viewport = Vec2.new(@size.x - (@bar_v ? BAR : 0), @size.y - (@bar_h ? BAR : 0))
+      w = @horizontal ? Math.max(min.x, @viewport.x) : @viewport.x
+      h = @vertical ? Math.max(min.y, @viewport.y) : @viewport.y
+      c.size = Vec2.new(w, h)
+    end
+
+    private def place_content : Nil
+      content.try { |c| c.position = Vec2.new(-@scroll.x, -@scroll.y) }
+    end
+  end
+
+  # A drop-down list. Same as `OptionButton`.
+  #
+  # ```
+  # quality = DropDown.new(["Low", "High"])
+  # ```
+  alias DropDown = OptionButton
+
+  # Label that draws a small markup subset: `**bold**` or `[b]bold[/b]`,
+  # `[color=#rrggbb]text[/color]`, newlines, and optional `[url=meta]text[/url]`
+  # links. It is not HTML.
+  #
+  # ```
+  # hint = RichTextLabel.new("**Tip:** collect [color=#e3a537]coins[/color].")
+  # hint.wrap = true
+  # ```
+  class RichTextLabel < Control
+    # One styled slice of the source string, after markup is stripped.
+    #
+    # ```
+    # spans = RichTextLabel.parse("plain **bold**")
+    # spans[1].bold? # => true
+    # ```
+    struct Span
+      # Visible text in this slice.
+      getter text : String
+      # True when the slice is bold.
+      getter? bold : Bool
+      # Fill color, or `nil` to use the theme text color.
+      getter color : Color?
+      # Link meta string from `[url=...]`, or `nil`.
+      getter url : String?
+
+      # Creates a span.
+      def initialize(@text : String, @bold = false, @color : Color? = nil, @url : String? = nil)
+      end
+    end
+
+    # A laid-out fragment ready to draw.
+    #
+    # ```
+    # label = RichTextLabel.new("go [url=door]here[/url]")
+    # label.layout
+    # link = label.runs.find { |run| run.url }
+    # ```
+    struct Run
+      # Visible text.
+      getter text : String
+      # Top-left in the control's local space.
+      getter position : Vec2
+      # Measured size of this fragment.
+      getter size : Vec2
+      # True when drawn with a fake bold offset.
+      getter? bold : Bool
+      # Draw color.
+      getter color : Color
+      # Link meta, or `nil`.
+      getter url : String?
+
+      # Creates a run.
+      def initialize(@text, @position, @size, @bold, @color, @url = nil)
+      end
+
+      # Hit area of this fragment.
+      def rect : Rect
+        Rect.new(@position, @size)
+      end
+    end
+
+    # Source string, including markup.
+    getter text : String
+    # Text color used when a span has no `[color]` tag. `nil` uses the theme.
+    property color : Color? = nil
+    # Text scale.
+    property font_scale : Float32 = 1_f32
+    # Wrap runs to the control's width.
+    property? wrap = false
+    # A font for this label only.
+    property label_font : Font? = nil
+    # Parsed spans. Useful in tests.
+    getter spans = [] of Span
+    # Laid-out fragments. Useful in tests.
+    getter runs = [] of Run
+    # Number of lines after the last layout pass.
+    getter line_count : Int32 = 1
+
+    @layout_w = 0_f32
+    @layout_h = 0_f32
+    @pen_x = 0_f32
+    @pen_y = 0_f32
+
+    # Emitted when a `[url]` run is clicked, with the tag's meta string.
+    # Connect with `on_meta_clicked { |meta| ... }`.
+    signal meta_clicked(meta : String)
+
+    # Creates a rich-text label.
+    def initialize(@text : String = "", position : Vec2 = Vec2::ZERO, color : Color? = nil, name : String = "", size : Vec2? = nil)
+      super(name, position, size)
+      @color = color
+      @spans = RichTextLabel.parse(@text)
+      @mouse_enabled = @spans.any? { |s| s.url }
+      @size = size || (GPU.ready? ? content_min_size : Vec2.new(100, 20))
+    end
+
+    # The font in use.
+    def font : Font; @label_font || super; end
+
+    # Replaces the source string and re-parses markup.
+    def text=(t : String)
+      @text = t
+      @spans = RichTextLabel.parse(t)
+      @mouse_enabled = @spans.any? { |s| s.url }
+      @runs = [] of Run
+    end
+
+    # Visible text with markup removed.
+    def plain_text : String
+      @spans.map(&.text).join
+    end
+
+    # Parses *text* into styled spans. Unknown tags are kept as literal text.
+    def self.parse(text : String) : Array(Span)
+      spans = [] of Span
+      buf = [] of Char
+      md_bold = false
+      b_count = 0
+      colors = [] of Color
+      urls = [] of String
+      chars = text.chars
+      i = 0
+      n = chars.size
+      flush = -> {
+        unless buf.empty?
+          spans << Span.new(buf.join, md_bold || b_count > 0, colors.last?, urls.last?)
+          buf.clear
+        end
+      }
+      while i < n
+        if chars[i] == '*' && i + 1 < n && chars[i + 1] == '*'
+          flush.call
+          md_bold = !md_bold
+          i += 2
+          next
+        end
+        if chars[i] == '['
+          j = i + 1
+          while j < n && chars[j] != ']'
+            j += 1
+          end
+          if j < n
+            tag = String.build { |io| (i + 1...j).each { |k| io << chars[k] } }
+            applied = true
+            case tag
+            when "b"
+              flush.call
+              b_count += 1
+            when "/b"
+              flush.call
+              b_count = Math.max(0, b_count - 1)
+            when "/color"
+              flush.call
+              colors.pop? unless colors.empty?
+            when "/url"
+              flush.call
+              urls.pop? unless urls.empty?
+            else
+              if tag.starts_with?("color=")
+                begin
+                  col = Color.hex(tag.lchop("color="))
+                  flush.call
+                  colors << col
+                rescue
+                  applied = false
+                end
+              elsif tag.starts_with?("url=")
+                flush.call
+                urls << tag.lchop("url=")
+              else
+                applied = false
+              end
+            end
+            if applied
+              i = j + 1
+              next
+            end
+          end
+        end
+        buf << chars[i]
+        i += 1
+      end
+      flush.call
+      spans
+    end
+
+    # Size of the laid-out text.
+    def content_min_size : Vec2
+      rebuild_layout
+      @wrap ? Vec2.new(0, @layout_h) : Vec2.new(@layout_w, @layout_h)
+    end
+
+    # Relays out when the size changes.
+    def layout : Nil
+      super
+      rebuild_layout
+      self.size = @size.max(@wrap ? Vec2.new(@size.x, @layout_h) : Vec2.new(@layout_w, @layout_h))
+    end
+
+    # Clicks `[url]` runs.
+    def gui_input(event : Event) : Bool
+      case event
+      when MouseButtonEvent
+        if event.button.left? && event.released? && contains_global?(event.position)
+          local = to_local(event.position)
+          @runs.each do |run|
+            if (meta = run.url) && run.rect.contains?(local)
+              emit_meta_clicked(meta)
+              return true
+            end
+          end
+        end
+      end
+      false
+    end
+
+    # Draws each run, with a one-pixel offset for bold.
+    def draw(g : Graphics) : Nil
+      t = theme_or_inherited
+      @runs.each do |run|
+        col = g.color * (@disabled ? t.text_disabled : run.color)
+        g.print(run.text, run.position.x, run.position.y, col, font, @font_scale)
+        g.print(run.text, run.position.x + 1, run.position.y, col, font, @font_scale) if run.bold?
+        if run.url
+          g.rect(run.position.x, run.position.y + run.size.y - 1, run.size.x, 1, color: col)
+        end
+      end
+    end
+
+    private def rebuild_layout : Nil
+      @runs = [] of Run
+      @pen_x = 0_f32
+      @pen_y = 0_f32
+      @line_count = 1
+      @layout_w = 0_f32
+      line_h = font.height * @font_scale
+      @spans.each do |span|
+        parts = span.text.split('\n')
+        parts.each_with_index do |part, pi|
+          newline(line_h) if pi > 0
+          emit_text(part, span)
+        end
+      end
+      @layout_h = @pen_y + line_h
+      @layout_h = line_h if @spans.empty?
+      @layout_w = Math.max(@layout_w, @pen_x)
+    end
+
+    private def newline(line_h : Float32)
+      @layout_w = Math.max(@layout_w, @pen_x)
+      @pen_x = 0_f32
+      @pen_y += line_h
+      @line_count += 1
+    end
+
+    private def emit_text(text : String, span : Span)
+      return if text.empty?
+      unless @wrap && @size.x > 0
+        emit_run(text, span)
+        return
+      end
+      token = String::Builder.new
+      text.each_char do |c|
+        if c == ' '
+          emit_run(token.to_s, span) unless token.empty?
+          token = String::Builder.new
+          emit_run(" ", span)
+        else
+          token << c
+        end
+      end
+      emit_run(token.to_s, span) unless token.empty?
+    end
+
+    private def emit_run(text : String, span : Span)
+      return if text.empty?
+      f = font
+      w = f.width(text) * @font_scale
+      w += 1 if span.bold? && w > 0
+      h = f.height * @font_scale
+      if @wrap && @size.x > 0 && @pen_x > 0 && (@pen_x + w) > @size.x && text != " "
+        newline(h)
+      end
+      col = span.color || @color || theme_or_inherited.text
+      @runs << Run.new(text, Vec2.new(@pen_x, @pen_y), Vec2.new(w, h), span.bold?, col, span.url)
+      @pen_x += w
+      @layout_w = Math.max(@layout_w, @pen_x)
+    end
+  end
+
+  # Same as `RichTextLabel`.
+  #
+  # ```
+  # note = RichText.new("[b]Note:[/b] saved")
+  # ```
+  alias RichText = RichTextLabel
 end
+
