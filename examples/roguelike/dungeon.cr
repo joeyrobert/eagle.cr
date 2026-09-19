@@ -162,56 +162,17 @@ module Rogue
 
     def walkable_count : Int32; @tiles.count(&.walkable?); end
 
-    # Symmetric shadowcasting FOV (recursive, 8 octants).
+    # Symmetric shadowcasting FOV via `Eagle::Grid.field_of_view`.
     def compute_fov(ox, oy, radius) : Nil
       @visible.fill(false)
-      mark_visible(ox, oy)
-      8.times { |oct| cast_light(ox, oy, radius, 1, 1.0, 0.0, oct) }
-    end
-
-    private def mark_visible(x, y)
-      return unless in_bounds?(x, y)
-      @visible[y * @width + x] = true
-      @explored[y * @width + x] = true
-    end
-
-    MULT = [[1, 0, 0, -1, -1, 0, 0, 1], [0, 1, -1, 0, 0, -1, 1, 0], [0, 1, 1, 0, 0, -1, -1, 0], [1, 0, 0, 1, -1, 0, 0, -1]]
-
-    private def cast_light(cx, cy, radius, row, start : Float64, finish : Float64, oct)
-      return if start < finish
-      xx = MULT[0][oct]; xy = MULT[1][oct]; yx = MULT[2][oct]; yy = MULT[3][oct]
-      r2 = radius * radius
-      (row..radius).each do |j|
-        dx = -j - 1; dy = -j
-        blocked = false
-        new_start = start
-        while dx <= 0
-          dx += 1
-          x = cx + dx * xx + dy * xy
-          y = cy + dx * yx + dy * yy
-          l_slope = (dx - 0.5) / (dy + 0.5)
-          r_slope = (dx + 0.5) / (dy - 0.5)
-          if start < r_slope
-            next
-          elsif finish > l_slope
-            break
-          end
-          mark_visible(x, y) if dx * dx + dy * dy < r2
-          if blocked
-            if self[x, y].opaque?
-              new_start = r_slope
-              next
-            else
-              blocked = false
-              start = new_start
-            end
-          elsif self[x, y].opaque? && j < radius
-            blocked = true
-            cast_light(cx, cy, radius, j + 1, start, l_slope, oct)
-            new_start = r_slope
-          end
-        end
-        break if blocked
+      seen = Eagle::Grid.field_of_view({ox, oy}, radius) do |x, y|
+        !in_bounds?(x, y) || self[x, y].opaque?
+      end
+      seen.each do |(x, y)|
+        next unless in_bounds?(x, y)
+        i = y * @width + x
+        @visible[i] = true
+        @explored[i] = true
       end
     end
 

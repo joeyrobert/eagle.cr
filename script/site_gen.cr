@@ -17,6 +17,7 @@ EXAMPLES = {
   "coinrush3d"   => {"Coin Rush (3D)", "Roll a ball around a lit, shadowed arena collecting coins before the timer runs out.", "WASD move · Space jump · right-drag orbits the camera"},
   "joyride"       => {"Joyride", "Drive through an infinite deterministic city and countryside with traffic, police, pedestrians and delivery or race missions.", "WASD/arrows drive · Space handbrake · M new mission"},
   "fps"           => {"Neon Bastion (FPS)", "First-person arena shooter: mouse look, pulse rifle and scattergun, grunt and charger AI, Waves and Deathmatch.", "Click to capture mouse · WASD move · Shift sprint · fire click/RB · 1/2 weapons · F1 Waves · F2 Deathmatch"},
+  "algorithms"   => {"Algorithms", "A* pathfinding, fBm terrain, Poisson-disk sampling, flocking and shadowcasting field of view.", "1-5 or Tab switch scenes · click sets the A* goal · WASD moves in FOV"},
   "flythrough3d" => {"3D fly-through", "Every 3D feature: primitives, textures, lights, shadows, fog, transparency, wireframe, picking.", "WASD/QE move · right-drag look · F wireframe · click to pick"},
   "spatial_audio3d" => {"Spatial audio (3D)", "Looping sound sources you can fly around: panning, distance models, interaural delay, head shadow and doppler.", "WASD/QE move · right-drag look · click fires a shot · 1-3 distance model · M mute"},
   "physics"      => {"2D physics", "Rigid bodies, stacking, ramps, sensors and additive particle bursts.", "Click to spawn bodies"},
@@ -481,6 +482,7 @@ API_GROUPS = {
   "UI"             => %w(Eagle::Control Eagle::Panel Eagle::Label Eagle::Button Eagle::CheckBox Eagle::Slider Eagle::ProgressBar Eagle::TextInput Eagle::VBox Eagle::HBox Eagle::GridContainer Eagle::Theme),
   "Audio & assets" => %w(Eagle::Audio Eagle::Sound Eagle::Voice Eagle::AudioPlayer Eagle::AudioPlayer2D Eagle::AudioPlayer3D Eagle::AudioListener3D Eagle::Assets Eagle::Image Eagle::Codecs::PNG Eagle::Codecs::Vorbis Eagle::Codecs::Zlib),
   "Math"           => %w(Eagle::Vec2 Eagle::Vec3 Eagle::Vec4 Eagle::Mat4 Eagle::Quat Eagle::Rect Eagle::AABB Eagle::Ray Eagle::Color Eagle::Transform2D Eagle::Mathf),
+  "Algorithms"     => %w(Eagle::Rng Eagle::Dice Eagle::Noise Eagle::Grid Eagle::Hex Eagle::CostGrid Eagle::Pathfinding Eagle::Procedural Eagle::Geometry Eagle::Quadtree Eagle::SpatialHash Eagle::Steering Eagle::StateMachine Eagle::Minimax),
 }
 
 def api_href(name : String) : String
@@ -547,7 +549,7 @@ def api_link(name : String, rel : String) : String?
 end
 
 # marketing page
-shots = %w(joyride flythrough3d coinrush3d fps chess platformer physics3d roguelike ui interactions asteroids breakout physics checkers).select { |n| has_shot.call(n) }
+shots = %w(joyride flythrough3d coinrush3d fps chess platformer physics3d roguelike algorithms ui interactions asteroids breakout physics checkers).select { |n| has_shot.call(n) }
 gallery = shots.map do |n|
   t, d, _ = EXAMPLES[n]
   "<figure><a href=\"play/#{n}/index.html\"><img src=\"assets/screenshots/#{n}.png\" alt=\"#{t} screenshot\" loading=\"lazy\"></a><figcaption><b><a href=\"play/#{n}/index.html\">#{t}</a></b>#{d}</figcaption></figure>"
