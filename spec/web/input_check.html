@@ -1,0 +1,49 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>input check</title>
+<style>html,body{margin:0}canvas{display:block}</style></head>
+<body><canvas id="eagle"></canvas><pre id="result">running</pre>
+<script type="module">
+import { runEagle } from "./eagle.js";
+const rt = await runEagle("./input_app.wasm", document.getElementById("eagle"));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// the runtime mirrors the focused field text one frame after every edit
+const lastText = () => rt.fieldText;
+// frames run on rAF, so poll until the field reaches the expected text
+const settle = async want => { for (let i = 0; i < 30 && lastText() !== want; i++) await sleep(100); };
+const fails = [];
+const check = (name, got, want) => { if (got !== want) fails.push(name + ": got " + JSON.stringify(got) + ", want " + JSON.stringify(want)); };
+const comp = (type, data) => rt.ta.dispatchEvent(new CompositionEvent(type, { bubbles: true, data }));
+await settle("");
+await sleep(500);
+check("text input on", rt.textInput, true);
+check("hidden field focused", document.activeElement === rt.ta, true);
+// plain typing arrives through input events
+rt.ta.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: "ab" }));
+await settle("ab");
+check("typed text", lastText(), "ab");
+// IME: compose then commit
+comp("compositionstart", "");
+comp("compositionupdate", "にほ");
+rt.ta.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertCompositionText", data: "にほ", isComposing: true }));
+await sleep(400);
+check("preedit not committed", lastText(), "ab");
+comp("compositionend", "日本");
+await settle("ab日本");
+check("committed IME text", lastText(), "ab日本");
+// paste through the paste event
+const dt = new DataTransfer(); dt.setData("text/plain", "XY");
+rt.ta.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: dt }));
+await settle("ab日本XY");
+check("pasted text", lastText(), "ab日本XY");
+check("clipboard cache after paste", rt.clipboardText, "XY");
+// copy event fills clipboardData from the widget text; cut then clears the field
+const out = new DataTransfer();
+rt.ta.dispatchEvent(new ClipboardEvent("copy", { bubbles: true, cancelable: true, clipboardData: out }));
+check("copy data", out.getData("text/plain"), "ab日本XY");
+const cut = new DataTransfer();
+rt.ta.dispatchEvent(new ClipboardEvent("cut", { bubbles: true, cancelable: true, clipboardData: cut }));
+await settle("");
+check("cut data", cut.getData("text/plain"), "ab日本XY");
+check("field after cut", lastText(), "");
+document.getElementById("result").textContent = fails.length ? "FAIL " + fails.join(" | ") : "PASS";
+</script></body></html>

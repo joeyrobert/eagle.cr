@@ -51,7 +51,12 @@ class UIDemo < App
 
     input = TextInput.new("", "Type your name and press Enter")
     input.on_submitted { |t| @status.text = "Hello, #{t}!" }
+    input.on_text_changed { |t| @status.text = "Typing: #{t}" }
     vbox.add(input)
+    clip = HBox.new
+    clip.add(Button.new("Copy text") { Clipboard.text = input.text; @status.text = "Copied #{input.text.size} characters" })
+    clip.add(Button.new("Paste") { input.paste })
+    vbox.add(clip)
 
     grid = GridContainer.new(3)
     9.times { |i| grid.add(Button.new("#{i + 1}") { @status.text = "Grid #{i + 1}" }) }

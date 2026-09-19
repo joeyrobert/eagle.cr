@@ -10,6 +10,10 @@
     fun js_set_title(ptr : Pointer(UInt8), len : Int32)
     fun js_poll_event(ptr : Pointer(Float32)) : Int32
     fun js_text_input(enabled : Int32)
+    fun js_text_area(x : Float32, y : Float32, w : Float32, h : Float32, text : Pointer(UInt8), len : Int32, caret : Int32)
+    fun js_clipboard_read(ptr : Pointer(UInt8), cap : Int32) : Int32
+    fun js_clipboard_write(ptr : Pointer(UInt8), len : Int32)
+    fun js_take_string(ptr : Pointer(UInt8), cap : Int32) : Int32
     fun js_relative_mouse(enabled : Int32)
     fun js_cursor(visible : Int32)
     fun js_audio_open(rate : Int32, frames : Int32) : Int32

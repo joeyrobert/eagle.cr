@@ -264,6 +264,26 @@ tip = RichTextLabel.new("**Tip:** grab [color=#e3a537]coins[/color], see [url=he
 tip.on_meta_clicked { |meta| puts meta } # `[url=meta]` links; `[b]` and `**` are bold
 ```
 
+### Text entry and the clipboard
+
+`TextInput` handles typing, IME composition (the underlined in-progress text while choosing
+kanji or accents), and copy, cut and paste. `Clipboard.text` reads and writes the system
+clipboard from your own code:
+
+```crystal
+name = TextInput.new("", "your name")
+name.on_submitted { |t| puts t }
+Clipboard.text = "invite code 1234" # call this from a click or key handler
+puts Clipboard.text
+```
+
+On the web a hidden text element takes focus while a `TextInput` is focused, which is what
+brings up IMEs and the on-screen keyboard on phones. Browsers only allow writing the clipboard
+during a click or key press, and only let a page read what the player pastes into it, so
+`Clipboard.text` returns the last text copied or pasted in the page. Without a platform (headless
+tests) it falls back to an in-memory copy. Copy and cut take the whole field, there is no
+selection yet. `script/web-input-check.sh` drives synthetic IME and clipboard events in headless Chrome.
+
 ## 3D
 
 ```crystal
@@ -395,7 +415,7 @@ read your disk.
 Web builds need `lld` (`brew install lld`, `apt install lld`); Crystal's wasm libraries are
 downloaded on first use (`eagle export web` keeps them in `~/.eagle/wasm-toolchain` unless the
 engine checkout has its own `.wasm-toolchain/`). Everything the desktop build does works in the browser except file-system
-access (embed assets), threads, and clipboard. Preview with
+access (embed assets) and threads. Preview with
 `cd dist/web/<name> && python3 -m http.server`.
 
 The same commands take a file, which is how the bundled examples are exported from an

@@ -322,7 +322,7 @@ module Eagle
         end
       when MouseWheelEvent
         event.handled = true if @hovered && gui_input(event)
-      when KeyEvent, TextEvent
+      when KeyEvent, TextEvent, CompositionEvent, ClipboardEvent
         event.handled = true if focused? && gui_input(event)
       end
     end

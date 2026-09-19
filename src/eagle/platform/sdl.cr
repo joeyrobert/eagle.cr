@@ -144,6 +144,11 @@ module Eagle
         enabled ? LibSDL.start_text_input : LibSDL.stop_text_input
       end
 
+      def set_text_input_area(rect : Rect, text : String, caret : Int32) : Nil
+        r = LibSDL::Rect.new(x: rect.x.to_i, y: rect.y.to_i, w: rect.w.to_i, h: rect.h.to_i)
+        LibSDL.set_text_input_rect(pointerof(r))
+      end
+
       def base_path : String
         p = LibSDL.get_base_path
         return Dir.current if p.null?
@@ -224,6 +229,9 @@ module Eagle
           code = e.keysym.scancode
           key = (code >= 0 && code < Key::Count.value) ? Key.from_value?(code) || Key::Unknown : Key::Unknown
           KeyEvent.new(key, e.type == LibSDL::KEYDOWN, e.repeat != 0, translate_mods(e.keysym.mod))
+        when LibSDL::TEXTEDITING
+          e = raw.as(LibSDL::TextEditingEvent*).value
+          CompositionEvent.new(String.new(e.text.to_unsafe))
         when LibSDL::TEXTINPUT
           e = raw.as(LibSDL::TextInputEvent*).value
           TextEvent.new(String.new(e.text.to_unsafe))
