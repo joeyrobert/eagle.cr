@@ -1,5 +1,5 @@
 module Eagle
-  # Schedules synthetic input over time: key presses, clicks, drags and gamepad events.
+  # Schedules synthetic input over time: key presses, clicks, drags, touches and gamepad events.
   #
   # Scripts drive integration tests, attract-mode demos and replays. Events go through
   # exactly the same path as real input, so `Input`, `App#input` and every node see them.
@@ -10,6 +10,7 @@ module Eagle
   # Script.at(1.0) { Script.type("hello"); Script.key(Key::Enter) }
   # Script.drag(v2(10, 10), v2(200, 200), seconds: 0.5, start: 2.0)
   # Script.hold(Key::Right, 1.5, start: 3.0) # walk right for a moment
+  # Script.pinch(v2(480, 270), 100, 250, start: 4.0) # two fingers spread apart
   # ```
   module Script
     # One scheduled action.
@@ -96,6 +97,56 @@ module Eagle
         at(start.to_f64 + seconds * t) { move(from.lerp(to, t)) }
       end
       at(start.to_f64 + seconds + 0.01) { release(to, button) }
+    end
+
+    # Puts finger *id* down at *at*. Follow with `touch_move` and `touch_up`.
+    def self.touch_down(id : Int32, at : Vec2) : Nil; Eagle.inject(TouchEvent.new(id, TouchPhase::Began, at)); end
+    # Moves finger *id* to *to*.
+    def self.touch_move(id : Int32, to : Vec2) : Nil; Eagle.inject(TouchEvent.new(id, TouchPhase::Moved, to)); end
+    # Lifts finger *id* at *at*.
+    def self.touch_up(id : Int32, at : Vec2) : Nil; Eagle.inject(TouchEvent.new(id, TouchPhase::Ended, at)); end
+    # Cancels finger *id*, as when the system takes the touch away.
+    def self.touch_cancel(id : Int32, at : Vec2) : Nil; Eagle.inject(TouchEvent.new(id, TouchPhase::Cancelled, at)); end
+
+    # Taps once with a finger: down and up on the next frame.
+    def self.touch_tap(at : Vec2, id : Int32 = 0) : Nil
+      Eagle.inject(TouchEvent.new(id, TouchPhase::Began, at), TouchEvent.new(id, TouchPhase::Ended, at))
+    end
+
+    # Schedules a one-finger drag: down at *from*, move to *to* in *steps* over *seconds*, then up.
+    def self.touch_drag(from : Vec2, to : Vec2, seconds : Number = 0.5, start : Number = 0, steps : Int32 = 10, id : Int32 = 0) : Nil
+      at(start) { touch_down(id, from) }
+      (1..steps).each do |i|
+        t = i / steps.to_f
+        at(start.to_f64 + seconds * t) { touch_move(id, from.lerp(to, t)) }
+      end
+      at(start.to_f64 + seconds + 0.01) { touch_up(id, to) }
+    end
+
+    # Schedules a two-finger pinch around *center*: the fingers start *from* pixels apart and end *to* apart.
+    def self.pinch(center : Vec2, from : Number, to : Number, seconds : Number = 0.5, start : Number = 0, steps : Int32 = 10) : Nil
+      two_fingers(center, from, to, 0.0, 0.0, seconds, start, steps)
+    end
+
+    # Schedules a two-finger twist around *center* with the fingers *radius* pixels out, turning by *radians*.
+    def self.twist(center : Vec2, radius : Number, radians : Number, seconds : Number = 0.5, start : Number = 0, steps : Int32 = 10) : Nil
+      two_fingers(center, radius * 2, radius * 2, 0.0, radians.to_f64, seconds, start, steps)
+    end
+
+    private def self.two_fingers(center : Vec2, from : Number, to : Number, angle0 : Float64, turn : Float64, seconds : Number, start : Number, steps : Int32) : Nil
+      spots = ->(t : Float64) do
+        half = (from + (to - from) * t) / 2
+        off = Vec2.new(half, 0).rotated(angle0 + turn * t)
+        {center + off, center - off}
+      end
+      first = spots.call(0.0)
+      at(start) { touch_down(0, first[0]); touch_down(1, first[1]) }
+      (1..steps).each do |i|
+        t = i / steps.to_f
+        at(start.to_f64 + seconds * t) { pa, pb = spots.call(t); touch_move(0, pa); touch_move(1, pb) }
+      end
+      last = spots.call(1.0)
+      at(start.to_f64 + seconds + 0.01) { touch_up(0, last[0]); touch_up(1, last[1]) }
     end
 
     # Holds a key down for *seconds*, starting at script time *start*.

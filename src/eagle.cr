@@ -56,14 +56,14 @@ require "./eagle/core/engine"
 # * `App` and `Eagle.run` open a window and run your game loop.
 # * `Graphics` draws shapes, sprites and text immediately, in the style of LÖVE.
 # * `Node`, `Node2D` and `SceneTree` build a Godot-style scene of objects that update and draw themselves.
-# * `Input` reads keys, mouse and gamepads, and maps them to named actions.
+# * `Input` reads keys, mouse and gamepads, and maps them to named actions. `Touch` and `GestureRecognizer` cover touch screens.
 #
 # ## By topic
 #
 # * **2D:** `Sprite2D`, `AnimatedSprite2D`, `Camera2D`, `TileMap`, `Particles2D`, `Polygon2D`, `CanvasLayer`
 # * **3D:** `Node3D`, `MeshInstance3D`, `Camera3D`, `DirectionalLight3D`, `Mesh`, `Material`, `Scene3D`
 # * **Physics:** `RigidBody2D`, `KinematicBody2D`, `Area2D`, `Physics2D`, and their 3D versions
-# * **UI:** `Control`, `Button`, `Label`, `Slider`, `TextInput`, `VBox`, `Theme`
+# * **UI:** `Control`, `Button`, `Label`, `Slider`, `TextInput`, `VBox`, `VirtualJoystick`, `Theme`
 # * **Audio:** `Sound`, `Voice`, `AudioPlayer`, `AudioPlayer3D`, `AudioListener3D`, `Audio`
 # * **Assets:** `Assets`, `Texture`, `Image`, `Font`, `Shader`
 # * **Timing:** `Clock`, `Timer`, `Tween`

@@ -142,6 +142,25 @@ Raw events (`KeyEvent`, `MouseButtonEvent`, `TextEvent`, `GamepadAxisEvent`, …
 arrive in `App#input` and `Node#input`; set `event.handled = true` to stop
 propagation.
 
+### Touch
+
+```crystal
+Touch.fingers.each { |f| puts "#{f.id} #{f.position} #{f.dragging?}" } # multi-touch polling
+Touch.emulate_mouse = false     # default true: unhandled touches also act as the left mouse button
+Touch.drag_threshold = 16       # pixels before a touch counts as a drag, not a tap
+
+gestures = GestureRecognizer.new # opt-in: tap, double tap, long press, swipe, pinch, rotate
+gestures.on_pinched { |scale, delta, center| camera.zoom *= delta }
+SceneTree.root.add(gestures)
+
+stick = VirtualJoystick.new(v2(30, 300)).bind("left", "right", "up", "down")
+jump = VirtualButton.new("jump", "A", v2(800, 400)) # drives the "jump" action
+```
+
+`TouchEvent` and `TouchDragEvent` arrive in `Node#input`; set `handled = true` on a
+`TouchEvent` to claim the finger (it then produces no mouse events). Tests drive touch with
+`Script.touch_tap`, `touch_drag`, `pinch` and `twist`. The `touch` example shows all of it.
+
 ## Signals
 
 ```crystal
