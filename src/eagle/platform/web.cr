@@ -8,7 +8,8 @@ module Eagle
       # :nodoc:
       class Web < Base
         EV_KEY = 1; EV_TEXT = 2; EV_MOTION = 3; EV_BUTTON = 4; EV_WHEEL = 5; EV_RESIZE = 6; EV_FOCUS = 7
-        EV_GP_CONNECT = 8; EV_GP_BUTTON = 9; EV_GP_AXIS = 10; EV_QUIT = 12; EV_TOUCH = 13
+        EV_GP_CONNECT = 8; EV_GP_BUTTON = 9; EV_GP_AXIS = 10; EV_QUIT = 12; EV_TOUCH = 13; EV_STR = 14
+        STR_TEXT = 0; STR_COMPOSITION = 1; STR_PASTE = 2; STR_COPY = 3; STR_CUT = 4
 
         @buf = Slice(Float32).new(8)
         @size = Slice(Int32).new(4)
@@ -39,9 +40,18 @@ module Eagle
         def mouse_position : Vec2; Input.mouse; end
         def relative_mouse=(v : Bool); LibJS.js_relative_mouse(v ? 1 : 0); end
         def cursor_visible=(v : Bool); LibJS.js_cursor(v ? 1 : 0); end
-        def clipboard : String; ""; end
-        def clipboard=(s : String); end
+        def clipboard : String
+          n = LibJS.js_clipboard_read(Pointer(UInt8).null, 0)
+          return "" if n == 0
+          String.new(n) { |buf| LibJS.js_clipboard_read(buf, n); {n, 0} }
+        end
+
+        def clipboard=(s : String); LibJS.js_clipboard_write(s.to_unsafe, s.bytesize); end
         def text_input=(enabled : Bool); LibJS.js_text_input(enabled ? 1 : 0); end
+
+        def set_text_input_area(rect : Rect, text : String, caret : Int32) : Nil
+          LibJS.js_text_area(rect.x, rect.y, rect.w, rect.h, text.to_unsafe, text.bytesize, caret)
+        end
         def base_path : String; "/"; end
         def pref_path(org : String, app : String) : String; "/"; end
         def message_box(title : String, message : String) : Nil
@@ -71,6 +81,18 @@ module Eagle
           end
         end
 
+        private def translate_string(kind : Int32, len : Int32) : Event?
+          text = len == 0 ? "" : String.new(len) { |buf| LibJS.js_take_string(buf, len); {len, 0} }
+          case kind
+          when STR_TEXT then text.empty? ? nil : TextEvent.new(text)
+          when STR_COMPOSITION then CompositionEvent.new(text)
+          when STR_PASTE then ClipboardEvent.new(ClipboardAction::Paste, text)
+          when STR_COPY then ClipboardEvent.new(ClipboardAction::Copy)
+          when STR_CUT then ClipboardEvent.new(ClipboardAction::Cut)
+          else nil
+          end
+        end
+
         private def translate : Event?
           b = @buf
           case b[0].to_i
@@ -79,6 +101,7 @@ module Eagle
           when EV_TEXT
             text = String.build { |io| (1..6).each { |i| cp = b[i].to_i; io << cp.chr if cp > 0 } }
             text.empty? ? nil : TextEvent.new(text)
+          when EV_STR then translate_string(b[1].to_i, b[2].to_i)
           when EV_MOTION then MouseMotionEvent.new(Vec2.new(b[1], b[2]), Vec2.new(b[3], b[4]))
           when EV_BUTTON then MouseButtonEvent.new(MouseButton.from_value?(b[1].to_i) || MouseButton::Left, b[2] == 1, Vec2.new(b[3], b[4]), b[5].to_i)
           when EV_WHEEL then MouseWheelEvent.new(Vec2.new(b[1], b[2]), Vec2.new(b[3], b[4]))

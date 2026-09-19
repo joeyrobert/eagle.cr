@@ -476,7 +476,10 @@ module Eagle
     property? password = false
     # Caret position, in characters.
     getter caret : Int32 = 0
+    # The input method's in-progress text, shown underlined at the caret until it is committed.
+    getter preedit : String = ""
     @blink = 0_f32
+    @area_sent : {Rect, String, Int32}? = nil
 
     # Emitted after every edit, with the new text. Connect with `on_text_changed { |text| ... }`.
     signal text_changed(text : String)
@@ -521,16 +524,47 @@ module Eagle
     def process(dt : Float32) : Nil
       super
       @blink += dt
+      sync_text_input_area if focused?
     end
 
     # :nodoc:
     def focus_entered_hook; end
 
+    # Copies the whole text to the clipboard (nothing for password fields).
+    def copy : Nil
+      Clipboard.text = @text unless @password
+    end
+
+    # Copies the whole text to the clipboard and clears the field.
+    def cut : Nil
+      return if @password
+      copy
+      self.text = ""
+      @caret = 0
+    end
+
+    # Inserts the clipboard text at the caret.
+    def paste : Nil
+      insert(Clipboard.text)
+    end
+
     # Handles typing, editing keys, clicks and Enter.
     def gui_input(event : Event) : Bool
       case event
       when TextEvent
+        @preedit = ""
         insert(event.text)
+        return true
+      when CompositionEvent
+        @preedit = event.text
+        @blink = 0_f32
+        return true
+      when ClipboardEvent
+        case event.action
+        in .paste? then insert(event.text)
+        in .copy? then copy
+        in .cut? then cut
+        end
         return true
       when KeyEvent
         return false unless event.pressed?
@@ -549,11 +583,12 @@ module Eagle
         when Key::End then @caret = @text.size
         when Key::Enter, Key::KpEnter then emit_submitted(@text)
         when Key::Escape then release_focus
-        when Key::V
-          if event.mods.ctrl? || event.mods.gui?
-            insert(Eagle.platform?.try(&.clipboard) || "")
-          else
-            return false
+        when Key::V, Key::C, Key::X
+          return false unless event.mods.ctrl? || event.mods.gui?
+          case event.key
+          when Key::V then paste
+          when Key::C then copy
+          else             cut
           end
         else
           return false
@@ -590,7 +625,20 @@ module Eagle
     def release_focus : Nil
       was = focused?
       super
+      @preedit = ""
+      @area_sent = nil
       Input.text_input = false if was
+    end
+
+    private def sync_text_input_area : Nil
+      t = theme_or_inherited
+      f = font
+      g = global_rect
+      cx = g.x + t.padding + f.width(display_text[0, @caret])
+      state = {Rect.new(cx, g.y, 2, g.h), @password ? "" : @text, @caret}
+      return if @area_sent == state
+      @area_sent = state
+      Input.text_input_area(*state)
     end
 
     private def display_text : String
@@ -605,14 +653,19 @@ module Eagle
       shown = display_text
       x = t.padding
       y = (@size.y - f.height) / 2
+      before = shown[0, @caret]
       g.with_scissor(global_rect.intersection(g.scissor_rect || Rect.new(-1e6, -1e6, 2e6, 2e6))) do
-        if shown.empty? && !focused?
+        if shown.empty? && !focused? && @preedit.empty?
           g.print(@placeholder, x, y, g.color * t.text_disabled, f)
         else
-          g.print(shown, x, y, g.color * t.text, f)
+          g.print(before + @preedit + shown[@caret..], x, y, g.color * t.text, f)
+        end
+        unless @preedit.empty?
+          px = x + f.width(before)
+          g.rect(px, y + f.height - 1, f.width(@preedit), 1, color: g.color * t.text)
         end
         if focused? && (@blink % 1.0) < 0.5
-          cx = x + f.width(shown[0, @caret])
+          cx = x + f.width(before + @preedit)
           g.rect(cx, y, 2, f.height, color: g.color * t.text)
         end
       end

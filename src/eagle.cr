@@ -15,6 +15,7 @@ require "./eagle/core/signal"
 require "./eagle/core/events"
 require "./eagle/input/keys"
 require "./eagle/input/input"
+require "./eagle/input/clipboard"
 require "./eagle/platform/wasm_shim"
 require "./eagle/platform/base"
 {% if flag?(:wasm32) %}

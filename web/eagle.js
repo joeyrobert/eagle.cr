@@ -29,7 +29,9 @@ const SCANCODES = {
 };
 
 // Event codes shared with src/eagle/platform/web.cr
-const EV = { KEY: 1, TEXT: 2, MOTION: 3, BUTTON: 4, WHEEL: 5, RESIZE: 6, FOCUS: 7, GP_CONNECT: 8, GP_BUTTON: 9, GP_AXIS: 10, QUIT: 12, TOUCH: 13 };
+const EV = { KEY: 1, TEXT: 2, MOTION: 3, BUTTON: 4, WHEEL: 5, RESIZE: 6, FOCUS: 7, GP_CONNECT: 8, GP_BUTTON: 9, GP_AXIS: 10, QUIT: 12, TOUCH: 13, STR: 14 };
+// String event kinds (slot 1 of EV.STR)
+const STR = { TEXT: 0, COMPOSITION: 1, PASTE: 2, COPY: 3, CUT: 4 };
 const TOUCH = { BEGAN: 0, MOVED: 1, ENDED: 2, CANCELLED: 3 };
 
 class EagleRuntime {
@@ -40,6 +42,11 @@ class EagleRuntime {
     this.objects = [null]; // GL object table (id -> object)
     this.locations = [null]; // uniform locations
     this.textInput = false;
+    this.clipboardText = ""; // last text copied or pasted, what Clipboard.text reads
+    this.fieldText = ""; // what the focused engine text field holds, for copy and cut events
+    this.strBytes = new Uint8Array(0);
+    this.composing = false;
+    this.switching = false;
     this.audio = null;
     this.gamepads = new Map();
     this.exports = null;
@@ -102,24 +109,40 @@ class EagleRuntime {
     c.style.outline = "none";
     c.addEventListener("contextmenu", e => e.preventDefault());
     const mods = e => (e.shiftKey ? 1 : 0) | (e.ctrlKey ? 2 : 0) | (e.altKey ? 4 : 0) | (e.metaKey ? 8 : 0);
-    c.addEventListener("keydown", e => {
+    const onKeyDown = e => {
+      const fromField = e.target === this.ta;
+      // an IME owns the key while composing, and mobile keyboards report 229 or "Unidentified"
+      if (e.isComposing || e.keyCode === 229 || e.key === "Unidentified" || e.key === "Process") return;
       const code = SCANCODES[e.code] || 0;
-      this.push(EV.KEY, code, 1, e.repeat ? 1 : 0, mods(e));
-      if (this.textInput && e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+      this.lastKey = e.code;
+      const clip = this.textInput && (e.ctrlKey || e.metaKey) && ["KeyC", "KeyX", "KeyV", "KeyA"].includes(e.code);
+      // copy, cut and paste arrive as browser events, which is the only place the clipboard is readable
+      if (!clip) this.push(EV.KEY, code, 1, e.repeat ? 1 : 0, mods(e));
+      if (this.textInput && !fromField && e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
         const cps = Array.from(e.key).map(ch => ch.codePointAt(0));
         this.push(EV.TEXT, ...cps.slice(0, 6));
       }
-      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab", "Backspace"].includes(e.code)) e.preventDefault();
+      if (fromField) {
+        // printable keys must reach the field so the browser produces the input event
+        if (!clip && !(e.key.length === 1 && !e.ctrlKey && !e.metaKey)) e.preventDefault();
+      } else if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab", "Backspace"].includes(e.code)) e.preventDefault();
       this.resumeAudio();
-    });
-    c.addEventListener("keyup", e => this.push(EV.KEY, SCANCODES[e.code] || 0, 0, 0, mods(e)));
+    };
+    const onKeyUp = e => {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (this.textInput && (e.ctrlKey || e.metaKey) && ["KeyC", "KeyX", "KeyV", "KeyA"].includes(e.code)) return;
+      this.push(EV.KEY, SCANCODES[e.code] || 0, 0, 0, mods(e));
+    };
+    c.addEventListener("keydown", onKeyDown);
+    c.addEventListener("keyup", onKeyUp);
+    this.setupTextField(onKeyDown, onKeyUp);
     const pos = e => { const r = c.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
     c.addEventListener("mousemove", e => { const [x, y] = pos(e); this.push(EV.MOTION, x, y, e.movementX, e.movementY); });
-    c.addEventListener("mousedown", e => { const [x, y] = pos(e); c.focus(); this.push(EV.BUTTON, e.button + 1 === 3 ? 3 : e.button + 1, 1, x, y, e.detail || 1); this.resumeAudio(); });
+    c.addEventListener("mousedown", e => { const [x, y] = pos(e); this.focusInput(); this.push(EV.BUTTON, e.button + 1 === 3 ? 3 : e.button + 1, 1, x, y, e.detail || 1); this.resumeAudio(); });
     c.addEventListener("mouseup", e => { const [x, y] = pos(e); this.push(EV.BUTTON, e.button + 1 === 3 ? 3 : e.button + 1, 0, x, y, e.detail || 1); });
     c.addEventListener("wheel", e => { const [x, y] = pos(e); this.push(EV.WHEEL, -e.deltaX / 100, -e.deltaY / 100, x, y); e.preventDefault(); }, { passive: false });
-    c.addEventListener("focus", () => this.push(EV.FOCUS, 1));
-    c.addEventListener("blur", () => this.push(EV.FOCUS, 0));
+    c.addEventListener("focus", e => { if (!this.switching) this.push(EV.FOCUS, 1); });
+    c.addEventListener("blur", e => { if (!this.switching && e.relatedTarget !== this.ta) this.push(EV.FOCUS, 0); });
     window.addEventListener("gamepadconnected", e => { this.gamepads.set(e.gamepad.index, { buttons: [], axes: [] }); this.push(EV.GP_CONNECT, e.gamepad.index, 1); });
     window.addEventListener("gamepaddisconnected", e => { this.gamepads.delete(e.gamepad.index); this.push(EV.GP_CONNECT, e.gamepad.index, 0); });
     // touch: every finger is its own event stream; the engine turns unhandled touches into mouse events
@@ -146,9 +169,10 @@ class EagleRuntime {
       }
       e.preventDefault();
     };
-    c.addEventListener("touchstart", e => { c.focus(); touches(TOUCH.BEGAN, e); this.resumeAudio(); }, { passive: false });
+    c.addEventListener("touchstart", e => { this.focusInput(); touches(TOUCH.BEGAN, e); this.resumeAudio(); }, { passive: false });
     c.addEventListener("touchmove", e => touches(TOUCH.MOVED, e), { passive: false });
-    c.addEventListener("touchend", e => touches(TOUCH.ENDED, e), { passive: false });
+    c.addEventListener("touchend", e => { touches(TOUCH.ENDED, e); this.focusInput(); }, { passive: false });
+    c.addEventListener("click", () => this.focusInput());
     c.addEventListener("touchcancel", e => touches(TOUCH.CANCELLED, e), { passive: false });
     // a hidden tab or lost focus never delivers the touchend, so cancel whatever is still down
     const cancelAll = () => {
@@ -157,6 +181,120 @@ class EagleRuntime {
     };
     document.addEventListener("visibilitychange", () => { if (document.hidden) cancelAll(); });
     window.addEventListener("blur", cancelAll);
+  }
+
+  // Hidden textarea that owns keyboard focus while an engine text field is focused. It is what
+  // makes IME composition, mobile on-screen keyboards, and copy/cut/paste events work.
+  setupTextField(onKeyDown, onKeyUp) {
+    const ta = document.createElement("textarea");
+    this.ta = ta;
+    ta.setAttribute("aria-label", "text input");
+    ta.setAttribute("autocomplete", "off");
+    ta.setAttribute("autocorrect", "off");
+    ta.setAttribute("autocapitalize", "off");
+    ta.setAttribute("spellcheck", "false");
+    // 16px keeps iOS from zooming the page; it is invisible and never takes pointer input
+    Object.assign(ta.style, {
+      position: "fixed", left: "0px", top: "0px", width: "1px", height: "20px", padding: "0", margin: "0", border: "0",
+      outline: "none", resize: "none", overflow: "hidden", opacity: "0", pointerEvents: "none", background: "transparent",
+      color: "transparent", caretColor: "transparent", fontSize: "16px", zIndex: "-1",
+    });
+    (this.canvas.parentNode || document.body).appendChild(ta);
+    ta.addEventListener("keydown", onKeyDown);
+    ta.addEventListener("keyup", onKeyUp);
+    ta.addEventListener("focus", e => { if (!this.switching && e.relatedTarget !== this.canvas) this.push(EV.FOCUS, 1); });
+    ta.addEventListener("blur", e => { if (!this.switching && e.relatedTarget !== this.canvas) this.push(EV.FOCUS, 0); });
+    ta.addEventListener("compositionstart", () => { this.composing = true; });
+    ta.addEventListener("compositionupdate", e => this.push(EV.STR, STR.COMPOSITION, e.data || ""));
+    ta.addEventListener("compositionend", e => {
+      this.composing = false;
+      this.push(EV.STR, STR.COMPOSITION, "");
+      if (e.data) this.push(EV.STR, STR.TEXT, e.data);
+      setTimeout(() => this.syncField(), 0);
+    });
+    ta.addEventListener("input", e => {
+      if (this.composing || e.isComposing || e.inputType === "insertCompositionText") return;
+      if ((e.inputType === "insertText" || e.inputType === "insertReplacementText") && e.data) {
+        this.push(EV.STR, STR.TEXT, e.data);
+      } else if (e.inputType === "deleteContentBackward" || e.inputType === "deleteContentForward") {
+        // mobile keyboards often send no usable keydown for delete
+        const key = e.inputType === "deleteContentBackward" ? 42 : 76;
+        if (this.lastKey !== (key === 42 ? "Backspace" : "Delete")) { this.push(EV.KEY, key, 1, 0, 0); this.push(EV.KEY, key, 0, 0, 0); }
+      }
+      this.lastKey = "";
+      setTimeout(() => this.syncField(), 0);
+    });
+    ta.addEventListener("paste", e => {
+      if (!this.textInput) return;
+      const text = (e.clipboardData && e.clipboardData.getData("text/plain")) || "";
+      e.preventDefault();
+      this.clipboardText = text;
+      this.push(EV.STR, STR.PASTE, text);
+    });
+    const copyOrCut = (kind) => e => {
+      if (!this.textInput) return;
+      // the widget mirrored its text here beforehand, so the answer is available inside the event
+      if (this.fieldText && e.clipboardData) {
+        e.clipboardData.setData("text/plain", this.fieldText);
+        this.clipboardText = this.fieldText;
+        e.preventDefault();
+      }
+      this.push(EV.STR, kind, "");
+    };
+    ta.addEventListener("copy", copyOrCut(STR.COPY));
+    ta.addEventListener("cut", copyOrCut(STR.CUT));
+  }
+
+  syncField() {
+    const ta = this.ta;
+    if (!ta || this.composing) return;
+    if (ta.value !== this.fieldText) ta.value = this.fieldText;
+    if (this.textInput && document.activeElement === ta) ta.select();
+  }
+
+  // Moves the hidden field to the caret so IME candidate windows appear next to it.
+  setFieldArea(x, y, w, h, text, caret) {
+    const ta = this.ta;
+    if (!ta) return;
+    const r = this.canvas.getBoundingClientRect();
+    ta.style.left = Math.round(r.left + x) + "px";
+    ta.style.top = Math.round(r.top + y) + "px";
+    ta.style.height = Math.max(1, Math.round(h)) + "px";
+    ta.style.width = Math.max(1, Math.round(w)) + "px";
+    this.fieldText = text;
+    this.syncField();
+  }
+
+  // Focus goes to the hidden field while text input is on (this also raises mobile keyboards), else the canvas.
+  focusInput() {
+    const el = this.textInput && this.ta ? this.ta : this.canvas;
+    if (document.activeElement === el) return;
+    this.switching = true;
+    try { el.focus({ preventScroll: true }); } finally { this.switching = false; }
+  }
+
+  setTextInput(on) {
+    this.textInput = on;
+    if (!on) this.fieldText = "";
+    this.composing = false;
+    this.focusInput();
+    if (on) this.syncField(); else if (this.ta) { this.ta.value = ""; this.push(EV.STR, STR.COMPOSITION, ""); }
+  }
+
+  // Writes to the clipboard. Browsers only allow this during a user gesture, which is when games call it.
+  writeClipboard(text) {
+    this.clipboardText = text;
+    const fallback = () => {
+      const ta = this.ta;
+      if (!ta || !document.execCommand) return;
+      const prev = ta.value, active = document.activeElement;
+      ta.value = text; ta.select();
+      try { document.execCommand("copy"); } catch (e) { /* no gesture, nothing to do */ }
+      ta.value = prev;
+      if (active && active !== ta && active.focus) active.focus({ preventScroll: true });
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(fallback);
+    else fallback();
   }
 
   resizeCanvas() {
@@ -207,9 +345,18 @@ class EagleRuntime {
         const v = rt.f32(ptr, 8);
         v.fill(0);
         for (let i = 0; i < e.length && i < 8; i++) v[i] = e[i];
+        if (e[0] === EV.STR) { rt.strBytes = rt.encoder.encode(e[2]); v[2] = rt.strBytes.length; }
         return 1;
       },
-      js_text_input: (on) => { rt.textInput = !!on; },
+      js_text_input: (on) => rt.setTextInput(!!on),
+      js_text_area: (x, y, w, h, ptr, len, caret) => rt.setFieldArea(x, y, w, h, rt.str(ptr, len), caret),
+      js_clipboard_read: (ptr, cap) => {
+        const bytes = rt.encoder.encode(rt.clipboardText);
+        if (ptr !== 0 && cap >= bytes.length) rt.u8(ptr, bytes.length).set(bytes);
+        return bytes.length;
+      },
+      js_clipboard_write: (ptr, len) => rt.writeClipboard(rt.str(ptr, len)),
+      js_take_string: (ptr, cap) => { const n = Math.min(cap, rt.strBytes.length); rt.u8(ptr, n).set(rt.strBytes.subarray(0, n)); return n; },
       js_relative_mouse: (on) => { if (on) rt.canvas.requestPointerLock && rt.canvas.requestPointerLock(); else if (document.exitPointerLock) document.exitPointerLock(); },
       js_cursor: (visible) => { rt.canvas.style.cursor = visible ? "default" : "none"; },
       js_audio_open: (rate, frames) => {

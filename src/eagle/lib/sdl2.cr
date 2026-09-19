@@ -114,6 +114,22 @@ lib LibSDL
     keysym : Keysym
   end
 
+  struct TextEditingEvent
+    type : UInt32
+    timestamp : UInt32
+    window_id : UInt32
+    text : UInt8[32]
+    start : Int32
+    length : Int32
+  end
+
+  struct Rect
+    x : Int32
+    y : Int32
+    w : Int32
+    h : Int32
+  end
+
   struct TextInputEvent
     type : UInt32
     timestamp : UInt32
@@ -264,6 +280,7 @@ lib LibSDL
   fun warp_mouse_in_window = SDL_WarpMouseInWindow(w : Window, x : Int32, y : Int32)
   fun start_text_input = SDL_StartTextInput
   fun stop_text_input = SDL_StopTextInput
+  fun set_text_input_rect = SDL_SetTextInputRect(rect : Rect*)
   fun get_scancode_name = SDL_GetScancodeName(scancode : Int32) : UInt8*
 
   fun get_ticks = SDL_GetTicks : UInt32
