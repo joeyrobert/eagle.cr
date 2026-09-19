@@ -230,6 +230,21 @@ Controls receive mouse/keyboard events, manage focus (`Control.focused`), and
 inherit `Theme` from ancestors. Containers (`VBox`, `HBox`, `GridContainer`)
 size children by `effective_min_size` and `size_flags`.
 
+Longer content and choices use three more widgets:
+
+```crystal
+log = VBox.new
+30.times { |i| log.add(Label.new("Line #{i}")) }
+scroller = ScrollContainer.new(size: v2(240, 120)) # wheel or drag the bar; clips its child
+scroller.add(log)
+
+biome = OptionButton.new(["Forest", "Desert", "Ocean"]) # a drop-down; also `DropDown`
+biome.on_item_selected { |i| puts biome.items[i] }
+
+tip = RichTextLabel.new("**Tip:** grab [color=#e3a537]coins[/color], see [url=help]help[/url].")
+tip.on_meta_clicked { |meta| puts meta } # `[url=meta]` links; `[b]` and `**` are bold
+```
+
 ## 3D
 
 ```crystal
