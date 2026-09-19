@@ -63,7 +63,7 @@ Requirements gathered from the project owner (2026-09-18):
 - [ ] WebAssembly/WebGL2 backend (architecture ready; see 000-vision)
 
 ## Known gaps / next steps
-- Physics3D: spheres + oriented boxes only (no capsules/meshes/joints); no sleeping.
+- Physics3D: mesh colliders are static only (no dynamic concave bodies, no mesh-vs-mesh); joints have no limits, motors or springs; sleeping is off by default and jointed bodies never sleep.
 - Audio: WAV + Ogg Vorbis (Crystal decoder, bit-exact vs ffmpeg on libvorbis streams; ffmpeg's *experimental* built-in encoder's coupled stereo decodes with a wrong angle channel, likely an encoder quirk, unresolved); no MP3; no reverb/effects; 3D audio is panning + ITD + head shadow (no HRTF or occlusion).
 - Fonts: TrueType `glyf` only (no CFF/OpenType, no GPOS kerning, no colour emoji).
 - 3D: no skeletal animation, no cubemaps/IBL/PBR, single directional shadow cascade, no post-processing stack.
@@ -86,6 +86,7 @@ Requirements gathered from the project owner (2026-09-18):
 - [x] Usage docs on every public type: overview, when to use it, and an example; 125 doc examples type-checked by `script/check_doc_examples.cr`
 
 ## Log
+- 2026-09-18: Physics3D capsules, static triangle-mesh colliders and joints (issue #27). `Capsule` (sphere/capsule/box/mesh contacts, raycast), `MeshCollider` (grid-accelerated triangle lookup, sphere/capsule/box contacts, raycast; `from_mesh`/`from_triangles`), `DistanceJoint`/`BallJoint`/`HingeJoint`/`FixedJoint` solved with the contact rows (`World#distance_joint` etc.), opt-in sleeping (`World#sleep_threshold`), node helpers `capsule` and `mesh`, and a capsule spawn in the physics3d example. Findings: the box-vs-triangle SAT used interval overlap, which is zero for a flat triangle, so it must use push distance; the solver's impulse helper reset the sleep timer every step, so nothing ever slept until it only woke sleeping bodies.
 - 2026-09-18: Fixed the intermittent GL crash in the full spec run (#26). Crystal's monitor moves the main fiber to a new thread after a blocking syscall over 10ms (file reads in the audio specs), leaving GL and the Cocoa event loop on the old thread; `Fiber.syscall` now runs in place in the SDL platform so the fiber stays put. Regression spec forces the case; `Scene3D.reset` added to the 3D specs' `before_each` after an order-dependent shadow failure.
 - 2026-09-18: Voxel island maker (`examples/voxel`): seeded noise island, greedy-meshed `Mesh` with vertex colours, Minecraft-style DDA break/place, colour hotbar + `E` palette, AABB walking. Simulation in `world.cr` with headless specs. Native builds lock the mouse on load so `EAGLE_FRAMES` can screenshot without a click.
 - 2026-09-18: Neon Bastion FPS example (`examples/fps`): mouse look via `Window.relative_mouse` (click-to-capture for pointer lock; browsers need a gesture), pulse rifle + scattergun, procedural arena, grunt (keep distance and shoot on sight) and charger (rush melee) AI, Waves and Deathmatch, spatial stereo through `Audio.play_at` / `AudioPlayer3D` (shots, footsteps, enemy hums, deaths). Simulation is in `game.cr` with headless specs. Native builds lock the mouse on load so `EAGLE_FRAMES` can screenshot without a click.
