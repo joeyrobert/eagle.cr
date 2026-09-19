@@ -1,10 +1,10 @@
 ; Inno Setup script for eagle-setup.exe. Built by .github/workflows/release.yml:
-;   iscc /DAppVersion=0.1.0 /DStageDir=C:\path\to\eagle-windows-x86_64 /DOutDir=C:\path\to\dist packaging\windows\eagle.iss
+;   iscc /DAppVersion=0.2.0 /DStageDir=C:\path\to\eagle-windows-x86_64 /DOutDir=C:\path\to\dist packaging\windows\eagle.iss
 ; StageDir holds bin\eagle.exe, bin\SDL2.dll, lib\SDL2.lib and src\ (the engine source).
 ; Installs per user (no admin prompt) into %LOCALAPPDATA%\eagle, like install.ps1, and adds bin\ to the user PATH.
 
 #ifndef AppVersion
-  #define AppVersion "0.1.0"
+  #define AppVersion "0.2.0"
 #endif
 #ifndef StageDir
   #define StageDir "..\..\dist\eagle-windows-x86_64"

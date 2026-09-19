@@ -74,7 +74,7 @@ curl -fsSL https://raw.githubusercontent.com/joeyrobert/eagle.cr/main/install.sh
 Use `wget -qO- ... | sh` if you don't have curl. Pass options after `sh -s --`:
 `--with-deps` installs Crystal and SDL2 for you (Homebrew, apt, dnf or pacman; sudo on
 Linux), `--from-source` builds from a git clone instead of downloading a release,
-`--version v0.1.0` pins a release (or set `EAGLE_VERSION`), and `--uninstall` removes it.
+`--version v0.2.0` pins a release (or set `EAGLE_VERSION`), and `--uninstall` removes it.
 Set `EAGLE_HOME` to install somewhere other than `~/.eagle`.
 
 **Windows (PowerShell):**
