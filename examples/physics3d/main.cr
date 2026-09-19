@@ -55,6 +55,12 @@ class Physics3DDemo < App
       b.add(MeshInstance3D.new(Mesh.cube(1), Material.new(Color::ORANGE)))
       SceneTree.root.add(b)
     end
+    if Input.pressed?(Key::C)
+      c = RigidBody3D.new(position: @cam.position + @cam.forward * 3).capsule(0.3, 0.8)
+      c.velocity = @cam.forward * 8
+      c.add(MeshInstance3D.new(Mesh.capsule(0.3, 0.8), Material.new(Color::CYAN)))
+      SceneTree.root.add(c)
+    end
     if Input.pressed?(Key::R)
       SceneTree.reset
       load
@@ -64,7 +70,7 @@ class Physics3DDemo < App
 
   def draw(g : Graphics)
     g.rect(0, 0, Window.width, 30, color: Color.new(0, 0, 0, 0.4))
-    g.print("3D physics  bodies #{Physics3D.world.bodies.size}  fps #{Clock.fps.round}   click: fire sphere  space: throw box  R reset  WASD/right-drag fly", 10, 8)
+    g.print("3D physics  bodies #{Physics3D.world.bodies.size}  fps #{Clock.fps.round}   click: fire sphere  space: throw box  C: capsule  R reset  WASD/right-drag fly", 10, 8)
   end
 end
 

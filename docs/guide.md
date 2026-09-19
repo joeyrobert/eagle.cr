@@ -230,6 +230,21 @@ Controls receive mouse/keyboard events, manage focus (`Control.focused`), and
 inherit `Theme` from ancestors. Containers (`VBox`, `HBox`, `GridContainer`)
 size children by `effective_min_size` and `size_flags`.
 
+Longer content and choices use three more widgets:
+
+```crystal
+log = VBox.new
+30.times { |i| log.add(Label.new("Line #{i}")) }
+scroller = ScrollContainer.new(size: v2(240, 120)) # wheel or drag the bar; clips its child
+scroller.add(log)
+
+biome = OptionButton.new(["Forest", "Desert", "Ocean"]) # a drop-down; also `DropDown`
+biome.on_item_selected { |i| puts biome.items[i] }
+
+tip = RichTextLabel.new("**Tip:** grab [color=#e3a537]coins[/color], see [url=help]help[/url].")
+tip.on_meta_clicked { |meta| puts meta } # `[url=meta]` links; `[b]` and `**` are bold
+```
+
 ## 3D
 
 ```crystal
@@ -296,6 +311,24 @@ gesture for pointer lock); native builds lock it on launch.
 crystal run examples/fps/main.cr
 # WASD move, Shift sprint, click/RB fire, 1/2 weapons, F1 Waves, F2 Deathmatch
 ```
+
+### Voxel island
+
+The `voxel` example is a finite first-person island, not a Minecraft clone. `Noise` builds a
+grass-and-stone island with a sky around it; a greedy mesher turns occupancy into one
+`Mesh` whose vertex colours are the palette. Left click breaks the block under the
+crosshair, right click places the selected colour on the hit face, and `E` opens a colour
+menu (number keys and the scroll wheel also change the slot). Walking is an AABB against
+the grid, not Physics3D. Generation, meshing, DDA picking and collision live in
+`examples/voxel/world.cr` so they can be specced without a window.
+
+```sh
+crystal run examples/voxel/main.cr
+# WASD move, Space jump, left break, right place, E colours, 1-9 / scroll palette, R regen
+```
+
+Set `EAGLE_WORLD_SEED=7` for a different island. Native builds lock the mouse on load so
+`EAGLE_FRAMES` can screenshot without a click.
 
 ## Automated runs
 

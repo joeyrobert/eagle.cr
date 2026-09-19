@@ -17,12 +17,13 @@ EXAMPLES = {
   "coinrush3d"   => {"Coin Rush (3D)", "Roll a ball around a lit, shadowed arena collecting coins before the timer runs out.", "WASD move · Space jump · right-drag orbits the camera"},
   "joyride"       => {"Joyride", "Drive through an infinite deterministic city and countryside with traffic, police, pedestrians and delivery or race missions.", "WASD/arrows drive · Space handbrake · M new mission"},
   "fps"           => {"Neon Bastion (FPS)", "First-person arena shooter: mouse look, pulse rifle and scattergun, grunt and charger AI, Waves and Deathmatch.", "Click to capture mouse · WASD move · Shift sprint · fire click/RB · 1/2 weapons · F1 Waves · F2 Deathmatch"},
+  "voxel"         => {"Voxel Island", "A finite noise-generated island you walk first-person: break blocks, place from a colour palette, greedy-meshed as one Mesh.", "Click to capture mouse · WASD move · Space jump · left break · right place · E colours · 1-9 / scroll palette · R regen"},
   "algorithms"   => {"Algorithms", "A* pathfinding, fBm terrain, Poisson-disk sampling, flocking and shadowcasting field of view.", "1-5 or Tab switch scenes · click sets the A* goal · WASD moves in FOV"},
   "flythrough3d" => {"3D fly-through", "Every 3D feature: primitives, textures, lights, shadows, fog, transparency, wireframe, picking.", "WASD/QE move · right-drag look · F wireframe · click to pick"},
   "spatial_audio3d" => {"Spatial audio (3D)", "Looping sound sources you can fly around: panning, distance models, interaural delay, head shadow and doppler.", "WASD/QE move · right-drag look · click fires a shot · 1-3 distance model · M mute"},
   "physics"      => {"2D physics", "Rigid bodies, stacking, ramps, sensors and additive particle bursts.", "Click to spawn bodies"},
   "physics3d"    => {"3D physics", "Spheres and boxes with SAT contacts, stacking pyramid, kinematic ramp.", "Click fires spheres · Space throws a box · R resets"},
-  "ui"           => {"UI toolkit", "Panels, buttons, sliders, checkboxes, text input, grids and themes.", "Click around; Tab cycles focus"},
+  "ui"           => {"UI toolkit", "Panels, buttons, sliders, text input, drop-downs, rich text, scroll containers, grids and themes.", "Click around; Tab cycles focus"},
   "interactions" => {"Interactions", "Every input pattern with a live event log: clicks, drags, wheel zoom, text, gamepads, signals, timers.", "Try everything; the log on the right narrates"},
   "sandbox2d"    => {"2D sandbox", "Scene tree, tile map, following camera with shake, tweens and a HUD layer.", "WASD moves the player"},
   "embedded"     => {"Embedded assets", "A game whose PNG, WAV and shader are baked into the binary at compile time.", "Nothing to press. It runs with no files at all"},
@@ -549,7 +550,7 @@ def api_link(name : String, rel : String) : String?
 end
 
 # marketing page
-shots = %w(joyride flythrough3d coinrush3d fps chess platformer physics3d roguelike algorithms ui interactions asteroids breakout physics checkers).select { |n| has_shot.call(n) }
+shots = %w(joyride flythrough3d coinrush3d fps voxel chess platformer physics3d roguelike algorithms ui interactions asteroids breakout physics checkers).select { |n| has_shot.call(n) }
 gallery = shots.map do |n|
   t, d, _ = EXAMPLES[n]
   "<figure><a href=\"play/#{n}/index.html\"><img src=\"assets/screenshots/#{n}.png\" alt=\"#{t} screenshot\" loading=\"lazy\"></a><figcaption><b><a href=\"play/#{n}/index.html\">#{t}</a></b>#{d}</figcaption></figure>"
