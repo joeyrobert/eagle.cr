@@ -1,5 +1,15 @@
 require "../lib/sdl2"
 
+# Crystal hands the scheduler to a new thread when the main fiber sits in a blocking syscall (a long file read)
+# for over 10ms. The GL context and the Cocoa event loop belong to the original thread, so the next GL or event call
+# crashes. Run those calls in place so the main fiber never changes threads.
+class Fiber
+  # :nodoc:
+  def self.syscall(&)
+    yield
+  end
+end
+
 module Eagle
   module Platform
     # :nodoc:

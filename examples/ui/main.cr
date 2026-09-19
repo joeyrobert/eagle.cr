@@ -1,7 +1,7 @@
 require "../../src/eagle"
 include Eagle
 
-# UI showcase: containers, buttons, sliders, text input, themes, TrueType font.
+# UI showcase: containers, buttons, sliders, text input, drop-down, rich text, scroll container, themes, TrueType font.
 class UIDemo < App
   @status = Label.new("Ready.")
   @ttf : Font? = nil
@@ -57,6 +57,21 @@ class UIDemo < App
     9.times { |i| grid.add(Button.new("#{i + 1}") { @status.text = "Grid #{i + 1}" }) }
     vbox.add(grid)
 
+    biome = OptionButton.new(["Forest", "Desert", "Ocean", "Tundra"])
+    biome.on_item_selected { |i| @status.text = "Biome: #{biome.items[i]}" }
+    vbox.add(biome)
+
+    tip = RichTextLabel.new("**Rich text:** [color=#e3a537]colors[/color] and [url=docs][color=#8fbaff]links[/color][/url].")
+    tip.on_meta_clicked { |m| @status.text = "Clicked link: #{m}" }
+    vbox.add(tip)
+
+    log = VBox.new
+    12.times { |i| log.add(Label.new("Log entry #{i + 1}", color: Color.gray(0.8))) }
+    scroller = ScrollContainer.new(size: v2(0, 70))
+    scroller.min_size = v2(0, 70)
+    scroller.add(log)
+    vbox.add(scroller)
+
     theme_row = HBox.new
     theme_row.add(Button.new("Dark") { panel.theme = nil; @status.text = "Dark theme" })
     theme_row.add(Button.new("Light") { panel.theme = Theme.default.light; @status.text = "Light theme" })
@@ -69,4 +84,4 @@ class UIDemo < App
   end
 end
 
-Eagle.run(UIDemo, title: "Eagle UI", width: 900, height: 640)
+Eagle.run(UIDemo, title: "Eagle UI", width: 900, height: 800)
