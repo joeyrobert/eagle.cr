@@ -1,7 +1,8 @@
 require "./keys"
+require "./touch"
 
 module Eagle
-  # Keyboard, mouse and gamepad state you can check from anywhere, plus an action map
+  # Keyboard, mouse, touch and gamepad state you can check from anywhere, plus an action map
   # so game code talks about "jump" instead of specific keys.
   #
   # There are two ways to read input:
@@ -121,6 +122,9 @@ module Eagle
     @@actions = {} of String => Array(Binding)
     @@gamepads = {} of Int32 => Gamepad
     @@any_pressed = false
+    @@virtual = {} of String => Float32
+    @@virtual_pressed = [] of String
+    @@virtual_released = [] of String
 
     # --- keyboard ---
     # True every frame while the key is held.
@@ -159,6 +163,10 @@ module Eagle
     # True on the frame the mouse button went up.
     def self.mouse_released?(b : MouseButton = MouseButton::Left) : Bool; @@mouse_released[b.value]; end
 
+    # --- touch ---
+    # Fingers currently on the screen. Shorthand for `Touch.fingers`.
+    def self.touches : Array(Finger); Touch.fingers; end
+
     # --- gamepads ---
     # Every connected controller.
     def self.gamepads : Array(Gamepad); @@gamepads.values; end
@@ -191,23 +199,23 @@ module Eagle
 
     # True while any binding of the action is held.
     def self.down?(action : String) : Bool
-      bindings(action).any? { |b| binding_down?(b) }
+      bindings(action).any? { |b| binding_down?(b) } || virtual_strength(action) >= 0.5
     end
 
     # True on the frame any binding of the action went down.
     def self.pressed?(action : String) : Bool
-      bindings(action).any? { |b| binding_pressed?(b) }
+      bindings(action).any? { |b| binding_pressed?(b) } || @@virtual_pressed.includes?(action)
     end
 
     # True on the frame any binding of the action went up.
     def self.released?(action : String) : Bool
-      bindings(action).any? { |b| binding_released?(b) }
+      bindings(action).any? { |b| binding_released?(b) } || @@virtual_released.includes?(action)
     end
 
     # How strongly the action is held, from 0 to 1. Keys and buttons are 0 or 1, and sticks and
     # triggers give values in between.
     def self.strength(action : String) : Float32
-      best = 0_f32
+      best = virtual_strength(action)
       bindings(action).each do |b|
         s = binding_strength(b)
         best = s if s > best
@@ -229,6 +237,28 @@ module Eagle
     def self.vector(left : String, right : String, up : String, down : String, normalize : Bool = true) : Vec2
       v = Vec2.new(axis(left, right), axis(up, down))
       normalize ? v.limit(1) : v
+    end
+
+    # Sets how strongly an action is held from code, 0 to 1. On-screen controls (`VirtualJoystick`,
+    # `VirtualButton`) use it, so game code that asks about "jump" or "left" works with touch
+    # without changes. Set it back to 0 to release.
+    #
+    # ```
+    # Input.set_virtual("jump", 1) # a touch button went down
+    # Input.pressed?("jump")       # true this frame
+    # Input.set_virtual("jump", 0)
+    # ```
+    def self.set_virtual(action : String, strength : Number) : Nil
+      v = strength.to_f32.clamp(0_f32, 1_f32)
+      was = (@@virtual[action]? || 0_f32) >= 0.5
+      @@virtual[action] = v
+      now = v >= 0.5
+      @@virtual_pressed << action if now && !was
+      @@virtual_released << action if was && !now
+    end
+
+    private def self.virtual_strength(action : String) : Float32
+      @@virtual[action]? || 0_f32
     end
 
     private def self.binding_down?(b : Binding) : Bool
@@ -302,6 +332,9 @@ module Eagle
           @@mouse_released[i] = true; @@mouse_down[i] = false
         end
       when MouseWheelEvent then @@wheel += e.delta
+      when TouchEvent
+        Touch.handle(e)
+        @@any_pressed = true if e.began?
       when GamepadConnectionEvent
         if e.connected?
           name = Eagle.platform?.try(&.gamepad_name(e.gamepad)) || "Gamepad"
@@ -328,6 +361,8 @@ module Eagle
       @@any_pressed = false
       @@gamepads.each_value(&.end_frame)
       @@axis_pressed.clear; @@axis_released.clear
+      @@virtual_pressed.clear; @@virtual_released.clear
+      Touch.begin_frame
     end
 
     # :nodoc:
@@ -349,7 +384,8 @@ module Eagle
     def self.reset : Nil
       begin_frame
       @@down.fill(false); @@mouse_down.fill(false)
-      @@actions.clear; @@gamepads.clear; @@axis_state.clear
+      @@actions.clear; @@gamepads.clear; @@axis_state.clear; @@virtual.clear
+      Touch.reset
       @@mouse = Vec2::ZERO
     end
   end

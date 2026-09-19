@@ -8,7 +8,7 @@ module Eagle
       # :nodoc:
       class Web < Base
         EV_KEY = 1; EV_TEXT = 2; EV_MOTION = 3; EV_BUTTON = 4; EV_WHEEL = 5; EV_RESIZE = 6; EV_FOCUS = 7
-        EV_GP_CONNECT = 8; EV_GP_BUTTON = 9; EV_GP_AXIS = 10; EV_QUIT = 12
+        EV_GP_CONNECT = 8; EV_GP_BUTTON = 9; EV_GP_AXIS = 10; EV_QUIT = 12; EV_TOUCH = 13
 
         @buf = Slice(Float32).new(8)
         @size = Slice(Int32).new(4)
@@ -87,6 +87,7 @@ module Eagle
           when EV_GP_CONNECT then GamepadConnectionEvent.new(b[1].to_i, b[2] == 1)
           when EV_GP_BUTTON then GamepadButtonEvent.new(b[1].to_i, GamepadButton.from_value?(b[2].to_i) || GamepadButton::A, b[3] == 1)
           when EV_GP_AXIS then GamepadAxisEvent.new(b[1].to_i, GamepadAxis.from_value?(b[2].to_i) || GamepadAxis::LeftX, b[3])
+          when EV_TOUCH then TouchEvent.new(b[2].to_i, TouchPhase.from_value?(b[1].to_i) || TouchPhase::Cancelled, Vec2.new(b[3], b[4]), b[5])
           when EV_QUIT then QuitEvent.new
           else nil
           end
