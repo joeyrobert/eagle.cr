@@ -571,9 +571,8 @@ features = [
 ]
 feature_cards = features.map { |(t, d)| "<div class=\"feat\"><h3>#{t}</h3><p>#{d}</p></div>" }.join
 install = [
-  "brew install sdl2",
-  "git clone https://github.com/joeyrobert/eagle.cr && cd eagle.cr",
-  "shards build && bin/eagle examples asteroids",
+  "curl -fsSL https://raw.githubusercontent.com/joeyrobert/eagle.cr/main/install.sh | sh",
+  "eagle init mygame --yes && cd mygame && eagle run",
 ].map { |l| "<span class=\"p\">$ </span>#{HTML.escape(l)}" }.join("\n")
 hero_img = has_shot.call("flythrough3d") ? %(<figure class="plate"><a href="play/flythrough3d/index.html"><img src="assets/screenshots/flythrough3d.png" alt="The 3D fly-through example"></a><figcaption>Fig. 1. The 3D fly-through example: shadows, fog, transparency and picking, running in WebGL2.</figcaption></figure>) : ""
 home = <<-HTML
