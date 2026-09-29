@@ -119,6 +119,8 @@ module Eagle
               if trns.size >= 6
                 if bit_depth == 8 && cur[x * 3] == trns[1] && cur[x * 3 + 1] == trns[3] && cur[x * 3 + 2] == trns[5]
                   a = 0_u8
+                elsif bit_depth == 16 && cur[x * 6, 2] == trns[0, 2] && cur[x * 6 + 2, 2] == trns[2, 2] && cur[x * 6 + 4, 2] == trns[4, 2]
+                  a = 0_u8
                 end
               end
             when 3 # palette

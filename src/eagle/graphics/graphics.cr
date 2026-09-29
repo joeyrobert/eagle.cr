@@ -260,6 +260,17 @@ module Eagle
     def scissor=(r : Rect?)
       flush
       @scissor_rect = r
+      apply_scissor
+    end
+
+    # :nodoc: puts the GPU blend mode and scissor back after other code changed them
+    def restore_state : Nil
+      GPU.device.blend_mode(@blend)
+      apply_scissor
+    end
+
+    private def apply_scissor : Nil
+      r = @scissor_rect
       if @canvas
         # canvas projection is unflipped, so y is already GL-style bottom-up.
         if rr = r
@@ -750,6 +761,7 @@ module Eagle
 
     @[AlwaysInline]
     private def ensure_space(verts : Int32, idx : Int32)
+      raise ArgumentError.new("Too much geometry for one draw call (#{verts} vertices, #{idx} indices; limits #{MAX_VERTICES} and #{@indices.size}). Split it into smaller pieces.") if verts > MAX_VERTICES || idx > @indices.size
       flush if @vcount + verts > MAX_VERTICES || @icount + idx > @indices.size
     end
 

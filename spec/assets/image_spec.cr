@@ -13,6 +13,37 @@ describe Eagle::Image do
   end
 end
 
+describe "truncated and keyed image data" do
+  it "raises AssetError on truncated BMP and QOI" do
+    img = Image.checkerboard(8, 8, 2)
+    bmp = Codecs::BMP.encode(img)
+    expect_raises(AssetError) { Codecs::BMP.decode(bmp[0, bmp.size - 10]) }
+    expect_raises(AssetError) { Codecs::BMP.decode(bmp[0, 30]) }
+    qoi = Codecs::QOI.encode(img)
+    expect_raises(AssetError) { Codecs::QOI.decode(qoi[0, 20]) }
+  end
+
+  it "honors tRNS for 16-bit RGB" do
+    io = IO::Memory.new
+    io.write(Codecs::PNG::SIGNATURE)
+    chunk = ->(type : String, data : Bytes) do
+      io.write_bytes(data.size.to_u32, IO::ByteFormat::BigEndian)
+      io.write(type.to_slice)
+      io.write(data)
+      crc = Codecs::PNG.crc32(type.to_slice)
+      io.write_bytes(Codecs::PNG.crc32(data, crc), IO::ByteFormat::BigEndian)
+    end
+    chunk.call("IHDR", Bytes[0, 0, 0, 2, 0, 0, 0, 1, 16, 2, 0, 0, 0])
+    chunk.call("tRNS", Bytes[0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc])
+    row = Bytes[0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbd]
+    chunk.call("IDAT", Codecs::Zlib.compress(row, 6))
+    chunk.call("IEND", Bytes.empty)
+    img = Codecs::PNG.decode(io.to_slice)
+    img[0, 0].a.should eq 0
+    img[1, 0].a.should eq 1
+  end
+end
+
 describe Eagle::Codecs::PNG do
   it "decodes RGBA8" do
     img = Image.load(File.join(FIX, "rgba.png"))

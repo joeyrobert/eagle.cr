@@ -39,9 +39,10 @@ module Eagle
 
     # Reads the pixels back to the CPU. It is slow, so use it for screenshots and tests, not every frame.
     def to_image : Image
+      prev = GPU.device.current_target
       GPU.device.bind_render_target(@handle)
       bytes = GPU.device.read_pixels(0, 0, @width, @height)
-      GPU.device.bind_render_target(nil)
+      GPU.device.bind_render_target(prev)
       Image.new(@width, @height, bytes)
     end
 

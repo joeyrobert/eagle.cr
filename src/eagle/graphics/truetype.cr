@@ -573,7 +573,8 @@ module Eagle
       @dirty = false
 
       def initialize(size : Int32, filter : GPU::Filter)
-        @image = Image.new(size, size)
+        # white with zero alpha, so filtering at glyph edges never darkens them
+        @image = Image.new(size, size, Color.new(1, 1, 1, 0))
         # a 3x3 white block in the corner, so bilinear sampling of its center stays pure white
         3.times { |y| 3.times { |x| @image[x, y] = Color::WHITE } }
         @x = 4
@@ -620,6 +621,13 @@ module Eagle
     # Loads a font file at *size* pixels, without caching. Prefer `Font.load`.
     def self.load(path : String, size : Number, filter : GPU::Filter = GPU::Filter::Linear) : TrueTypeFont
       new(Assets.read_bytes(path), size, filter)
+    end
+
+    # Frees the atlas textures. Glyphs are rasterized again on next use.
+    def dispose : Nil
+      @atlases.each { |a| a.texture.dispose }
+      @atlases.clear
+      @glyphs.clear
     end
 
     # The first atlas texture.

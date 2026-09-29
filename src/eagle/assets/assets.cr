@@ -181,6 +181,7 @@ module Eagle
       @@textures.each_value(&.dispose)
       @@shaders.each_value(&.dispose)
       @@meshes.each_value(&.dispose)
+      @@fonts.each_value(&.dispose)
       @@textures.clear; @@images.clear; @@shaders.clear; @@sounds.clear; @@fonts.clear; @@meshes.clear
       @@embedded_bytes.clear
       Texture.reset_shared
@@ -192,7 +193,10 @@ module Eagle
       @@images.delete(p); @@sounds.delete(p); @@meshes.delete(p)
       @@textures.reject! { |k, _| k.starts_with?("#{p}|") }
       @@shaders.delete(p)
-      @@fonts.reject! { |k, _| k.starts_with?("#{p}|") }
+      @@fonts.select { |k, _| k.starts_with?("#{p}|") }.each do |k, f|
+        f.dispose
+        @@fonts.delete(k)
+      end
     end
   end
 end

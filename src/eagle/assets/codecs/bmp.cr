@@ -10,6 +10,7 @@ module Eagle
       # Decodes BMP bytes into an image.
       def self.decode(data : Bytes) : Image
         le = IO::ByteFormat::LittleEndian
+        raise AssetError.new("BMP data truncated") if data.size < 34
         offset = le.decode(UInt32, data[10, 4]).to_i
         header_size = le.decode(UInt32, data[14, 4]).to_i
         w = le.decode(Int32, data[18, 4])
@@ -20,6 +21,8 @@ module Eagle
         top_down = h < 0
         h = h.abs
         row_size = ((bpp * w + 31) // 32) * 4
+        raise AssetError.new("Bad BMP size #{w}x#{h}") if w <= 0 || h <= 0
+        raise AssetError.new("BMP data truncated") if offset < 0 || offset + row_size * h > data.size
         img = Image.new(w, h)
         h.times do |y|
           src_y = top_down ? y : h - 1 - y

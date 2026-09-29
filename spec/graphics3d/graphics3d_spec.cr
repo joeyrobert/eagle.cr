@@ -326,6 +326,48 @@ describe Eagle::Renderer3D do
     canvas.dispose
   end
 
+  gpu_it "keeps the 2D blend mode and scissor across a 3D render" do
+    root = SceneTree.root
+    cam = Camera3D.new(position: v3(0, 0, 4))
+    cam.look_at(Vec3::ZERO)
+    env = Scene3D.environment
+    env.shadows = true; env.shadow_size = 256
+    root.add(cam, DirectionalLight3D.new(v3(0, -1, -1)))
+    canvas = Canvas.new(16, 16, depth: true)
+    g = Eagle.graphics
+    g.begin_frame
+    g.with_canvas(canvas, clear: Color.gray(0.5)) do
+      g.blend = GPU::BlendMode::Additive
+      g.scissor = Rect.new(0, 0, 8, 16)
+      Scene3D.render(root, cam, canvas.size, flip_y: true, clear: false)
+      g.rect(0, 0, 16, 16, color: Color.new(0, 1, 0, 0.5))
+    end
+    g.end_frame
+    img = canvas.to_image
+    canvas.dispose
+    img[2, 8].g.should be > 0.9 # additive: 0.5 + 0.5, alpha blend would give 0.75
+    img[12, 8].g.should be < 0.6 # outside the scissor
+  end
+
+  gpu_it "applies fog to unlit materials" do
+    root = SceneTree.root
+    cam = Camera3D.new(position: v3(0, 0, 10))
+    cam.look_at(Vec3::ZERO)
+    env = Scene3D.environment
+    env.sky = false; env.background = Color::BLUE; env.shadows = false
+    env.fog(1, 5, Color::BLACK)
+    quad = MeshInstance3D.new(Mesh.quad(20, 20), Material.unlit(Color::WHITE))
+    root.add(cam, quad)
+    canvas = Canvas.new(16, 16, depth: true)
+    g = Eagle.graphics
+    g.begin_frame
+    g.with_canvas(canvas, clear: nil) { Scene3D.render(root, cam, canvas.size, flip_y: true) }
+    g.end_frame
+    img = canvas.to_image
+    canvas.dispose
+    img[8, 8].r.should be < 0.05
+  end
+
   gpu_it "honors Material#receive_shadows" do
     root = SceneTree.root
     cam = Camera3D.new(position: v3(0, 6, 0.01))

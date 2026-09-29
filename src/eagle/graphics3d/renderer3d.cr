@@ -197,8 +197,10 @@ module Eagle
         lights = lights.dup
         lights.unshift(lights.delete_at(lights.index!(sl)))
         caller_target = dev.current_target
+        dev.scissor(nil, 0)
         shadow_ok = render_shadows(sl, items, camera)
         dev.bind_render_target(caller_target)
+        Eagle.graphics.restore_state if Eagle.initialized?
         dbg("shadow pass")
       end
 
@@ -280,7 +282,11 @@ module Eagle
       dev.depth_test(false)
       dev.cull(GPU::CullMode::None)
       dev.front_face_ccw(true)
-      dev.blend_mode(GPU::BlendMode::Alpha)
+      if Eagle.initialized?
+        Eagle.graphics.restore_state
+      else
+        dev.blend_mode(GPU::BlendMode::Alpha)
+      end
       @stats_draw_calls = @draw_calls
       @stats_culled = @culled
     end
