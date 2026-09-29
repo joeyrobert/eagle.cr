@@ -15,6 +15,7 @@ EXAMPLES = {
   "snake"        => {"Snake", "Grid logic with a unit-tested core and speed that ramps as you eat.", "Arrows/WASD · Space restarts"},
   "roguelike"    => {"Roguelike", "Procedural dungeons, shadowcasting field of view, monsters that chase, items, five levels.", "Arrows/WASD/hjkl move · Space wait · Enter descends on > · R restart"},
   "coinrush3d"   => {"Coin Rush (3D)", "Roll a ball around a lit, shadowed arena collecting coins before the timer runs out.", "WASD move · Space jump · right-drag orbits the camera"},
+  "rocketball"   => {"Boost Ball", "Rocket-powered car soccer with bot opponents, boost pads, flips, demolitions, replays, overtime and full menus.", "WASD drive · Space jump/flip · Shift or click boost · Ctrl drift · Q/E air roll · B ball cam · Esc pause"},
   "tiltmaze"     => {"Tilt Maze", "Tilt the board to roll a marble through a maze past holes to the goal before time runs out.", "WASD/arrows/left stick tilt · R restart"},
   "joyride"       => {"Joyride", "Drive through an infinite deterministic city and countryside with traffic, police, pedestrians and delivery or race missions.", "WASD/arrows drive · Space handbrake · M new mission"},
   "fps"           => {"Neon Bastion (FPS)", "First-person arena shooter: mouse look, pulse rifle and scattergun, grunt and charger AI, Waves and Deathmatch.", "Click to capture mouse · WASD move · Shift sprint · fire click/RB · 1/2 weapons · F1 Waves · F2 Deathmatch"},
@@ -552,7 +553,7 @@ def api_link(name : String, rel : String) : String?
 end
 
 # marketing page
-shots = %w(joyride flythrough3d coinrush3d tiltmaze fps voxel chess platformer physics3d roguelike algorithms ui interactions asteroids breakout physics checkers).select { |n| has_shot.call(n) }
+shots = %w(rocketball joyride flythrough3d coinrush3d tiltmaze fps voxel chess platformer physics3d roguelike algorithms ui interactions asteroids breakout physics checkers).select { |n| has_shot.call(n) }
 gallery = shots.map do |n|
   t, d, _ = EXAMPLES[n]
   "<figure><a href=\"play/#{n}/index.html\"><img src=\"assets/screenshots/#{n}.png\" alt=\"#{t} screenshot\" loading=\"lazy\"></a><figcaption><b><a href=\"play/#{n}/index.html\">#{t}</a></b>#{d}</figcaption></figure>"
