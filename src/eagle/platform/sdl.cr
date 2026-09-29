@@ -54,6 +54,13 @@ module Eagle
         wflags |= config.hidden ? LibSDL::WINDOW_HIDDEN : LibSDL::WINDOW_SHOWN
 
         @window = LibSDL.create_window(config.title, LibSDL::WINDOWPOS_CENTERED, LibSDL::WINDOWPOS_CENTERED, config.width, config.height, wflags)
+        if @window.null? && config.msaa > 0
+          # X11 picks the GL visual at window creation and fails when no multisampled visual matches.
+          Eagle.log.warn { "No #{config.msaa}x MSAA window available (#{error}); continuing without multisampling" }
+          LibSDL.gl_set_attribute(LibSDL::GL_MULTISAMPLEBUFFERS, 0)
+          LibSDL.gl_set_attribute(LibSDL::GL_MULTISAMPLESAMPLES, 0)
+          @window = LibSDL.create_window(config.title, LibSDL::WINDOWPOS_CENTERED, LibSDL::WINDOWPOS_CENTERED, config.width, config.height, wflags)
+        end
         raise Error.new("SDL_CreateWindow failed: #{error}") if @window.null?
 
         @context = LibSDL.gl_create_context(@window)
