@@ -109,13 +109,18 @@ end
 describe "Tween restart" do
   before_each { Tween.clear }
 
-  it "does not re-register a finished tween" do
-    t = Tween.new(1) { |_| }
+  it "replays a finished tween once when started again" do
+    values = [] of Float32
+    t = Tween.new(1) { |v| values << v }
     t.start
     Tween.update_all(2_f32)
     t.finished?.should be_true
     Tween.active_count.should eq 0
     t.start
-    Tween.active_count.should eq 0
+    t.start
+    Tween.active_count.should eq 1
+    t.finished?.should be_false
+    Tween.update_all(0.5_f32)
+    values.last.should be_close(0.5, 1e-3)
   end
 end
