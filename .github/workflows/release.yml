@@ -56,7 +56,7 @@ jobs:
         run: brew install sdl2
 
       - name: Build
-        run: shards build --release --no-debug eagle
+        run: shards build --release --no-debug -Dwithout_mt eagle
 
       - name: Smoke test
         run: bin/eagle version && bin/eagle help init
@@ -94,7 +94,7 @@ jobs:
       - name: Build
         run: |
           New-Item -ItemType Directory -Force bin | Out-Null
-          crystal build src/cli.cr --release --no-debug -o bin/eagle.exe --link-flags "/LIBPATH:$env:SDL2_LIB"
+          crystal build src/cli.cr --release --no-debug -Dwithout_mt -o bin/eagle.exe --link-flags "/LIBPATH:$env:SDL2_LIB"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Stage files

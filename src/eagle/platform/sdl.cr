@@ -1,15 +1,5 @@
 require "../lib/sdl2"
 
-# Keep the main fiber on its thread: GL and the Cocoa event loop crash if a >10ms syscall migrates the scheduler (build with -Dwithout_mt instead to avoid this override).
-class Fiber
-  {% raise "Eagle overrides Fiber.syscall to pin the main fiber to its thread; this Crystal no longer defines it, so re-check the fix from PR #53" unless @type.class.has_method?(:syscall) %}
-
-  # :nodoc:
-  def self.syscall(&)
-    yield
-  end
-end
-
 module Eagle
   module Platform
     # :nodoc:

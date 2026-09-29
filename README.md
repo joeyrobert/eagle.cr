@@ -155,9 +155,12 @@ To add Eagle to an existing Crystal project without the CLI:
 4. Run and build it with plain Crystal, or with the eagle CLI:
 
    ```sh
-   crystal run src/main.cr                          # or: eagle run
-   mkdir -p bin && crystal build src/main.cr --release -o bin/game  # or: eagle build
+   crystal run -Dwithout_mt src/main.cr                          # or: eagle run
+   mkdir -p bin && crystal build src/main.cr --release -Dwithout_mt -o bin/game  # or: eagle build
    ```
+
+   Pass `-Dwithout_mt` to plain `crystal`/`shards` builds. It keeps the game on the thread that owns the
+   window and GL context; the eagle CLI adds it for you.
 
 ## Build and export
 
@@ -168,8 +171,8 @@ To add Eagle to an existing Crystal project without the CLI:
 | `eagle export exe [FILE]` | release executable `dist/<project>/<project>` |
 | `eagle export web [FILE]` | `dist/web/<project>/`: `index.html`, `eagle.js`, `<project>.wasm` |
 | `eagle export app [FILE]` | macOS app bundle `dist/<project>.app` |
-| `mkdir -p bin && crystal build src/main.cr --release -o bin/game` | the same as `eagle build`, without the CLI (crystal doesn't create `bin/`) |
-| `shards build --release` | builds every target in `shard.yml` into `bin/` |
+| `mkdir -p bin && crystal build src/main.cr --release -Dwithout_mt -o bin/game` | the same as `eagle build`, without the CLI (crystal doesn't create `bin/`) |
+| `shards build --release -Dwithout_mt` | builds every target in `shard.yml` into `bin/` |
 
 `<project>` is the project folder's name. Executables look for assets in `assets/` next
 to them or in the working directory; add `Eagle.embed_assets("assets")` to `src/main.cr`
@@ -186,7 +189,7 @@ For automated runs (CI, screenshots), any Eagle program honours
 
 ```sh
 git clone https://github.com/joeyrobert/eagle.cr && cd eagle.cr
-shards build                 # builds bin/eagle
+shards build -Dwithout_mt    # builds bin/eagle
 bin/eagle examples           # list examples
 bin/eagle examples asteroids # run one
 cd .. && eagle.cr/bin/eagle init mygame --local eagle.cr --yes   # a game that uses this checkout
@@ -216,8 +219,8 @@ Releases: pushing a `v*` tag runs `.github/workflows/release.yml`, which builds 
 ## Testing
 
 ```sh
-crystal spec                 # ~230 specs incl. GPU-backed pixel tests (hidden window)
-EAGLE_NO_GPU=1 crystal spec  # skip GPU specs (CI without a display)
+crystal spec -Dwithout_mt                 # ~470 specs incl. GPU-backed pixel tests (hidden window)
+EAGLE_NO_GPU=1 crystal spec -Dwithout_mt  # skip GPU specs (CI without a display)
 ```
 
 ## Documentation
