@@ -18,7 +18,7 @@ fail=0
 for f in examples/*/main.cr; do
   n="$(basename "$(dirname "$f")")"
   if [ "$link" = true ]; then
-    if ! crystal build "$f" -o "bin/examples/$n"; then
+    if ! crystal build "$f" -Dwithout_mt -o "bin/examples/$n"; then
       echo "FAIL $n"
       fail=1
     elif [ "$run" = true ] && ! EAGLE_FRAMES=30 EAGLE_SCREENSHOT="screenshots/examples/$n.png" "bin/examples/$n" >/dev/null; then
@@ -31,7 +31,7 @@ for f in examples/*/main.cr; do
       echo "ok $n"
     fi
   else
-    if crystal build "$f" --no-codegen; then
+    if crystal build "$f" -Dwithout_mt --no-codegen; then
       echo "ok $n"
     else
       echo "FAIL $n"

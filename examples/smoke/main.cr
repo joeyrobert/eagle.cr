@@ -1,7 +1,7 @@
 require "../../src/eagle"
 
 # Minimal smoke test: draws shapes, sprites and text. Run with
-#   EAGLE_FRAMES=5 EAGLE_SCREENSHOT=smoke.png crystal run examples/smoke/main.cr
+#   EAGLE_FRAMES=5 EAGLE_SCREENSHOT=smoke.png crystal run -Dwithout_mt examples/smoke/main.cr
 class Smoke < Eagle::App
   @tex : Eagle::Texture? = nil
 

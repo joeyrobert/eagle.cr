@@ -262,8 +262,8 @@ install_from_source() {
   mv "$TMP/src" "$EAGLE_HOME/src.new"
   rm -rf "$EAGLE_HOME/src"
   mv "$EAGLE_HOME/src.new" "$EAGLE_HOME/src"
-  info "Building eagle (shards build --release; this takes a minute or two)"
-  (cd "$EAGLE_HOME/src" && shards build --release --no-debug eagle)
+  info "Building eagle (shards build --release -Dwithout_mt; this takes a minute or two)"
+  (cd "$EAGLE_HOME/src" && shards build --release --no-debug -Dwithout_mt eagle)
   cp "$EAGLE_HOME/src/bin/eagle" "$EAGLE_HOME/bin/eagle.new"
   chmod 755 "$EAGLE_HOME/bin/eagle.new"
   mv "$EAGLE_HOME/bin/eagle.new" "$EAGLE_HOME/bin/eagle"

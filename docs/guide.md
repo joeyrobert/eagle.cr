@@ -22,7 +22,7 @@ Then create a project and run it:
 eagle init mygame   # pick a template (2d-game, 3d-game, ui-app, empty), window size, pixel art, web, git, CI
 cd mygame
 eagle run
-crystal spec        # the generated sample spec
+crystal spec -Dwithout_mt  # the generated sample spec
 ```
 
 In scripts, pass the answers as flags: `eagle init mygame --template 3d --size 1280x720 --no-ci --yes`.
@@ -60,7 +60,7 @@ Adding Eagle to an existing Crystal project needs no CLI:
    Eagle.run(Game, title: "My Game", width: 960, height: 540)
    ```
 
-4. `crystal run src/main.cr` runs it; `mkdir -p bin && crystal build src/main.cr --release -o bin/game` builds a
+4. `crystal run -Dwithout_mt src/main.cr` runs it; `mkdir -p bin && crystal build src/main.cr --release -Dwithout_mt -o bin/game` builds a
    release executable. `eagle run` and `eagle build` do the same, and work in any project
    that has `src/main.cr`.
 
@@ -230,7 +230,7 @@ flocking and shadowcasting FOV. The roguelike uses `Grid.field_of_view` for its
 fog of war.
 
 ```sh
-crystal run examples/algorithms/main.cr
+crystal run -Dwithout_mt examples/algorithms/main.cr
 # 1-5 or Tab switch scenes, click sets the A* goal, WASD moves in FOV
 ```
 
@@ -330,7 +330,7 @@ around the player and evicts old simulation layouts. Traffic follows the generat
 graph, pedestrians use generated sidewalks, and missions choose targets from that same graph.
 
 ```sh
-crystal run examples/joyride/main.cr
+crystal run -Dwithout_mt examples/joyride/main.cr
 # WASD/arrows drive, Space handbrake, M starts a new mission
 ```
 
@@ -347,7 +347,7 @@ first-person view, HUD and spatial audio. Click to capture the mouse (browsers r
 gesture for pointer lock); native builds lock it on launch.
 
 ```sh
-crystal run examples/fps/main.cr
+crystal run -Dwithout_mt examples/fps/main.cr
 # WASD move, Shift sprint, click/RB fire, 1/2 weapons, F1 Waves, F2 Deathmatch
 ```
 
@@ -362,7 +362,7 @@ the grid, not Physics3D. Generation, meshing, DDA picking and collision live in
 `examples/voxel/world.cr` so they can be specced without a window.
 
 ```sh
-crystal run examples/voxel/main.cr
+crystal run -Dwithout_mt examples/voxel/main.cr
 # WASD move, Space jump, left break, right place, E colours, 1-9 / scroll palette, R regen
 ```
 
@@ -384,10 +384,12 @@ are abstract. `Platform::SDL` + `GPU::GL33` are the desktop implementations.
 through `web/eagle.js`. Shaders and formats stay within the WebGL2 subset so the
 same code renders identically on both.
 
-The desktop backend keeps the main fiber on its original thread, because GL and the
-macOS event loop crash if Crystal's scheduler migrates it during a slow syscall. Eagle
-does this by overriding `Fiber.syscall`; building with `-Dwithout_mt` is an alternative
-that avoids the override but gives up execution contexts.
+Build games with `-Dwithout_mt` (the eagle CLI does this for you). The window, its event
+loop and the GL context belong to the thread that created them. With Crystal's default
+multi-threaded runtime, a blocking call over 10ms (a slow `File.open`, for example) can
+resume the main fiber on another thread. Without the flag this is rare, and Eagle raises
+a clear error on the next GPU call instead of crashing. The flag uses Crystal's
+single-threaded runtime, so `Fiber::ExecutionContext` isn't available.
 
 ## Building and exporting
 
@@ -405,9 +407,9 @@ eagle export app     # dist/<name>.app (macOS bundle)
 The same without the CLI:
 
 ```sh
-crystal run src/main.cr
-mkdir -p bin && crystal build src/main.cr --release -o bin/mygame
-shards build --release                                        # every target in shard.yml, into bin/
+crystal run -Dwithout_mt src/main.cr
+mkdir -p bin && crystal build src/main.cr --release -Dwithout_mt -o bin/mygame
+shards build --release -Dwithout_mt                           # every target in shard.yml, into bin/
 sh lib/eagle/script/build-web.sh src/main.cr dist/web/mygame  # the web build eagle export web runs
 ```
 

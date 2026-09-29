@@ -345,6 +345,7 @@ module Eagle
   # `run` calls this in a loop. Call it yourself after `init` to drive the engine from tests;
   # pass *dt* (seconds) to advance the clock by a fixed amount instead of wall-clock time.
   def self.step(dt : Number? = nil) : Nil
+    GPU.check_thread
     pf = platform
     app = self.app
     now = pf.now
