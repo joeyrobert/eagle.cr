@@ -105,6 +105,11 @@ class EagleRuntime {
     }
     this.resizeCanvas();
     new ResizeObserver(() => { this.resizeCanvas(); this.push(EV.RESIZE, this.logicalW, this.logicalH); }).observe(c);
+    // browser zoom or moving to another monitor changes the pixel ratio without resizing the element
+    window.addEventListener("resize", () => {
+      if ((window.devicePixelRatio || 1) === this.dpr) return;
+      this.resizeCanvas(); this.push(EV.RESIZE, this.logicalW, this.logicalH);
+    });
     c.tabIndex = 0;
     c.style.outline = "none";
     c.addEventListener("contextmenu", e => e.preventDefault());
@@ -140,7 +145,9 @@ class EagleRuntime {
     c.addEventListener("mousemove", e => { const [x, y] = pos(e); this.push(EV.MOTION, x, y, e.movementX, e.movementY); });
     c.addEventListener("mousedown", e => { const [x, y] = pos(e); this.focusInput(); this.push(EV.BUTTON, e.button + 1 === 3 ? 3 : e.button + 1, 1, x, y, e.detail || 1); this.resumeAudio(); });
     c.addEventListener("mouseup", e => { const [x, y] = pos(e); this.push(EV.BUTTON, e.button + 1 === 3 ? 3 : e.button + 1, 0, x, y, e.detail || 1); });
-    c.addEventListener("wheel", e => { const [x, y] = pos(e); this.push(EV.WHEEL, -e.deltaX / 100, -e.deltaY / 100, x, y); e.preventDefault(); }, { passive: false });
+    // Firefox reports lines and some mice pages, not pixels
+    const wheelPx = e => e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? 800 : 1;
+    c.addEventListener("wheel", e => { const [x, y] = pos(e); const k = wheelPx(e); this.push(EV.WHEEL, -e.deltaX * k / 100, -e.deltaY * k / 100, x, y); e.preventDefault(); }, { passive: false });
     c.addEventListener("focus", e => { if (!this.switching) this.push(EV.FOCUS, 1); });
     c.addEventListener("blur", e => { if (!this.switching && e.relatedTarget !== this.ta) this.push(EV.FOCUS, 0); });
     window.addEventListener("gamepadconnected", e => { this.gamepads.set(e.gamepad.index, { buttons: [], axes: [] }); this.push(EV.GP_CONNECT, e.gamepad.index, 1); });
@@ -171,8 +178,8 @@ class EagleRuntime {
     };
     c.addEventListener("touchstart", e => { this.focusInput(); touches(TOUCH.BEGAN, e); this.resumeAudio(); }, { passive: false });
     c.addEventListener("touchmove", e => touches(TOUCH.MOVED, e), { passive: false });
-    c.addEventListener("touchend", e => { touches(TOUCH.ENDED, e); this.focusInput(); }, { passive: false });
-    c.addEventListener("click", () => this.focusInput());
+    c.addEventListener("touchend", e => { touches(TOUCH.ENDED, e); this.focusInput(); this.resumeAudio(); }, { passive: false });
+    c.addEventListener("click", () => { this.focusInput(); this.resumeAudio(); });
     c.addEventListener("touchcancel", e => touches(TOUCH.CANCELLED, e), { passive: false });
     // a hidden tab or lost focus never delivers the touchend, so cancel whatever is still down
     const cancelAll = () => {
@@ -299,6 +306,7 @@ class EagleRuntime {
 
   resizeCanvas() {
     const c = this.canvas;
+    this.dpr = window.devicePixelRatio || 1;
     const r = c.getBoundingClientRect();
     this.logicalW = Math.max(1, Math.round(r.width));
     this.logicalH = Math.max(1, Math.round(r.height));

@@ -480,3 +480,27 @@ describe Eagle::RichTextLabel do
     img.average(0, 0, 100, 30).a.should be > 0.01
   end
 end
+
+describe "UI regressions" do
+  before_each { SceneTree.reset }
+
+  it "keeps the caret at the end after backspace" do
+    t = TextInput.new("日本語")
+    t.gui_input(KeyEvent.new(Key::Backspace, true, false, KeyMod::None))
+    t.text.should eq "日本"
+    t.caret.should eq 2
+    t.gui_input(TextEvent.new("x"))
+    t.text.should eq "日本x"
+  end
+
+  gpu_it "keeps the drop-down list inside the window near the bottom edge" do
+    ob = OptionButton.new(["A", "B", "C"], position: v2(20, Window.height - 30))
+    SceneTree.root.add(ob)
+    ob.open
+    SceneTree.root.process_tree(0.016_f32)
+    overlay = SceneTree.root.children.find! { |c| c.is_a?(OptionButton::Overlay) }
+    panel = overlay.children.first.as(Control)
+    (panel.global_position.y + panel.size.y).should be <= Window.height
+    panel.global_position.y.should be >= 0
+  end
+end

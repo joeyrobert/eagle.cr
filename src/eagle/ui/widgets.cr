@@ -572,8 +572,9 @@ module Eagle
         case event.key
         when Key::Backspace
           if @caret > 0
-            self.text = @text[0, @caret - 1] + @text[@caret..]
+            nt = @text[0, @caret - 1] + @text[@caret..]
             @caret -= 1
+            self.text = nt
           end
         when Key::Delete
           self.text = @text[0, @caret] + @text[@caret + 1..] if @caret < @text.size
@@ -1006,8 +1007,15 @@ module Eagle
     private def update_popup_transform : Nil
       overlay, panel, _ = popup
       return unless overlay.parent
-      panel.position = global_position + Vec2.new(0, @size.y) - overlay.global_position
       panel.width = Math.max(@size.x, panel.size.x)
+      gp = global_position
+      pos = gp + Vec2.new(0, @size.y)
+      # flip above the field, or slide up, when the list would run off the window
+      if Window.height > 0 && pos.y + panel.size.y > Window.height
+        pos = Vec2.new(pos.x, gp.y - panel.size.y >= 0 ? gp.y - panel.size.y : Math.max(0_f32, Window.height - panel.size.y))
+      end
+      pos = Vec2.new(Math.max(0_f32, Window.width - panel.size.x), pos.y) if Window.width > 0 && pos.x + panel.size.x > Window.width
+      panel.position = pos - overlay.global_position
     end
   end
 
