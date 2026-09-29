@@ -394,6 +394,19 @@ describe "Physics3D joints" do
 end
 
 describe "Physics3D regressions" do
+  it "a capsule crossing a triangle is pushed out on the side its centre is on" do
+    up = {v3(-5, 0, -5), v3(-5, 0, 5), v3(5, 0, 0)}
+    down = {up[0], up[2], up[1]}
+    below = {v3(0, -0.6, 0), v3(0, 0.3, 0)}
+    above = {v3(0, -0.3, 0), v3(0, 0.6, 0)}
+    [up, down].each do |tri|
+      n1 = P3::Collision.triangle_capsule(tri, below[0], below[1], 0.25_f32).not_nil!.normal
+      n2 = P3::Collision.triangle_capsule(tri, above[0], above[1], 0.25_f32).not_nil!.normal
+      n1.y.should be < 0
+      n2.y.should be > 0
+    end
+  end
+
   it "raycasts a mesh with a huge max distance without walking empty grid cells" do
     w = P3::World.new
     w.add(P3::BodyType::Static, Vec3::ZERO, P3::MeshCollider.from_triangles([v3(-5, 0, -5), v3(5, 0, -5), v3(0, 0, 5)]))

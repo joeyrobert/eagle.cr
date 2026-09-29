@@ -34,6 +34,12 @@ describe Eagle::Codecs::WAV do
     f32 = Bytes.new(4); le.encode(0.25_f32, f32)
     Codecs::WAV.decode(make.call(3, 32, f32)).samples[0].should eq 0.25_f32
     expect_raises(AssetError) { Codecs::WAV.decode(make.call(1, 12, Bytes[0, 0])) }
+    expect_raises(AssetError) { Codecs::WAV.decode(make.call(1, 0, Bytes[0, 0])) }
+  end
+
+  it "rejects a truncated fmt chunk" do
+    data = "RIFF\0\0\0\0WAVEfmt \4\0\0\0\1\0\1\0data\0\0\0\0".to_slice
+    expect_raises(AssetError) { Codecs::WAV.decode(data) }
   end
 end
 
@@ -149,6 +155,18 @@ describe Eagle::Audio do
     out = Audio.render(4)
     out[0].should be_close(0.5 * 0.7071 + 0.1, 1e-3)
     st.stop
+  end
+
+  it "node updates do not cancel a voice fade" do
+    s = Sound.generate(1.0) { |t| 1_f32 }
+    p = AudioPlayer.new(s, volume: 1)
+    p.play
+    v = p.voice.not_nil!
+    v.fade(0.2, 0.5)
+    Audio.render(4800)
+    p.update_voice
+    v.volume.should be < 1
+    p.stop
   end
 
   it "survives an out of range pan without NaN" do

@@ -567,7 +567,9 @@ module Eagle
               -d / dist
             else
               tn = (tri[1] - tri[0]).cross(tri[2] - tri[0])
-              tn.length_squared > 1e-12 ? tn.normalized : Vec3::UP
+              tn = tn.length_squared > 1e-12 ? tn.normalized : Vec3::UP
+              # the segment crosses the triangle: push out along the side the capsule centre is on
+              tn.dot((a + b) * 0.5_f32 - tri[0]) < 0 ? -tn : tn
             end
         # n from triangle (A/mesh) to capsule: if d = pt-ps is from capsule to tri, n = -d
         Manifold.new(n, radius - dist, [pt])

@@ -182,6 +182,8 @@ module Eagle
 
     # True while the voice is producing sound. False when paused or finished.
     def playing? : Bool; @playing; end
+    # True while a `fade` is still ramping the volume.
+    def fading? : Bool; !@fade_to.nil?; end
     # True once the voice reached the end or was stopped. A finished voice can't be resumed.
     def finished? : Bool; @finished; end
 

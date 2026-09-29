@@ -52,7 +52,7 @@ module Eagle
     # Pushes volume, pitch and pan to the playing voice. Called every frame.
     def update_voice : Nil
       if v = @voice
-        v.volume = effective_volume
+        v.volume = effective_volume unless v.fading?
         v.pitch = @pitch
         v.pan = effective_pan
       end

@@ -113,9 +113,18 @@ describe Eagle::Codecs::Vorbis do
     got.samples.size.should eq want.samples.size
   end
 
-  it "handles truncated files without index errors" do
+  it "raises AssetError for truncated files instead of decoding nothing" do
     data = File.read(File.join(OGG_DIR, "lib_sweep_stereo.ogg")).to_slice
-    Codecs::Vorbis.decode(data[0, data.size - 1]).channels.should eq 2
     expect_raises(AssetError) { Codecs::Vorbis.decode(data[0, 100]) }
+    expect_raises(AssetError) { Codecs::Vorbis.decode(data[0, data.size // 2]) }
+  end
+
+  it "treats an audio packet that ends early as zeros" do
+    packets, _ = Codecs::Vorbis.packets(File.read(File.join(OGG_DIR, "lib_sweep_mono.ogg")).to_slice)
+    dec = Codecs::Vorbis::Decoder.new(packets[0], packets[2])
+    packets[3..].each_with_index do |p, i|
+      pk = i == 5 ? p[0, Math.max(2, p.size // 3)] : p
+      dec.decode_packet(pk)
+    end
   end
 end
