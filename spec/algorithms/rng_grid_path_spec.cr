@@ -109,3 +109,14 @@ describe "A* with cheap cells" do
     Pathfinding.a_star(grid2, {0, 0}, {4, 0}).cost.should be_close(Pathfinding.dijkstra(grid2, {0, 0}, {4, 0}).cost, 1e-9)
   end
 end
+
+describe "flow field corner cutting" do
+  it "does not step diagonally between two blocked cells" do
+    grid = CostGrid.new(3, 3)
+    grid.block(1, 0)
+    grid.block(0, 1)
+    field = Pathfinding.flow_field(grid, {2, 2}, diagonal: true)
+    field.reachable?({0, 0}).should be_false
+    Pathfinding.flow_field(grid, {2, 2}, diagonal: true, no_corner_cutting: false).reachable?({0, 0}).should be_true
+  end
+end

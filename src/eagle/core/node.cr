@@ -159,7 +159,11 @@ module Eagle
     def queue_free : Nil
       return if @queued_free
       @queued_free = true
-      SceneTree.defer { remove_from_parent }
+      SceneTree.defer do
+        remove_from_parent
+        # A parentless node never runs propagate_exit, so clear the flag here too.
+        @queued_free = false
+      end
     end
 
     # True after `queue_free` and before the removal happens.

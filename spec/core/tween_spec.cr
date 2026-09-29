@@ -105,3 +105,17 @@ describe "Tween ping_pong" do
     last.should be_close(0.5, 1e-3)
   end
 end
+
+describe "Tween restart" do
+  before_each { Tween.clear }
+
+  it "does not re-register a finished tween" do
+    t = Tween.new(1) { |_| }
+    t.start
+    Tween.update_all(2_f32)
+    t.finished?.should be_true
+    Tween.active_count.should eq 0
+    t.start
+    Tween.active_count.should eq 0
+  end
+end

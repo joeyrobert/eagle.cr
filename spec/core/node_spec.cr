@@ -260,3 +260,15 @@ describe "Node edge cases" do
     later.should eq 0
   end
 end
+
+describe "queue_free without a parent" do
+  before_each { SceneTree.reset }
+
+  it "clears the queued flag once the deferred removal has run" do
+    n = Node.new
+    n.queue_free
+    n.queued_free?.should be_true
+    SceneTree.flush_deferred
+    n.queued_free?.should be_false
+  end
+end

@@ -228,3 +228,10 @@ describe "math edge cases" do
     Color.hex("#0F08").a.should be_close(0x88 / 255.0, 1e-4)
   end
 end
+
+describe "projection onto zero" do
+  it "returns zero instead of NaN" do
+    v2(1, 2).project(Vec2::ZERO).should eq Vec2::ZERO
+    v3(1, 2, 3).project(Vec3::ZERO).should eq Vec3::ZERO
+  end
+end

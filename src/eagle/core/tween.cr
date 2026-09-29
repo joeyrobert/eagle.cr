@@ -216,6 +216,7 @@ module Eagle
 
     # Starts or resumes updating this tween. Returns self.
     def start : self
+      return self if @finished
       if @duration <= 0 && @delay <= 0
         # Zero-length tweens complete synchronously (used for sequence callbacks).
         @on_update.try(&.call(@ease.call(1_f32)))
