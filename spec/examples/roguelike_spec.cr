@@ -96,4 +96,24 @@ describe Rogue::Game do
     end
     w.won?.should be_true
   end
+
+  it "cannot descend once the game is over" do
+    g = Rogue::Game.new(11)
+    (1..Rogue::Game::MAX_LEVEL).each do
+      sx, sy = g.dungeon.rooms.last.center
+      g.player.x = sx; g.player.y = sy
+      g.descend
+    end
+    g.won?.should be_true
+    g.descend.should be_false
+    g.level.should eq Rogue::Game::MAX_LEVEL + 1
+  end
+
+  it "never lets hp drop below zero" do
+    g = Rogue::Game.new(3)
+    troll = Rogue::Entity.new("troll", g.player.x + 1, g.player.y, 20, 50, 0, 'T', xp_value: 25)
+    g.attack(troll, g.player)
+    g.player.hp.should eq 0
+    g.game_over?.should be_true
+  end
 end

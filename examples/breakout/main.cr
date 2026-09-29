@@ -4,6 +4,7 @@ include Eagle
 # Breakout: move the paddle with the mouse or arrow keys / gamepad. Space launches.
 class Breakout < App
   W = 800; H = 600
+  MAX_SPEED = 700_f32
   record Brick, rect : Rect, color : Color, hp : Int32
 
   @paddle : Rect = Rect.new(350, 560, 100, 14)
@@ -79,6 +80,7 @@ class Breakout < App
   end
 
   private def step(dt)
+    return if @game_over
     @ball += @vel * dt
     if @ball.x - @radius < 0 || @ball.x + @radius > W
       @vel = v2(-@vel.x, @vel.y); @ball = v2(@ball.x.clamp(@radius, W - @radius), @ball.y); @snd_hit.try(&.play(pitch: 1.5))
@@ -100,7 +102,7 @@ class Breakout < App
     # paddle
     if @vel.y > 0 && circle_rect?(@ball, @radius, @paddle)
       t = ((@ball.x - @paddle.center.x) / (@paddle.w / 2)).clamp(-1_f32, 1_f32)
-      speed = @vel.length * 1.01
+      speed = Math.min(@vel.length * 1.01, MAX_SPEED)
       @vel = Vec2.from_angle(-Math::PI / 2 + t * 1.1, speed)
       @ball = v2(@ball.x, @paddle.y - @radius - 0.5)
       @snd_hit.try(&.play)

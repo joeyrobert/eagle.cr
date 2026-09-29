@@ -77,4 +77,15 @@ describe Chess::AI do
     ai.best_move(c).not_nil!.to_s.should eq "d1d5"
     ai.evaluate(Chess::Board.new).should eq 0
   end
+
+  it "undoes back to the human's turn in AI mode and one ply in two-player mode" do
+    b = Chess::Board.new
+    b.undo_plies(true).should eq 0
+    b.play("e2", "e4")
+    b.undo_plies(true).should eq 1 # Black to move, e.g. AI was switched on mid-game
+    b.undo_plies(false).should eq 1
+    b.play("e7", "e5")
+    b.undo_plies(true).should eq 2
+    b.undo_plies(false).should eq 1
+  end
 end
