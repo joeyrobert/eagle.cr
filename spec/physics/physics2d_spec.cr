@@ -237,3 +237,14 @@ describe Eagle::CollisionObject2D do
     ray.collider.should eq floor
   end
 end
+
+describe "Physics2D disabled bodies" do
+  it "a disabled dynamic body neither falls nor drifts" do
+    w = World.new
+    b = w.add(BodyType::Dynamic, v2(10, 10), Circle.new(5))
+    b.velocity = v2(100, 0)
+    b.enabled = false
+    30.times { w.step(1 / 60_f32) }
+    b.position.should eq v2(10, 10)
+  end
+end

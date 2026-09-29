@@ -18,12 +18,24 @@ module Eagle
         current = IO::Memory.new
         pos = 0
         granule = 0_i64
+        serial : UInt32? = nil
         while pos + 27 <= data.size
           raise DecodeError.new("Bad Ogg page at #{pos}") unless data[pos, 4] == "OggS".to_slice
-          granule = IO::ByteFormat::LittleEndian.decode(Int64, data[pos + 6, 8])
           nsegs = data[pos + 26].to_i
+          break if pos + 27 + nsegs > data.size
           table = data[pos + 27, nsegs]
           body = pos + 27 + nsegs
+          # a page cut short by a truncated file is dropped
+          break if body + table.sum(&.to_i) > data.size
+          # decode the first logical stream only: skip other serials, stop at its end (chained files)
+          page_serial = IO::ByteFormat::LittleEndian.decode(UInt32, data[pos + 14, 4])
+          serial ||= page_serial
+          if page_serial != serial
+            pos = body + table.sum(&.to_i)
+            next
+          end
+          granule = IO::ByteFormat::LittleEndian.decode(Int64, data[pos + 6, 8])
+          last_page = (data[pos + 5] & 4) != 0
           nsegs.times do |i|
             len = table[i].to_i
             current.write(data[body, len]) if len > 0
@@ -34,6 +46,7 @@ module Eagle
             end
           end
           pos = body
+          break if last_page
         end
         {packets, granule}
       end

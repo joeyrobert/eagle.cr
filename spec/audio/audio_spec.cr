@@ -140,6 +140,28 @@ describe Eagle::Audio do
     st.stop
     Audio.render(4)[0].should eq 0
   end
+
+  it "applies stream volume and keeps voices when a stream assigns its samples" do
+    Audio.play(Sound.generate(0.1) { |t| 0.5_f32 })
+    st = AssigningStream.new
+    st.volume = 0.5_f32
+    Audio.add_stream(st)
+    out = Audio.render(4)
+    out[0].should be_close(0.5 * 0.7071 + 0.1, 1e-3)
+    st.stop
+  end
+
+  it "survives an out of range pan without NaN" do
+    v = Sound.generate(0.1) { |t| 0.5_f32 }.play(pan: 2)
+    Audio.render(8).each { |x| x.nan?.should be_false }
+    v.stop
+  end
+end
+
+class AssigningStream < Eagle::AudioStream
+  def fill(buf : Slice(Float32), frames : Int32, sample_rate : Int32) : Nil
+    frames.times { |i| buf[i * 2] = 0.2_f32; buf[i * 2 + 1] = 0.2_f32 }
+  end
 end
 
 class TestStream < Eagle::AudioStream

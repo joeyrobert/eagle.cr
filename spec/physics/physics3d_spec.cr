@@ -393,6 +393,46 @@ describe "Physics3D joints" do
   end
 end
 
+describe "Physics3D regressions" do
+  it "raycasts a mesh with a huge max distance without walking empty grid cells" do
+    w = P3::World.new
+    w.add(P3::BodyType::Static, Vec3::ZERO, P3::MeshCollider.from_triangles([v3(-5, 0, -5), v3(5, 0, -5), v3(0, 0, 5)]))
+    hit = w.raycast(v3(0, 5, 0), v3(0.1, -1, 0.1), 1e12).not_nil!
+    hit.point.y.should be_close(0, 1e-3)
+  end
+
+  {"fixed", "hinge"}.each do |kind|
+    it "a #{kind} joint pulls a tilted body back when the bodies started with different rotations" do
+      w = P3::World.new
+      w.gravity = Vec3::ZERO
+      a = w.add(P3::BodyType::Static, Vec3::ZERO, P3::Cuboid.cube(1))
+      b = w.add(P3::BodyType::Dynamic, v3(2, 0, 0), P3::Cuboid.cube(1))
+      b.rotation = Quat.from_axis_angle(Vec3::UP, Math::PI / 2)
+      kind == "fixed" ? w.fixed_joint(a, b, v3(1, 0, 0)) : w.hinge_joint(a, b, v3(1, 0, 0), Vec3::UP)
+      b.rotation = (Quat.from_axis_angle(Vec3::BACK, 0.3_f32) * b.rotation).normalized
+      b.update_world_shapes
+      180.times { w.step(1 / 60_f32) }
+      (b.rotation * Vec3::UP).approx?(Vec3::UP, 0.02).should be_true
+      (b.position - v3(2, 0, 0)).length.should be < 0.05
+    end
+  end
+
+  it "a stack of boxes falls asleep together and wakes when its support is removed" do
+    w = P3::World.new
+    w.sleep_threshold = 0.1_f32
+    w.add(P3::BodyType::Static, v3(0, -0.5, 0), P3::Cuboid.new(v3(20, 1, 20)))
+    lo = w.add(P3::BodyType::Dynamic, v3(0, 0.5, 0), P3::Cuboid.cube(1))
+    hi = w.add(P3::BodyType::Dynamic, v3(0, 1.5, 0), P3::Cuboid.cube(1))
+    300.times { w.step(1 / 60_f32) }
+    lo.sleeping?.should be_true
+    hi.sleeping?.should be_true
+    w.remove_body(lo)
+    hi.sleeping?.should be_false
+    60.times { w.step(1 / 60_f32) }
+    hi.position.y.should be < 1
+  end
+end
+
 describe "Physics3D sleeping" do
   it "puts resting bodies to sleep and wakes them on demand" do
     w = P3::World.new

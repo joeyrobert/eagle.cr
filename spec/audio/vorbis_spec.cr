@@ -100,4 +100,22 @@ describe Eagle::Codecs::Vorbis do
     s2.duration.should be_close(1.2, 0.1)
     expect_raises(AssetError) { Sound.decode(Bytes[1, 2, 3, 4, 5, 6, 7, 8]) }
   end
+
+  it "decodes only the first stream of a chained file" do
+    first = File.read(File.join(OGG_DIR, "lib_sweep_mono.ogg")).to_slice
+    second = File.read(File.join(OGG_DIR, "tone_stereo.ogg")).to_slice
+    chained = Bytes.new(first.size + second.size)
+    first.copy_to(chained)
+    second.copy_to(chained + first.size)
+    want = Codecs::Vorbis.decode(first)
+    got = Codecs::Vorbis.decode(chained)
+    got.channels.should eq 1
+    got.samples.size.should eq want.samples.size
+  end
+
+  it "handles truncated files without index errors" do
+    data = File.read(File.join(OGG_DIR, "lib_sweep_stereo.ogg")).to_slice
+    Codecs::Vorbis.decode(data[0, data.size - 1]).channels.should eq 2
+    expect_raises(AssetError) { Codecs::Vorbis.decode(data[0, 100]) }
+  end
 end
