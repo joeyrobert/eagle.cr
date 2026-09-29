@@ -148,6 +148,7 @@ describe Eagle::CLI::Init do
       files.keys.sort.should eq [".github/workflows/ci.yml", ".gitignore", "README.md", "assets/icon.png", "shard.yml",
                                  "spec/my_game_spec.cr", "spec/spec_helper.cr", "src/main.cr", "src/my_game.cr"]
       files["shard.yml"].as(String).should contain "github: joeyrobert/eagle.cr"
+      files["shard.yml"].as(String).should contain "    github: joeyrobert/eagle.cr\n    version: ~> #{Eagle::VERSION}\n"
       files["shard.yml"].as(String).should contain "my-game:\n    main: src/main.cr"
       files["src/main.cr"].as(String).should contain %(Eagle.run(MyGame::Game, title: "My Game", width: 960, height: 540))
       files["src/main.cr"].as(String).should contain %(Eagle.embed_assets("assets"))

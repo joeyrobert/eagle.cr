@@ -384,6 +384,11 @@ are abstract. `Platform::SDL` + `GPU::GL33` are the desktop implementations.
 through `web/eagle.js`. Shaders and formats stay within the WebGL2 subset so the
 same code renders identically on both.
 
+The desktop backend keeps the main fiber on its original thread, because GL and the
+macOS event loop crash if Crystal's scheduler migrates it during a slow syscall. Eagle
+does this by overriding `Fiber.syscall`; building with `-Dwithout_mt` is an alternative
+that avoids the override but gives up execution contexts.
+
 ## Building and exporting
 
 Run these in the project folder. FILE defaults to `src/main.cr`, and `<name>` is the

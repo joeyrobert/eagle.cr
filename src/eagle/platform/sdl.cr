@@ -1,9 +1,9 @@
 require "../lib/sdl2"
 
-# Crystal hands the scheduler to a new thread when the main fiber sits in a blocking syscall (a long file read)
-# for over 10ms. The GL context and the Cocoa event loop belong to the original thread, so the next GL or event call
-# crashes. Run those calls in place so the main fiber never changes threads.
+# Keep the main fiber on its thread: GL and the Cocoa event loop crash if a >10ms syscall migrates the scheduler (build with -Dwithout_mt instead to avoid this override).
 class Fiber
+  {% raise "Eagle overrides Fiber.syscall to pin the main fiber to its thread; this Crystal no longer defines it, so re-check the fix from PR #53" unless @type.class.has_method?(:syscall) %}
+
   # :nodoc:
   def self.syscall(&)
     yield
@@ -54,6 +54,13 @@ module Eagle
         wflags |= config.hidden ? LibSDL::WINDOW_HIDDEN : LibSDL::WINDOW_SHOWN
 
         @window = LibSDL.create_window(config.title, LibSDL::WINDOWPOS_CENTERED, LibSDL::WINDOWPOS_CENTERED, config.width, config.height, wflags)
+        if @window.null? && config.msaa > 0
+          # X11 picks the GL visual at window creation and fails when no multisampled visual matches.
+          Eagle.log.warn { "No #{config.msaa}x MSAA window available (#{error}); continuing without multisampling" }
+          LibSDL.gl_set_attribute(LibSDL::GL_MULTISAMPLEBUFFERS, 0)
+          LibSDL.gl_set_attribute(LibSDL::GL_MULTISAMPLESAMPLES, 0)
+          @window = LibSDL.create_window(config.title, LibSDL::WINDOWPOS_CENTERED, LibSDL::WINDOWPOS_CENTERED, config.width, config.height, wflags)
+        end
         raise Error.new("SDL_CreateWindow failed: #{error}") if @window.null?
 
         @context = LibSDL.gl_create_context(@window)
