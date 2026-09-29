@@ -493,6 +493,34 @@ describe "UI regressions" do
     t.text.should eq "日本x"
   end
 
+  it "trims existing text when max_length is set" do
+    t = TextInput.new("abcdef")
+    t.max_length = 3
+    t.text.should eq "abc"
+    t.caret.should eq 3
+  end
+
+  it "reports the post-insert caret to text_changed" do
+    t = TextInput.new("ac")
+    t.gui_input(KeyEvent.new(Key::Left, true, false, KeyMod::None))
+    carets = [] of Int32
+    t.on_text_changed { |_| carets << t.caret }
+    t.insert("bb")
+    t.text.should eq "abbc"
+    carets.should eq [3]
+  end
+
+  gpu_it "scrolls a long text field to keep the caret visible" do
+    t = TextInput.new("", size: v2(60, 24))
+    SceneTree.root.add(t)
+    t.insert("the quick brown fox jumps over")
+    GPUSpec.render(100, 40) { |g| SceneTree.root.draw_tree(g) }
+    t.scroll_x.should be > 0
+    t.gui_input(KeyEvent.new(Key::Home, true, false, KeyMod::None))
+    GPUSpec.render(100, 40) { |g| SceneTree.root.draw_tree(g) }
+    t.scroll_x.should eq 0
+  end
+
   gpu_it "keeps the drop-down list inside the window near the bottom edge" do
     ob = OptionButton.new(["A", "B", "C"], position: v2(20, Window.height - 30))
     SceneTree.root.add(ob)
