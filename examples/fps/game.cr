@@ -157,6 +157,7 @@ module EagleFPS
     getter cooldown = 0_f32
     getter elapsed = 0_f32
     getter message = ""
+    @message_time = 0_f32
     getter? finished = false
     @next_id = 1
     @rng : RNG
@@ -180,6 +181,8 @@ module EagleFPS
     def update(dt : Float32) : Nil
       return if @finished
       @elapsed += dt
+      @message_time -= dt if @message_time > 0
+      @message = "" if @message_time <= 0
       @cooldown = Math.max(0_f32, @cooldown - dt)
       if @health <= 0
         @respawn -= dt
@@ -211,7 +214,7 @@ module EagleFPS
       if @mode.waves? && @health > 0 && @enemies.none?(&.alive?)
         @wave += 1
         @health = Math.min(100, @health + 25)
-        @message = "Wave #{@wave}"
+        say("Wave #{@wave}")
         spawn_wave
       elsif @mode.deathmatch?
         @enemies.reject! { |e| !e.alive? }
@@ -220,7 +223,7 @@ module EagleFPS
         end
         if @score >= 15
           @finished = true
-          @message = "Frag limit reached"
+          say("Frag limit reached")
         end
       end
     end
@@ -269,20 +272,25 @@ module EagleFPS
       ShotResult.new(true, hits, kills, endpoint)
     end
 
+    private def say(text : String) : Nil
+      @message = text
+      @message_time = 3_f32
+    end
+
     private def damage_player(amount : Int32) : Nil
       return if @health <= 0
       @health = Math.max(0, @health - amount)
       if @health == 0
         @deaths += 1
         @respawn = 2_f32
-        @message = "Respawning..."
+        say("Respawning...")
       end
     end
 
     private def respawn_player : Nil
       @health = 100
       @player = Vec2::ZERO
-      @message = "Back in the fight"
+      say("Back in the fight")
     end
 
     private def spawn_wave : Nil

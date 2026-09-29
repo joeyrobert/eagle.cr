@@ -131,3 +131,22 @@ describe "Joyride actors and missions" do
     wanted.level.should eq 1
   end
 end
+
+describe "Joyride mission and pedestrian edge cases" do
+  it "completes a mission with no targets instead of raising" do
+    m = Joyride::Mission.new(Joyride::Mission::Kind::Race, [] of Joyride::Mission::Target, 0_f32)
+    m.update(0.1_f32, v2(0, 0), 0_f32).should eq :complete
+    m.done?.should be_true
+  end
+
+  it "remembers which car knocked a pedestrian down" do
+    ped = Joyride::Pedestrian.new(v2(0, 0), v2(0, 10), 0_f32, Color::RED, Color::BLUE)
+    player = Joyride::Car.new(v2(50, 50))
+    civilian = Joyride::Car.new(v2(0.5, 0))
+    civilian.vel = v2(0, -8)
+    ped.update(0.01_f32, [player, civilian]).should be_true
+    ped.hit_by.same?(civilian).should be_true
+    ped.hit_by.same?(player).should be_false
+  end
+end
+

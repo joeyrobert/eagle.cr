@@ -50,7 +50,7 @@ class CoinRush < App
     # coins
     20.times do
       pos = v3((@rng.rand - 0.5) * ARENA * 1.7, 0.8, (@rng.rand - 0.5) * ARENA * 1.7)
-      next if @obstacles.any? { |o| o.contains?(pos) }
+      next if @obstacles.any? { |o| o.contains?(pos) } || pos.xz.length < 3
       coin = MeshInstance3D.new(Mesh.cylinder(0.45, 0.12, 20), Material.new(Color.hex("#ffd700"), shininess: 96, specular: 0.9, emissive: Color.new(0.15, 0.1, 0)), position: pos)
       coin.rotate_x(Math::PI / 2)
       root.add(coin)
@@ -92,7 +92,7 @@ class CoinRush < App
       end
     elsif Input.pressed?(Key::R)
       SceneTree.reset
-      @coins.clear; @obstacles.clear; @score = 0; @time_left = 45_f32; @state = :playing
+      @coins.clear; @obstacles.clear; @score = 0; @time_left = 45_f32; @state = :playing; @yaw = 0_f32
       @ball = MeshInstance3D.new(Mesh.sphere(0.5, 24, 16), Material.new(Color.hex("#ff6b6b"), shininess: 64, specular: 0.6), position: v3(0, 0.5, 0))
       @vel = Vec3::ZERO
       @cam = Camera3D.new(position: v3(0, 8, 12))
