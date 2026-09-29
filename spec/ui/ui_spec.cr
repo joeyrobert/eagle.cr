@@ -480,3 +480,55 @@ describe Eagle::RichTextLabel do
     img.average(0, 0, 100, 30).a.should be > 0.01
   end
 end
+
+describe "UI regressions" do
+  before_each { SceneTree.reset }
+
+  it "keeps the caret at the end after backspace" do
+    t = TextInput.new("日本語")
+    t.gui_input(KeyEvent.new(Key::Backspace, true, false, KeyMod::None))
+    t.text.should eq "日本"
+    t.caret.should eq 2
+    t.gui_input(TextEvent.new("x"))
+    t.text.should eq "日本x"
+  end
+
+  it "trims existing text when max_length is set" do
+    t = TextInput.new("abcdef")
+    t.max_length = 3
+    t.text.should eq "abc"
+    t.caret.should eq 3
+  end
+
+  it "reports the post-insert caret to text_changed" do
+    t = TextInput.new("ac")
+    t.gui_input(KeyEvent.new(Key::Left, true, false, KeyMod::None))
+    carets = [] of Int32
+    t.on_text_changed { |_| carets << t.caret }
+    t.insert("bb")
+    t.text.should eq "abbc"
+    carets.should eq [3]
+  end
+
+  gpu_it "scrolls a long text field to keep the caret visible" do
+    t = TextInput.new("", size: v2(60, 24))
+    SceneTree.root.add(t)
+    t.insert("the quick brown fox jumps over")
+    GPUSpec.render(100, 40) { |g| SceneTree.root.draw_tree(g) }
+    t.scroll_x.should be > 0
+    t.gui_input(KeyEvent.new(Key::Home, true, false, KeyMod::None))
+    GPUSpec.render(100, 40) { |g| SceneTree.root.draw_tree(g) }
+    t.scroll_x.should eq 0
+  end
+
+  gpu_it "keeps the drop-down list inside the window near the bottom edge" do
+    ob = OptionButton.new(["A", "B", "C"], position: v2(20, Window.height - 30))
+    SceneTree.root.add(ob)
+    ob.open
+    SceneTree.root.process_tree(0.016_f32)
+    overlay = SceneTree.root.children.find! { |c| c.is_a?(OptionButton::Overlay) }
+    panel = overlay.children.first.as(Control)
+    (panel.global_position.y + panel.size.y).should be <= Window.height
+    panel.global_position.y.should be >= 0
+  end
+end

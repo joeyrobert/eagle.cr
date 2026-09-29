@@ -175,7 +175,7 @@ module Eagle
     # ```
     def reflect(normal : Vec2) : Vec2; self - normal * (2 * dot(normal)); end
     # The component of this vector along *onto*.
-    def project(onto : Vec2) : Vec2; onto * (dot(onto) / onto.length_squared); end
+    def project(onto : Vec2) : Vec2; onto.zero? ? Vec2::ZERO : onto * (dot(onto) / onto.length_squared); end
 
     # True when both components are within *eps* of *o*'s.
     def approx?(o : Vec2, eps = 1e-5) : Bool

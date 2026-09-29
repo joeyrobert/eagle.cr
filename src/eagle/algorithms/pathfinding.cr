@@ -88,6 +88,8 @@ module Eagle
       unless grid.passable?(start[0], start[1]) && grid.passable?(goal[0], goal[1])
         return Result(Point).new(Array(Point).new, Float64::INFINITY, 0)
       end
+      # Cells cheaper than 1 would make the step-count heuristic overestimate, so scale it down.
+      scale = Math.min(1.0, grid.costs.min)
       frontier = [start]
       came_from = {} of Point => Point
       distance = {start => 0.0}
@@ -95,7 +97,7 @@ module Eagle
       until frontier.empty?
         current_index = frontier.each_index.min_by do |i|
           point = frontier[i]
-          distance[point] + (heuristic ? grid_heuristic(point, goal, diagonal) : 0.0)
+          distance[point] + (heuristic ? grid_heuristic(point, goal, diagonal) * scale : 0.0)
         end
         current = frontier.delete_at(current_index)
         visited += 1
@@ -197,7 +199,12 @@ module Eagle
     end
 
     # Dijkstra search from *goal* over the whole grid, then a best-next-cell map.
-    def self.flow_field(grid : CostGrid, goal : Point, diagonal = false) : FlowField
+    private def self.diagonal_clear?(grid : CostGrid, x : Int32, y : Int32, dx : Int32, dy : Int32, no_corner_cutting : Bool) : Bool
+      return true unless no_corner_cutting && dx != 0 && dy != 0
+      grid.passable?(x + dx, y) && grid.passable?(x, y + dy)
+    end
+
+    def self.flow_field(grid : CostGrid, goal : Point, diagonal = false, no_corner_cutting = true) : FlowField
       distance = {goal => 0.0}
       frontier = [goal]
       until frontier.empty?
@@ -207,6 +214,7 @@ module Eagle
         (diagonal ? Grid::OCTILE : Grid::CARDINAL).each do |(dx, dy)|
           neighbor = {cx + dx, cy + dy}
           next unless grid.passable?(neighbor[0], neighbor[1])
+          next unless diagonal_clear?(grid, cx, cy, dx, dy, no_corner_cutting)
           candidate = distance[current] + grid[cx, cy] * (dx != 0 && dy != 0 ? Math.sqrt(2.0) : 1.0)
           next if distance[neighbor]?.try { |old| old <= candidate }
           distance[neighbor] = candidate
@@ -217,7 +225,7 @@ module Eagle
       distance.each_key do |point|
         next if point == goal
         x, y = point
-        choices = (diagonal ? Grid::OCTILE : Grid::CARDINAL).map { |(dx, dy)| {x + dx, y + dy} }
+        choices = (diagonal ? Grid::OCTILE : Grid::CARDINAL).select { |(dx, dy)| diagonal_clear?(grid, x, y, dx, dy, no_corner_cutting) }.map { |(dx, dy)| {x + dx, y + dy} }
         if next_point = choices.select { |candidate| distance.has_key?(candidate) }.min_by? { |candidate| distance[candidate] }
           directions[point] = next_point
         end

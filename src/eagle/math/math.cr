@@ -140,6 +140,7 @@ module Eagle
     # x = Mathf.ping_pong(Clock.elapsed * 100, 300) # slides 0..300..0
     # ```
     def ping_pong(v : Number, length : Number) : Float32
+      return 0_f32 if length == 0
       l2 = length * 2
       t = v - l2 * (v / l2).floor
       (length - (t - length).abs).to_f32

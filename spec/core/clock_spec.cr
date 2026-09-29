@@ -31,3 +31,30 @@ describe Eagle::Clock do
     steps.should eq 1
   end
 end
+
+describe "Clock fixed steps" do
+  it "keeps leftover time when exactly max_steps ran" do
+    Clock.reset
+    Clock.scale = 1
+    Clock.fixed_delta = 0.1
+    Clock.max_delta = 10
+    Clock.advance(0.35)
+    n = 0
+    Clock.each_fixed_step(3) { n += 1 }
+    n.should eq 3
+    Clock.fixed_alpha.should be_close(0.5, 1e-3)
+    Clock.max_delta = 0.25
+    Clock.fixed_delta = 1_f32 / 60
+  end
+
+  it "drops time when far over budget" do
+    Clock.reset
+    Clock.fixed_delta = 0.1
+    Clock.max_delta = 10
+    Clock.advance(2.0)
+    Clock.each_fixed_step(3) { }
+    Clock.fixed_alpha.should eq 0
+    Clock.max_delta = 0.25
+    Clock.fixed_delta = 1_f32 / 60
+  end
+end

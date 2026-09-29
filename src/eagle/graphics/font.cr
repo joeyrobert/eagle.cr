@@ -41,6 +41,9 @@ module Eagle
     # Extra space between characters, in pixels.
     property letter_spacing : Float32 = 0_f32
 
+    # Frees GPU resources. Does nothing for fonts that share their texture.
+    def dispose : Nil; end
+
     # Extra horizontal adjustment between the pair *a*, *b*, such as pulling "AV" together.
     def kerning(a : Char, b : Char) : Float32; 0_f32; end
 

@@ -88,7 +88,7 @@ module Eagle
         yield @@fixed_delta
       end
       # Drop excess time if we can't keep up.
-      @@fixed_accumulator = 0.0 if steps >= max_steps
+      @@fixed_accumulator = 0.0 if steps >= max_steps && @@fixed_accumulator >= @@fixed_delta
     end
 
     # :nodoc:

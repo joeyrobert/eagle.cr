@@ -103,8 +103,7 @@ module Eagle
 
         # integrate velocities
         @bodies.each do |b|
-          next unless b.enabled? || !b.static?
-          next if b.static?
+          next if b.static? || !b.enabled?
           b.position += b.velocity * dt
           b.rotation += b.angular_velocity * dt unless b.fixed_rotation?
         end

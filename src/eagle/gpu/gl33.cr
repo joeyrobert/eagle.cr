@@ -430,7 +430,12 @@ module Eagle
         end
         status = GL.check_framebuffer_status(GL::FRAMEBUFFER)
         GL.bind_framebuffer(GL::FRAMEBUFFER, 0_u32)
-        raise Error.new("Framebuffer incomplete: 0x#{status.to_s(16)}") if status != GL::FRAMEBUFFER_COMPLETE
+        if status != GL::FRAMEBUFFER_COMPLETE
+          GL.delete_framebuffers(1, pointerof(fbo))
+          delete_texture(color)
+          GL.delete_renderbuffers(1, pointerof(depth_id)) if depth_id != 0
+          raise Error.new("Framebuffer incomplete: 0x#{status.to_s(16)}")
+        end
         RenderTargetHandle.new(fbo, color, depth_id, w, h)
       end
 
@@ -447,7 +452,11 @@ module Eagle
         GL.read_buffer(GL::NONE)
         status = GL.check_framebuffer_status(GL::FRAMEBUFFER)
         GL.bind_framebuffer(GL::FRAMEBUFFER, 0_u32)
-        raise Error.new("Depth framebuffer incomplete: 0x#{status.to_s(16)}") if status != GL::FRAMEBUFFER_COMPLETE
+        if status != GL::FRAMEBUFFER_COMPLETE
+          GL.delete_framebuffers(1, pointerof(fbo))
+          delete_texture(depth)
+          raise Error.new("Depth framebuffer incomplete: 0x#{status.to_s(16)}")
+        end
         RenderTargetHandle.new(fbo, 0_u32, depth, w, h, true)
       end
 

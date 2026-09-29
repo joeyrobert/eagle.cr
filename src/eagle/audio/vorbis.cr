@@ -11,6 +11,9 @@ module Eagle
       # Raised when a Vorbis stream is corrupt or uses a feature the decoder doesn't support.
       class DecodeError < AssetError; end
 
+      # :nodoc: Raised when a packet ends while it is being read. Audio packets may end early.
+      class EndOfPacket < DecodeError; end
+
       # --- Ogg pages -> packets -------------------------------------------------
       # :nodoc:
       def self.packets(data : Bytes) : {Array(Bytes), Int64}
@@ -18,12 +21,24 @@ module Eagle
         current = IO::Memory.new
         pos = 0
         granule = 0_i64
+        serial : UInt32? = nil
         while pos + 27 <= data.size
           raise DecodeError.new("Bad Ogg page at #{pos}") unless data[pos, 4] == "OggS".to_slice
-          granule = IO::ByteFormat::LittleEndian.decode(Int64, data[pos + 6, 8])
           nsegs = data[pos + 26].to_i
+          break if pos + 27 + nsegs > data.size
           table = data[pos + 27, nsegs]
           body = pos + 27 + nsegs
+          # a page cut short by a truncated file is dropped
+          break if body + table.sum(&.to_i) > data.size
+          # decode the first logical stream only: skip other serials, stop at its end (chained files)
+          page_serial = IO::ByteFormat::LittleEndian.decode(UInt32, data[pos + 14, 4])
+          serial ||= page_serial
+          if page_serial != serial
+            pos = body + table.sum(&.to_i)
+            next
+          end
+          granule = IO::ByteFormat::LittleEndian.decode(Int64, data[pos + 6, 8])
+          last_page = (data[pos + 5] & 4) != 0
           nsegs.times do |i|
             len = table[i].to_i
             current.write(data[body, len]) if len > 0
@@ -34,6 +49,7 @@ module Eagle
             end
           end
           pos = body
+          break if last_page
         end
         {packets, granule}
       end
@@ -50,7 +66,7 @@ module Eagle
           v = 0_u32
           shift = 0
           while n > 0
-            raise DecodeError.new("Unexpected end of packet") if @pos >= @data.size
+            raise EndOfPacket.new("Unexpected end of packet") if @pos >= @data.size
             avail = 8 - @bit
             take = Math.min(avail, n)
             bits = (@data[@pos].to_u32 >> @bit) & ((1_u32 << take) - 1)
@@ -601,7 +617,12 @@ module Eagle
           floors = Array(Slice(Float32)?).new(@channels, nil)
           @channels.times do |c|
             sub = mapping.mux[c]
-            floors[c] = @floors[mapping.submap_floor[sub]].decode(r, @books, n2)
+            # a packet that ends inside a floor leaves the channel silent
+            floors[c] = begin
+              @floors[mapping.submap_floor[sub]].decode(r, @books, n2)
+            rescue EndOfPacket
+              nil
+            end
           end
           no_residue = floors.map(&.nil?)
           # coupled channels: if either has a floor, both get residue
@@ -616,7 +637,11 @@ module Eagle
             @channels.times { |c| chs << c if mapping.mux[c] == s }
             vecs = chs.map { |c| vectors[c] }
             dnd = chs.map { |c| no_residue[c] }
-            @residues[mapping.submap_residue[s]].decode(r, @books, vecs, dnd, n2)
+            # a packet that ends inside the residue leaves the rest of the spectrum zero
+            begin
+              @residues[mapping.submap_residue[s]].decode(r, @books, vecs, dnd, n2)
+            rescue EndOfPacket
+            end
           end
           # inverse coupling
           mapping.coupling.reverse_each do |(mi, ai)|
@@ -833,6 +858,7 @@ module Eagle
             pos += 1
           end
         end
+        raise DecodeError.new("Ogg file has no audio (truncated?)") if total == 0
         AudioBuffer.new(dec.sample_rate, ch, samples)
       end
     end

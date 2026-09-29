@@ -182,6 +182,8 @@ module Eagle
 
     # True while the voice is producing sound. False when paused or finished.
     def playing? : Bool; @playing; end
+    # True while a `fade` is still ramping the volume.
+    def fading? : Bool; !@fade_to.nil?; end
     # True once the voice reached the end or was stopped. A finished voice can't be resumed.
     def finished? : Bool; @finished; end
 
@@ -217,8 +219,9 @@ module Eagle
       buf = @sound.buffer
       step = @pitch.to_f64 * buf.sample_rate / out_rate
       total = buf.frames
-      left_gain = Math.sqrt(0.5 * (1 - @pan)).to_f32
-      right_gain = Math.sqrt(0.5 * (1 + @pan)).to_f32
+      pan = @pan.clamp(-1_f32, 1_f32) # an out of range pan would take the square root of a negative
+      left_gain = Math.sqrt(0.5 * (1 - pan)).to_f32
+      right_gain = Math.sqrt(0.5 * (1 + pan)).to_f32
       fade_per_frame = @fade_rate / out_rate
       frames.times do |i|
         if @position >= total
@@ -371,6 +374,7 @@ module Eagle
     @@streams = [] of AudioStream
     @@buses = {"master" => Bus.new}
     @@mix = Slice(Float32).new(0)
+    @@stream_mix = Slice(Float32).new(0)
     @@enabled = false
     @@max_voices = 64
     @@last_finished = [] of Voice
@@ -467,7 +471,13 @@ module Eagle
       end
       @@streams.reject! do |s|
         next true unless s.playing?
-        s.fill(buf, frames, @@sample_rate)
+        # each stream fills a cleared scratch buffer so it cannot overwrite the voices, then its volume applies
+        @@stream_mix = Slice(Float32).new(needed) if @@stream_mix.size < needed
+        sb = @@stream_mix[0, needed]
+        sb.fill(0_f32)
+        s.fill(sb, frames, @@sample_rate)
+        vol = s.volume
+        needed.times { |i| buf[i] += sb[i] * vol }
         false
       end
       # soft clip

@@ -487,6 +487,8 @@ module Joyride
     getter pants : Color
     getter phase : Float32 = 0_f32
     property fly : Vec2 = Vec2::ZERO
+    # The car that last knocked this pedestrian down.
+    getter hit_by : Car? = nil
     @a : Vec2
     @b : Vec2
     @toward_b = true
@@ -534,6 +536,7 @@ module Joyride
         if dist < 2.1 && spd > 3
           # hit: thrown along the car's motion
           @state = State::Down
+          @hit_by = car
           @timer = 4_f32
           @fly = car.vel * 0.6_f32 + rel.normalized * 2
           return true
@@ -597,6 +600,10 @@ module Joyride
     # Returns :checkpoint, :complete, :failed or nil.
     def update(dt : Float32, pos : Vec2, speed : Float32) : Symbol?
       return nil unless @state.active?
+      if @targets.empty?
+        @state = State::Complete
+        return :complete
+      end
       if t = @time_left
         t -= dt
         @time_left = t

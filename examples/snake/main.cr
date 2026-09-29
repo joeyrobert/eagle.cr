@@ -21,6 +21,7 @@ class SnakeApp < App
   end
 
   def update(dt : Float32)
+    Eagle.quit if Input.pressed?(Key::Escape)
     @game.turn(SnakeGame::Dir::Up) if Input.pressed?("up")
     @game.turn(SnakeGame::Dir::Down) if Input.pressed?("down")
     @game.turn(SnakeGame::Dir::Left) if Input.pressed?("left")
@@ -39,10 +40,11 @@ class SnakeApp < App
         @snd.try(&.play(pitch: 1 + @game.score * 0.02))
         @speed += 0.25
         @best = Math.max(@best, @game.score)
-      when :died then @snd_die.try(&.play)
+      when :died
+        @snd_die.try(&.play)
+        break
       end
     end
-    Eagle.quit if Input.pressed?(Key::Escape)
   end
 
   def draw(g : Graphics)

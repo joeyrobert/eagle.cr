@@ -132,4 +132,13 @@ describe EagleFPS::Game do
     grunt.position.distance(game.player).should be < g0.distance(game.player)
     charger.position.distance(game.player).should be < c0.distance(game.player)
   end
+
+  it "clears status messages after a few seconds" do
+    game = EagleFPS::Game.new(EagleFPS::Mode::Waves, 12)
+    game.enemies.each { |e| e.health = 0 }
+    game.update(0.1_f32)
+    game.message.should eq "Wave 2"
+    40.times { game.update(0.1_f32) }
+    game.message.should eq ""
+  end
 end

@@ -203,7 +203,8 @@ fi
 
 # ---- install ----------------------------------------------------------------
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/eagle-install.XXXXXX")"
-trap 'rm -rf "$TMP"' EXIT INT TERM
+trap 'rm -rf "$TMP"' EXIT
+trap 'exit 1' INT TERM
 mkdir -p "$EAGLE_HOME/bin"
 
 case "$EAGLE_VERSION" in

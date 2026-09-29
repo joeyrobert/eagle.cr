@@ -88,3 +88,20 @@ describe Eagle::Input do
     Key.named?("nope").should be_nil
   end
 end
+
+describe "gamepad disconnect while holding" do
+  it "reports released on the frame after the disconnect" do
+    Input.reset
+    Input.map("jump", GamepadButton::A)
+    Input.handle(GamepadConnectionEvent.new(7, true))
+    Input.handle(GamepadButtonEvent.new(7, GamepadButton::A, true))
+    Input.down?("jump").should be_true
+    Input.begin_frame
+    Input.handle(GamepadConnectionEvent.new(7, false))
+    Input.down?("jump").should be_false
+    Input.released?("jump").should be_true
+    Input.begin_frame
+    Input.released?("jump").should be_false
+    Input.reset
+  end
+end

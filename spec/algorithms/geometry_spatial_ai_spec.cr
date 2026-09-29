@@ -85,3 +85,13 @@ describe "game AI helpers" do
     result.visited.should be > 1
   end
 end
+
+describe "Minimax with all losing scores" do
+  it "still returns the first legal move" do
+    moves = ->(s : Int32) { s == 0 ? [1, 2, 3] : [] of Int32 }
+    apply = ->(_s : Int32, m : Int32) { m }
+    eval = ->(_s : Int32) { -Float64::INFINITY }
+    r = Minimax.search(0, 2, true, moves, apply, eval)
+    r.move.should eq 1
+  end
+end

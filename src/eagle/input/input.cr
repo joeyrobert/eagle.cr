@@ -105,6 +105,10 @@ module Eagle
         @down[i] = v
       end
       # :nodoc:
+      def release_all
+        GamepadButton::Count.value.times { |i| @released[i] = true if @down[i] }
+        @down.fill(false)
+      end
       def end_frame; @pressed.fill(false); @released.fill(false); end
     end
 
@@ -289,7 +293,7 @@ module Eagle
       case b
       in Key then released?(b)
       in MouseButton then mouse_released?(b)
-      in GamepadButton then @@gamepads.each_value.any?(&.released?(b))
+      in GamepadButton then @@gamepads.each_value.any?(&.released?(b)) || @@disconnected.any?(&.released?(b))
       in AxisBinding then @@axis_released.includes?(b)
       end
     end
@@ -307,6 +311,7 @@ module Eagle
       end
     end
 
+    @@disconnected = [] of Gamepad
     @@axis_pressed = [] of AxisBinding
     @@axis_released = [] of AxisBinding
     @@axis_state = {} of AxisBinding => Bool
@@ -348,7 +353,8 @@ module Eagle
           @@gamepads[e.gamepad] = Gamepad.new(e.gamepad, name)
           Eagle.log.info { "Gamepad connected: #{name} (#{e.gamepad})" }
         else
-          @@gamepads.delete(e.gamepad)
+          # Keep the dropped pad until next begin_frame so held buttons still report released.
+          @@gamepads.delete(e.gamepad).try { |g| g.release_all; @@disconnected << g }
         end
       when GamepadButtonEvent
         @@gamepads[e.gamepad]?.try(&.set_button(e.button, e.pressed?))
@@ -367,6 +373,7 @@ module Eagle
       @@text = ""
       @@any_pressed = false
       @@gamepads.each_value(&.end_frame)
+      @@disconnected.clear
       @@axis_pressed.clear; @@axis_released.clear
       @@virtual_pressed.clear; @@virtual_released.clear
       Touch.begin_frame
@@ -391,7 +398,7 @@ module Eagle
     def self.reset : Nil
       begin_frame
       @@down.fill(false); @@mouse_down.fill(false)
-      @@actions.clear; @@gamepads.clear; @@axis_state.clear; @@virtual.clear
+      @@actions.clear; @@gamepads.clear; @@disconnected.clear; @@axis_state.clear; @@virtual.clear
       Touch.reset
       @@mouse = Vec2::ZERO
     end

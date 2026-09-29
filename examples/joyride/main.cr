@@ -135,7 +135,7 @@ class JoyrideGame < App
   private def update_pedestrians(dt : Float32) : Nil
     cars = [@player] + @traffic.map(&.car) + @police
     @pedestrians.each do |p|
-      if p.update(dt, cars)
+      if p.update(dt, cars) && p.hit_by.same?(@player)
         notify("Pedestrian hit! Wanted level raised") if @wanted.crime!(2)
       end
     end

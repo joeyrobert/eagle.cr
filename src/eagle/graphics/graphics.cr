@@ -149,6 +149,8 @@ module Eagle
     private def set_target(canvas : Canvas?)
       flush
       @canvas = canvas
+      # the GPU scissor is cleared below, so the tracked rect must be too
+      @scissor_rect = nil
       if c = canvas
         GPU.device.bind_render_target(c.handle)
         @target_size = c.size
@@ -258,6 +260,17 @@ module Eagle
     def scissor=(r : Rect?)
       flush
       @scissor_rect = r
+      apply_scissor
+    end
+
+    # :nodoc: puts the GPU blend mode and scissor back after other code changed them
+    def restore_state : Nil
+      GPU.device.blend_mode(@blend)
+      apply_scissor
+    end
+
+    private def apply_scissor : Nil
+      r = @scissor_rect
       if @canvas
         # canvas projection is unflipped, so y is already GL-style bottom-up.
         if rr = r
@@ -730,7 +743,8 @@ module Eagle
     # Selects a texture for solid shapes and returns it with the UV of a white texel. Stays on the
     # current texture when it has one, so shapes batch with the text or sprites around them.
     private def white : {Texture, Float32, Float32}
-      if uv = @texture.white_uv
+      # A disposed texture (id 0) keeps its white_uv but can no longer be sampled.
+      if @texture.id != 0 && (uv = @texture.white_uv)
         return {@texture, uv.x, uv.y}
       end
       tex = Texture.white
@@ -748,6 +762,7 @@ module Eagle
 
     @[AlwaysInline]
     private def ensure_space(verts : Int32, idx : Int32)
+      raise ArgumentError.new("Too much geometry for one draw call (#{verts} vertices, #{idx} indices; limits #{MAX_VERTICES} and #{@indices.size}). Split it into smaller pieces.") if verts > MAX_VERTICES || idx > @indices.size
       flush if @vcount + verts > MAX_VERTICES || @icount + idx > @indices.size
     end
 

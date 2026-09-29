@@ -19,6 +19,64 @@ describe Eagle::TrueType do
     ttf.advance(ttf.glyph_index(' ')).should be > 0
   end
 
+  gpu_it "Font.load honors the filter argument" do
+    pending!("no system TTF found") unless SYSTEM_TTF
+    f = Font.load(SYSTEM_TTF.not_nil!, 13, GPU::Filter::Nearest)
+    f.glyph('A')
+    f.texture.filter.should eq GPU::Filter::Nearest
+    Font.load(SYSTEM_TTF.not_nil!, 13, GPU::Filter::Nearest).should be f
+    Font.load(SYSTEM_TTF.not_nil!, 13, GPU::Filter::Linear).should_not be f
+  end
+
+  gpu_it "fills the atlas padding with transparent white" do
+    pending!("no system TTF found") unless SYSTEM_TTF
+    f = TrueTypeFont.new(File.read(SYSTEM_TTF.not_nil!).to_slice, 13)
+    f.glyph('A')
+    tex = f.texture
+    g = Eagle.graphics
+    g.begin_frame
+    canvas = Canvas.new(8, 8)
+    g.with_canvas(canvas, clear: Color::BLACK) do
+      g.blend = GPU::BlendMode::None
+      g.draw(tex, 0, 0, color: Color::WHITE)
+    end
+    g.end_frame
+    img = canvas.to_image
+    canvas.dispose
+    # pixel (3, 0) is padding between the white block and the first glyph
+    img[3, 0].r.should be > 0.99
+    img[3, 0].a.should be < 0.01
+    img[1, 1].should eq Color::WHITE
+    f.dispose
+  end
+
+  gpu_it "Assets.invalidate frees font atlases" do
+    pending!("no system TTF found") unless SYSTEM_TTF
+    f = Font.load(SYSTEM_TTF.not_nil!, 11)
+    f.glyph('A')
+    tex = f.texture
+    Assets.invalidate(SYSTEM_TTF.not_nil!)
+    tex.id.should eq 0
+  end
+
+  gpu_it "draws shapes after the current font atlas is disposed" do
+    pending!("no system TTF found") unless SYSTEM_TTF
+    f = TrueTypeFont.new(File.read(SYSTEM_TTF.not_nil!).to_slice, 13)
+    g = Eagle.graphics
+    g.begin_frame
+    canvas = Canvas.new(16, 16)
+    g.with_canvas(canvas, clear: Color::BLACK) do
+      g.print("A", 0, 0, font: f)
+      g.flush
+      f.dispose
+      g.rect(0, 0, 16, 16, color: Color::WHITE)
+    end
+    g.end_frame
+    img = canvas.to_image
+    canvas.dispose
+    img[8, 8].should eq Color::WHITE
+  end
+
   it "reads outlines and rasterises glyphs with anti-aliasing" do
     pending!("no system TTF found") unless SYSTEM_TTF
     ttf = TrueType.load(SYSTEM_TTF.not_nil!)
