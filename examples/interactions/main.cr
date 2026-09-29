@@ -121,6 +121,10 @@ class Crate < Polygon2D
     super(Polygon2D.rect(48, 48, color).points, color, name: "Crate", position: position)
   end
 
+  def self.reset_drag : Nil
+    @@dragging_any = false
+  end
+
   def inside?(p : Vec2) : Bool
     l = to_local(p)
     l.x.abs <= 24 && l.y.abs <= 24
@@ -233,6 +237,8 @@ class InteractionsDemo < App
 
   def build_world
     @world.clear_children
+    Crate.reset_drag
+    @zone_inside = false
     # 2 & 3: clickable shapes and draggable crates
     @world.add(Clickable.new("A", v2(420, 140), Color.hex("#4cc9f0")), Clickable.new("B", v2(500, 140), Color.hex("#f72585")))
     @world.add(Crate.new(v2(420, 260), Color.hex("#b5651d")), Crate.new(v2(500, 260), Color.hex("#c98a3c")))

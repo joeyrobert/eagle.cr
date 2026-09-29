@@ -70,7 +70,7 @@ class Physics3DDemo < App
 
   def draw(g : Graphics)
     g.rect(0, 0, Window.width, 30, color: Color.new(0, 0, 0, 0.4))
-    g.print("3D physics  bodies #{Physics3D.world.bodies.size}  fps #{Clock.fps.round}   click: fire sphere  space: throw box  C: capsule  R reset  WASD/right-drag fly", 10, 8)
+    g.print("3D physics  bodies #{Physics3D.world.bodies.size}  fps #{Clock.fps.round}  click ball  space box  C capsule  R reset", 10, 8)
   end
 end
 

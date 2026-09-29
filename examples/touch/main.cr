@@ -18,6 +18,13 @@ class Card < Node2D
 
   def initialize(position : Vec2, @color : Color, @label : String)
     super("Card", position)
+    @home = position
+  end
+
+  def reset : Nil
+    self.position = @home
+    self.z_index = 0
+    @finger = nil
   end
 
   def input(e : Event)
@@ -57,6 +64,7 @@ class TouchDemo < App
   @log = Label.new("")
   @lines = [] of String
   @fingers = Label.new("")
+  @cards = [] of Card
 
   def load
     Input.map "left", Key::A, Key::Left
@@ -67,8 +75,9 @@ class TouchDemo < App
 
     @star.position = v2(Window.width / 2, Window.height / 2 - 10)
     SceneTree.root.add(@star)
-    SceneTree.root.add(Card.new(v2(150, 150), Color.hex("#4cc9f0"), "drag me"))
-    SceneTree.root.add(Card.new(v2(Window.width - 150, 150), Color.hex("#f72585"), "or me"))
+    @cards << Card.new(v2(150, 150), Color.hex("#4cc9f0"), "drag me")
+    @cards << Card.new(v2(Window.width - 150, 150), Color.hex("#f72585"), "or me")
+    @cards.each { |c| SceneTree.root.add(c) }
 
     gestures = GestureRecognizer.new
     gestures.on_pinched { |_, delta, c| @star.scale *= delta if near_star?(c) }
@@ -102,6 +111,7 @@ class TouchDemo < App
     @star.scale = Vec2::ONE
     @star.rotation = 0
     @dot = v2(200, 380)
+    @cards.each(&.reset)
     log("reset")
   end
 
