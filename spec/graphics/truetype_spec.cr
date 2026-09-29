@@ -59,6 +59,24 @@ describe Eagle::TrueType do
     tex.id.should eq 0
   end
 
+  gpu_it "draws shapes after the current font atlas is disposed" do
+    pending!("no system TTF found") unless SYSTEM_TTF
+    f = TrueTypeFont.new(File.read(SYSTEM_TTF.not_nil!).to_slice, 13)
+    g = Eagle.graphics
+    g.begin_frame
+    canvas = Canvas.new(16, 16)
+    g.with_canvas(canvas, clear: Color::BLACK) do
+      g.print("A", 0, 0, font: f)
+      g.flush
+      f.dispose
+      g.rect(0, 0, 16, 16, color: Color::WHITE)
+    end
+    g.end_frame
+    img = canvas.to_image
+    canvas.dispose
+    img[8, 8].should eq Color::WHITE
+  end
+
   it "reads outlines and rasterises glyphs with anti-aliasing" do
     pending!("no system TTF found") unless SYSTEM_TTF
     ttf = TrueType.load(SYSTEM_TTF.not_nil!)

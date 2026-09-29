@@ -743,7 +743,8 @@ module Eagle
     # Selects a texture for solid shapes and returns it with the UV of a white texel. Stays on the
     # current texture when it has one, so shapes batch with the text or sprites around them.
     private def white : {Texture, Float32, Float32}
-      if uv = @texture.white_uv
+      # A disposed texture (id 0) keeps its white_uv but can no longer be sampled.
+      if @texture.id != 0 && (uv = @texture.white_uv)
         return {@texture, uv.x, uv.y}
       end
       tex = Texture.white
