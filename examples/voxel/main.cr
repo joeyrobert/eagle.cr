@@ -149,10 +149,10 @@ class VoxelIslandApp < App
   end
 
   private def look(dt : Float32)
-    @yaw -= Input.mouse_delta.x * 0.0025
+    @yaw += Input.mouse_delta.x * 0.0025
     @pitch = (@pitch - Input.mouse_delta.y * 0.0025).clamp(-1.35_f32, 1.35_f32)
     if pad = Input.gamepad
-      @yaw -= pad.right_stick.x * dt * 2.4
+      @yaw += pad.right_stick.x * dt * 2.4
       @pitch = (@pitch - pad.right_stick.y * dt * 2.0).clamp(-1.35_f32, 1.35_f32)
     end
   end
