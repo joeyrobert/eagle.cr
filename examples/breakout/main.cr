@@ -79,6 +79,7 @@ class Breakout < App
   end
 
   private def step(dt)
+    return if @game_over
     @ball += @vel * dt
     if @ball.x - @radius < 0 || @ball.x + @radius > W
       @vel = v2(-@vel.x, @vel.y); @ball = v2(@ball.x.clamp(@radius, W - @radius), @ball.y); @snd_hit.try(&.play(pitch: 1.5))

@@ -151,7 +151,7 @@ class AsteroidsGame < App
           break
         end
       end
-      if @ship.alive? && !@ship.invulnerable? && !r.queued_free? && r.position.distance(@ship.position) < r.radius + 10
+      if !@over && @ship.alive? && !@ship.invulnerable? && !r.queued_free? && r.position.distance(@ship.position) < r.radius + 10
         @lives -= 1
         explode(@ship.position, 40)
         @ship.die

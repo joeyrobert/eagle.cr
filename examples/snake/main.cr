@@ -21,6 +21,7 @@ class SnakeApp < App
   end
 
   def update(dt : Float32)
+    Eagle.quit if Input.pressed?(Key::Escape)
     @game.turn(SnakeGame::Dir::Up) if Input.pressed?("up")
     @game.turn(SnakeGame::Dir::Down) if Input.pressed?("down")
     @game.turn(SnakeGame::Dir::Left) if Input.pressed?("left")
@@ -42,7 +43,6 @@ class SnakeApp < App
       when :died then @snd_die.try(&.play)
       end
     end
-    Eagle.quit if Input.pressed?(Key::Escape)
   end
 
   def draw(g : Graphics)

@@ -11,8 +11,8 @@ LEVEL = <<-MAP
   #    P      ###          c c                        c              #
   #  #####            e   ####                  ###  ####            #
   #                 #####            ####               ##   c   G   #
-  #        c c                  e             c   e         ####  ###
-  #       #####        ^^^    ######    ^^^  ####### ^^^^ ^^        #
+  #        c c                  e             c   e         ####  ####
+  #       #####        ^^^    ######    ^^^  ####### ^^^^ ^^        ##
   ####################################################################
   MAP
 
@@ -192,7 +192,7 @@ class Platformer < App
   end
 
   def hurt
-    return unless (p = @player) && p.in_tree?
+    return unless (p = @player) && p.in_tree? && !p.queued_free?
     @deaths += 1
     Sounds.hurt
     @cam.shake(6, 0.3)

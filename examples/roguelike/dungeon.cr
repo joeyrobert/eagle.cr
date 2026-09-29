@@ -290,6 +290,7 @@ module Rogue
     end
 
     def descend : Bool
+      return false if @game_over
       return false unless @dungeon[@player.x, @player.y].stairs_down?
       @level += 1
       if @level > MAX_LEVEL
