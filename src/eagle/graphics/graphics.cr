@@ -149,6 +149,8 @@ module Eagle
     private def set_target(canvas : Canvas?)
       flush
       @canvas = canvas
+      # the GPU scissor is cleared below, so the tracked rect must be too
+      @scissor_rect = nil
       if c = canvas
         GPU.device.bind_render_target(c.handle)
         @target_size = c.size

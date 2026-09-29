@@ -37,8 +37,7 @@ module Eagle
 
     # Loads an image file through the asset cache.
     def self.load(path : String) : Image
-      data = File.read(path).to_slice
-      decode(data, path)
+      decode(Assets.read_bytes(path), path)
     end
 
     # Decodes PNG, QOI or BMP bytes. The format is detected from the data, and *hint* (a file

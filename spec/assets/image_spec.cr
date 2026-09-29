@@ -2,6 +2,17 @@ require "../spec_helper"
 
 FIX = File.join(__DIR__, "..", "fixtures")
 
+describe Eagle::Image do
+  it "loads res:// paths through the assets folder" do
+    Assets.root = FIX
+    begin
+      Image.load("res://rgba.png")[0, 0].should eq Color::RED
+    ensure
+      Assets.root = nil
+    end
+  end
+end
+
 describe Eagle::Codecs::PNG do
   it "decodes RGBA8" do
     img = Image.load(File.join(FIX, "rgba.png"))

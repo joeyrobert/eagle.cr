@@ -19,6 +19,15 @@ describe Eagle::TrueType do
     ttf.advance(ttf.glyph_index(' ')).should be > 0
   end
 
+  gpu_it "Font.load honors the filter argument" do
+    pending!("no system TTF found") unless SYSTEM_TTF
+    f = Font.load(SYSTEM_TTF.not_nil!, 13, GPU::Filter::Nearest)
+    f.glyph('A')
+    f.texture.filter.should eq GPU::Filter::Nearest
+    Font.load(SYSTEM_TTF.not_nil!, 13, GPU::Filter::Nearest).should be f
+    Font.load(SYSTEM_TTF.not_nil!, 13, GPU::Filter::Linear).should_not be f
+  end
+
   it "reads outlines and rasterises glyphs with anti-aliasing" do
     pending!("no system TTF found") unless SYSTEM_TTF
     ttf = TrueType.load(SYSTEM_TTF.not_nil!)

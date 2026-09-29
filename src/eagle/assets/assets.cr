@@ -166,8 +166,8 @@ module Eagle
     end
 
     # Loads and caches a TrueType `Font` at a pixel size.
-    def self.font(p : String, size : Number) : Font
-      @@fonts["#{p}|#{size}"] ||= TrueTypeFont.new(read_bytes(p), size.to_f32)
+    def self.font(p : String, size : Number, filter : GPU::Filter = GPU::Filter::Linear) : Font
+      @@fonts["#{p}|#{size}|#{filter}"] ||= TrueTypeFont.new(read_bytes(p), size.to_f32, filter)
     end
 
     # Loads and caches a `Mesh` from an OBJ file.

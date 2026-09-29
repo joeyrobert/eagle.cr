@@ -193,6 +193,9 @@ module Eagle
       shadow_light = lights.find { |l| l.kind.directional? && l.shadows? } if @environment.shadows?
       shadow_ok = false
       if sl = shadow_light
+        # the shader shadows light 0 only, so put the shadow caster first
+        lights = lights.dup
+        lights.unshift(lights.delete_at(lights.index!(sl)))
         caller_target = dev.current_target
         shadow_ok = render_shadows(sl, items, camera)
         dev.bind_render_target(caller_target)
@@ -253,6 +256,7 @@ module Eagle
         end
         m = item.material
         m.apply(sh)
+        sh["u_shadows"] = shadow_ok && m.receive_shadows? ? 1 : 0
         sh["u_model"] = item.transform
         sh["u_normal_matrix"] = item.transform.to_mat3.inverse.transposed
         dev.cull(m.double_sided? ? GPU::CullMode::None : GPU::CullMode::Back)

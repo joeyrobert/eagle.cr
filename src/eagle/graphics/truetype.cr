@@ -685,7 +685,7 @@ module Eagle
   class Font
     # Loads a TrueType font at a pixel size. Cached by path and size, so calling it every frame is cheap.
     def self.load(path : String, size : Number, filter : GPU::Filter = GPU::Filter::Linear) : Font
-      Assets.font(path, size)
+      Assets.font(path, size, filter)
     end
   end
 end
