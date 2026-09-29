@@ -285,16 +285,29 @@ module Eagle
     end
 
     @@device : Device? = nil
+    @@device_thread : Thread? = nil
 
     # The active device. Raises if called before the engine has started, which usually means
     # a texture or shader was created too early. Create them in `App#load` or `Node#ready`.
     def self.device : Device
-      @@device || raise Error.new("No GPU device yet. Create textures, shaders and other GPU resources after the engine starts: in App#load, Node#ready, or by passing your App *class* to Eagle.run (e.g. `Eagle.run(MyGame)`) so it is constructed after init.")
+      d = @@device || raise Error.new("No GPU device yet. Create textures, shaders and other GPU resources after the engine starts: in App#load, Node#ready, or by passing your App *class* to Eagle.run (e.g. `Eagle.run(MyGame)`) so it is constructed after init.")
+      check_thread
+      d
+    end
+
+    # :nodoc: GL and the window belong to the thread that created them; fail clearly instead of segfaulting.
+    def self.check_thread : Nil
+      {% unless flag?(:wasm32) %}
+        if (t = @@device_thread) && !t.same?(Thread.current)
+          raise Error.new("The window or GPU was used from a thread other than the one that opened it. Either the call came from another Thread, or Crystal moved the main fiber after a blocking call over 10ms (such as a slow File.open); build with -Dwithout_mt to prevent that (eagle run, build and export do).")
+        end
+      {% end %}
     end
 
     # Sets the active device. The engine does this.
     def self.device=(d : Device?)
       @@device = d
+      @@device_thread = d ? Thread.current : nil
     end
 
     # True once a device exists.

@@ -50,10 +50,10 @@ jobs:
         run: |
           xvfb-run --auto-servernum \
             --server-args="-screen 0 1280x720x24 -ac +extension GLX +render -noreset" \
-            sh -c 'glxinfo -B && crystal spec --error-trace'
+            sh -c 'glxinfo -B && crystal spec -Dwithout_mt --error-trace'
 
       - name: Build CLI
-        run: crystal build src/cli.cr -o bin/eagle
+        run: crystal build src/cli.cr -Dwithout_mt -o bin/eagle
 
       - name: Build and run every example headless
         run: |

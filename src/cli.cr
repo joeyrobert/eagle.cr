@@ -31,14 +31,14 @@ module Eagle::CLI
 
       Compiles FILE (default src/main.cr) in debug mode into bin/ and runs it.
       Runs `shards install` first if shard.yml has dependencies but lib/ doesn't exist.
-      Plain Crystal equivalent: crystal run src/main.cr
+      Plain Crystal equivalent: crystal run -Dwithout_mt src/main.cr
       TXT
     "build" => <<-TXT,
       Usage: eagle build [FILE]
 
       Compiles FILE (default src/main.cr) with --release into bin/<project>.
-      Plain Crystal equivalent: mkdir -p bin && crystal build src/main.cr --release -o bin/<project>
-      (or shards build --release, which builds the targets in shard.yml).
+      Plain Crystal equivalent: mkdir -p bin && crystal build src/main.cr --release -Dwithout_mt -o bin/<project>
+      (or shards build --release -Dwithout_mt, which builds the targets in shard.yml).
       TXT
     "export" => <<-TXT,
       Usage: eagle export exe|web|app [FILE]
@@ -208,7 +208,11 @@ module Eagle::CLI
   end
 
   private def run_cmd(cmd : Array(String), env : Hash(String, String)? = nil)
-    cmd = cmd + windows_link_flags if cmd[0] == "crystal"
+    if cmd[0] == "crystal"
+      # Keeps the game on one thread: GL and the window can't follow a fiber that Crystal moves to another thread.
+      cmd = cmd + ["-Dwithout_mt"] if cmd[1] == "build"
+      cmd = cmd + windows_link_flags
+    end
     puts "$ #{Process.quote(cmd)}"
     status = Process.run(cmd[0], cmd[1..], env: env, output: STDOUT, error: STDERR)
     abort "command failed" unless status.success?

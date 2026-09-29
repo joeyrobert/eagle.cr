@@ -488,17 +488,18 @@ module Eagle::CLI
         |---------|--------------|
         | `eagle run` | build and run in debug mode |
         | `eagle build` | release executable in `bin/#{n}` |
-        | `crystal spec` | run the specs in `spec/` |
+        | `crystal spec -Dwithout_mt` | run the specs in `spec/` |
         | `eagle export exe` | release build into `dist/#{n}/` |
         | `eagle export web` | WebAssembly bundle into `dist/web/#{n}/` |
         | `eagle export app` | macOS app bundle `dist/#{n}.app` |
 
-        Without the eagle CLI, plain Crystal works too:
+        Without the eagle CLI, plain Crystal works too. Pass `-Dwithout_mt` so Crystal keeps the game on the
+        thread that owns the window (the CLI adds it for you):
 
         ```sh
-        crystal run src/main.cr                                       # run
-        mkdir -p bin && crystal build src/main.cr --release -o bin/#{n}  # release build
-        shards build --release                                        # same, via the shard.yml target
+        crystal run -Dwithout_mt src/main.cr                                       # run
+        mkdir -p bin && crystal build src/main.cr --release -Dwithout_mt -o bin/#{n}  # release build
+        shards build --release -Dwithout_mt                                        # same, via the shard.yml target
         ```
 
         Automated runs (CI, screenshots): `EAGLE_FRAMES=60 EAGLE_SCREENSHOT=shot.png EAGLE_HEADLESS=1 bin/#{n}`.
@@ -509,7 +510,7 @@ module Eagle::CLI
 
         * `src/main.cr`: entry point; opens the window
         * `src/#{o.file_name}.cr`: the game
-        * `spec/`: specs (`crystal spec`)
+        * `spec/`: specs (`crystal spec -Dwithout_mt`)
         * `assets/`: images, sounds, fonts (loaded with `res://` paths)
 
         MD
@@ -536,9 +537,9 @@ module Eagle::CLI
               - name: Install shards
                 run: shards install
               - name: Specs
-                run: crystal spec
+                run: crystal spec -Dwithout_mt
               - name: Release build
-                run: shards build --release
+                run: shards build --release -Dwithout_mt
 
         YML
     end
