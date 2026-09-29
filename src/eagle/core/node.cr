@@ -116,6 +116,7 @@ module Eagle
     def add(child : Node) : Node
       raise Error.new("#{child.name} already has a parent") if child.parent
       raise Error.new("cannot add a node to itself") if child == self
+      raise Error.new("cannot add #{child.name} below its own descendant") if child.ancestor_of?(self)
       @children << child
       child.set_parent(self)
       child.propagate_enter(@in_tree)
@@ -158,7 +159,11 @@ module Eagle
     def queue_free : Nil
       return if @queued_free
       @queued_free = true
-      SceneTree.defer { remove_from_parent }
+      SceneTree.defer do
+        remove_from_parent
+        # A parentless node never runs propagate_exit, so clear the flag here too.
+        @queued_free = false
+      end
     end
 
     # True after `queue_free` and before the removal happens.
@@ -334,13 +339,16 @@ module Eagle
     # :nodoc:
     def process_tree(dt : Float32) : Nil
       process(dt) if can_process?
-      @children.each { |c| c.process_tree(dt) }
+      return if @children.empty?
+      # Iterate a copy so nodes can be removed during processing, and skip ones detached meanwhile.
+      @children.dup.each { |c| c.process_tree(dt) if c.parent == self }
     end
 
     # :nodoc:
     def physics_process_tree(dt : Float32) : Nil
       physics_process(dt) if can_process?
-      @children.each { |c| c.physics_process_tree(dt) }
+      return if @children.empty?
+      @children.dup.each { |c| c.physics_process_tree(dt) if c.parent == self }
     end
 
     # :nodoc:
@@ -365,9 +373,12 @@ module Eagle
 
     # :nodoc: children get input first (deepest last-added first), like Godot.
     def input_tree(event : Event) : Nil
-      @children.reverse_each do |c|
-        c.input_tree(event)
-        return if event.handled?
+      unless @children.empty?
+        @children.reverse.each do |c|
+          next unless c.parent == self
+          c.input_tree(event)
+          return if event.handled?
+        end
       end
       input(event) if can_process?
     end

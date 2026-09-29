@@ -54,7 +54,8 @@ module Eagle
     # Builds a config from named arguments that match the property names.
     def initialize(**opts)
       {% for ivar in @type.instance_vars %}
-        if v = opts[{{ivar.symbolize}}]?
+        v = opts[{{ivar.symbolize}}]?
+        unless v.nil?
           @{{ivar}} = v.as({{ivar.type}})
         end
       {% end %}

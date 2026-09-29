@@ -112,7 +112,7 @@ module Eagle
     def reflect(n : Vec3) : Vec3; self - n * (2 * dot(n)); end
     # The component of this vector along *onto*. Subtract it to slide along a surface:
     # `vel - vel.project(normal)`.
-    def project(onto : Vec3) : Vec3; onto * (dot(onto) / onto.length_squared); end
+    def project(onto : Vec3) : Vec3; onto.zero? ? Vec3::ZERO : onto * (dot(onto) / onto.length_squared); end
 
     # True when all components are within *eps*.
     def approx?(o : Vec3, eps = 1e-5) : Bool

@@ -247,7 +247,7 @@ module Eagle
       visited.value += 1
       choices = moves.call(state)
       return {evaluate.call(state), nil} if depth <= 0 || choices.empty? || terminal.call(state)
-      best_move = nil.as(M?)
+      best_move = choices.first.as(M?)
       a = alpha
       b = beta
       best = maximizing ? -Float64::INFINITY : Float64::INFINITY

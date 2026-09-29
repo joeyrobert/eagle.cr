@@ -55,11 +55,14 @@ module Eagle
       return if @handlers.empty?
       # Iterate a copy so handlers may connect/disconnect during emission.
       @handlers.dup.each do |h|
-        h.call(*args)
+        # Skip handlers disconnected by an earlier handler in this emit.
+        next unless @handlers.includes?(h)
+        # Drop one-shot handlers before calling so a re-entrant emit can't fire them twice.
         if @once.includes?(h)
           @once.delete(h)
           @handlers.delete(h)
         end
+        h.call(*args)
       end
     end
 
