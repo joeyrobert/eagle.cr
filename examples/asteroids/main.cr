@@ -42,9 +42,13 @@ class Ship < Node2D
 
   def invulnerable? : Bool; @invuln > 0; end
 
-  def die
+  def revive : Nil
+    @respawn = 0_f32 unless @alive
+  end
+
+  def die(permanent = false)
     @alive = false
-    @respawn = 2_f32
+    @respawn = permanent ? Float32::MAX : 2_f32
     thrust.emitting = false
   end
 
@@ -154,14 +158,15 @@ class AsteroidsGame < App
       if !@over && @ship.alive? && !@ship.invulnerable? && !r.queued_free? && r.position.distance(@ship.position) < r.radius + 10
         @lives -= 1
         explode(@ship.position, 40)
-        @ship.die
-        @over = true if @lives <= 0
+        @over = @lives <= 0
+        @ship.die(@over)
       end
     end
     spawn_wave if rocks.empty?
     if @over && Input.pressed?(Key::R)
       SceneTree.root.children_of(Rock).each(&.queue_free)
       @score = 0; @lives = 3; @wave = 0; @over = false
+      @ship.revive
       SceneTree.flush_deferred
       spawn_wave
     end

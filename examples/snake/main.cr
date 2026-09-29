@@ -40,7 +40,9 @@ class SnakeApp < App
         @snd.try(&.play(pitch: 1 + @game.score * 0.02))
         @speed += 0.25
         @best = Math.max(@best, @game.score)
-      when :died then @snd_die.try(&.play)
+      when :died
+        @snd_die.try(&.play)
+        break
       end
     end
   end

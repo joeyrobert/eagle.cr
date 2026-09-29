@@ -324,7 +324,7 @@ module Rogue
 
     def attack(a : Entity, d : Entity) : Nil
       dmg = Math.max(0, a.attack + @rng.rand(0..2) - d.defense)
-      d.hp -= dmg
+      d.hp = Math.max(0, d.hp - dmg)
       if a.player?
         log(dmg > 0 ? "You hit the #{d.name} for #{dmg}." : "You miss the #{d.name}.")
         if !d.alive?

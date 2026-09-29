@@ -97,6 +97,7 @@ class Platformer < App
   @coins = 0
   @total = 0
   @deaths = 0
+  @respawn_gen = 0
   @won = false
   @world = Node2D.new("World")
   @hud = Label.new("")
@@ -118,7 +119,8 @@ class Platformer < App
 
   def build
     @world.clear_children
-    @coins = 0; @total = 0; @won = false
+    @coins = 0; @total = 0; @won = false; @deaths = 0
+    @respawn_gen += 1
     lines = LEVEL.lines.map(&.rstrip)
     ts = Image.new(TILE * 2, TILE)
     ts.fill_rect(0, 0, TILE, TILE, Color.hex("#3d5a80"))
@@ -198,7 +200,8 @@ class Platformer < App
     @cam.shake(6, 0.3)
     start = p.position
     p.queue_free
-    SceneTree.defer { spawn(v2(2.5 * TILE, 4.5 * TILE)) }
+    gen = @respawn_gen
+    SceneTree.defer { spawn(v2(2.5 * TILE, 4.5 * TILE)) if gen == @respawn_gen }
   end
 
   def update(dt : Float32)

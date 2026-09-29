@@ -388,6 +388,11 @@ module Chess
       check ? Status::Check : Status::Playing
     end
 
+    # How many plies undo takes back: in AI mode back to a position where White (the human) is to move.
+    def undo_plies(vs_ai : Bool) : Int32
+      Math.min(vs_ai && @turn.white? ? 2 : 1, @history.size)
+    end
+
     def game_over? : Bool
       st = status
       st.checkmate? || st.stalemate? || st.draw?

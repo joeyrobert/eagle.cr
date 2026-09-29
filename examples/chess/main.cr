@@ -96,8 +96,8 @@ class ChessGame < App
   end
 
   def undo
-    n = (@vs_ai && @board.history.size >= 2) ? 2 : 1
-    return if @board.history.size < n
+    n = @board.undo_plies(@vs_ai)
+    return if n == 0
     hist = @board.history[0...-n]
     @board = Chess::Board.new
     hist.each { |m| @board.apply(m) }

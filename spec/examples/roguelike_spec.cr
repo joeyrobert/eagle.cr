@@ -108,4 +108,12 @@ describe Rogue::Game do
     g.descend.should be_false
     g.level.should eq Rogue::Game::MAX_LEVEL + 1
   end
+
+  it "never lets hp drop below zero" do
+    g = Rogue::Game.new(3)
+    troll = Rogue::Entity.new("troll", g.player.x + 1, g.player.y, 20, 50, 0, 'T', xp_value: 25)
+    g.attack(troll, g.player)
+    g.player.hp.should eq 0
+    g.game_over?.should be_true
+  end
 end
