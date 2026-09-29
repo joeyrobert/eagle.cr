@@ -32,7 +32,7 @@ Options:
   --with-deps        install missing prerequisites (Crystal, SDL2, git) with your
                      package manager; may use sudo (apt, dnf, pacman)
   --from-source      skip the prebuilt binary; clone and build with shards
-  --version VERSION  install a specific release tag, e.g. v0.1.0 (or set EAGLE_VERSION)
+  --version VERSION  install a specific release tag, e.g. v0.2.0 (or set EAGLE_VERSION)
   --yes, -y          answer yes to every prompt (PATH setup; deps only with --with-deps)
   --no-modify-path   never edit shell startup files
   --uninstall        remove \$EAGLE_HOME (default ~/.eagle)

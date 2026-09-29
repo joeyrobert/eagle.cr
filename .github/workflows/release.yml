@@ -1,7 +1,7 @@
 # Builds release binaries of the eagle CLI and attaches them to a GitHub Release.
 #
 # Triggers:
-#   * pushing a tag like v0.1.0 builds everything and publishes the release for that tag
+#   * pushing a tag like v0.2.0 builds everything and publishes the release for that tag
 #   * "Run workflow" (workflow_dispatch) builds everything; give it an existing tag to also
 #     upload to that tag's release, or leave it empty to just keep the files as workflow artifacts
 #

@@ -2,7 +2,7 @@
 #
 #   irm https://raw.githubusercontent.com/joeyrobert/eagle.cr/main/install.ps1 | iex
 #
-# Pin a version:  $env:EAGLE_VERSION = 'v0.1.0'; irm .../install.ps1 | iex
+# Pin a version:  $env:EAGLE_VERSION = 'v0.2.0'; irm .../install.ps1 | iex
 # Uninstall:      $env:EAGLE_UNINSTALL = '1'; irm .../install.ps1 | iex
 #
 # Installs eagle.exe, SDL2.dll and SDL2.lib into %LOCALAPPDATA%\eagle (or $env:EAGLE_HOME)

@@ -1566,4 +1566,3 @@ module Eagle
   # ```
   alias RichText = RichTextLabel
 end
-
