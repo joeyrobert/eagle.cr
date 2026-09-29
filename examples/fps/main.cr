@@ -110,10 +110,10 @@ class NeonBastion < App
     # Calling this from a click is required by browser pointer-lock's user-gesture rule;
     # repeating it is harmless and lets a click recapture after Escape releases the lock.
     Window.relative_mouse = true if Input.mouse_pressed?(MouseButton::Left)
-    @yaw -= Input.mouse_delta.x * 0.0025
+    @yaw += Input.mouse_delta.x * 0.0025
     @pitch = (@pitch - Input.mouse_delta.y * 0.0025).clamp(-1.25_f32, 1.25_f32)
     if pad = Input.gamepad
-      @yaw -= pad.right_stick.x * dt * 2.4
+      @yaw += pad.right_stick.x * dt * 2.4
       @pitch = (@pitch - pad.right_stick.y * dt * 2.0).clamp(-1.25_f32, 1.25_f32)
     end
 
