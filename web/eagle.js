@@ -50,6 +50,11 @@ class EagleRuntime {
     this.audio = null;
     this.gamepads = new Map();
     this.exports = null;
+    this.cleanups = [];
+    this.observer = null;
+    this.locked = false;
+    this.wantLock = false;
+    this.uniforms = new Map(); // program id -> Map(name -> location id)
     this.running = false;
     this.decoder = new TextDecoder();
     this.encoder = new TextEncoder();
@@ -93,7 +98,35 @@ class EagleRuntime {
     requestAnimationFrame(frame);
   }
 
-  stop() { this.running = false; }
+  // Registers a listener that stop() removes again.
+  on(target, type, fn, opts) {
+    target.addEventListener(type, fn, opts);
+    this.cleanups.push(() => target.removeEventListener(type, fn, opts));
+  }
+
+  stop() {
+    this.running = false;
+    for (const off of this.cleanups) off();
+    this.cleanups = [];
+    if (this.observer) { this.observer.disconnect(); this.observer = null; }
+    if (this.ta) { this.ta.remove(); this.ta = null; }
+    if (document.exitPointerLock && document.pointerLockElement === this.canvas) document.exitPointerLock();
+    this.wantLock = false;
+  }
+
+  // Asks for pointer lock; browsers refuse without a user gesture, which is not an error.
+  requestLock() {
+    this.wantLock = true;
+    const c = this.canvas;
+    if (!c.requestPointerLock || document.pointerLockElement === c) return;
+    try {
+      const p = c.requestPointerLock();
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) { /* not allowed right now, the next click retries */ }
+  }
+
+  // The player left pointer lock with Esc: lock again on the next click while the game still wants it.
+  relock() { if (this.wantLock && !this.locked) this.requestLock(); }
 
   setupCanvas(width, height) {
     const c = this.canvas;
@@ -104,10 +137,17 @@ class EagleRuntime {
       c.style.width = width + "px"; c.style.height = height + "px";
     }
     this.resizeCanvas();
-    new ResizeObserver(() => { this.resizeCanvas(); this.push(EV.RESIZE, this.logicalW, this.logicalH); }).observe(c);
+    this.observer = new ResizeObserver(() => { this.resizeCanvas(); this.push(EV.RESIZE, this.logicalW, this.logicalH); });
+    this.observer.observe(c);
+    // browser zoom or moving to another monitor changes the pixel ratio without resizing the element
+    this.on(window, "resize", () => {
+      if ((window.devicePixelRatio || 1) === this.dpr) return;
+      this.resizeCanvas(); this.push(EV.RESIZE, this.logicalW, this.logicalH);
+    });
+    this.on(document, "pointerlockchange", () => { this.locked = document.pointerLockElement === c; });
     c.tabIndex = 0;
     c.style.outline = "none";
-    c.addEventListener("contextmenu", e => e.preventDefault());
+    this.on(c, "contextmenu", e => e.preventDefault());
     const mods = e => (e.shiftKey ? 1 : 0) | (e.ctrlKey ? 2 : 0) | (e.altKey ? 4 : 0) | (e.metaKey ? 8 : 0);
     const onKeyDown = e => {
       const fromField = e.target === this.ta;
@@ -133,25 +173,27 @@ class EagleRuntime {
       if (this.textInput && (e.ctrlKey || e.metaKey) && ["KeyC", "KeyX", "KeyV", "KeyA"].includes(e.code)) return;
       this.push(EV.KEY, SCANCODES[e.code] || 0, 0, 0, mods(e));
     };
-    c.addEventListener("keydown", onKeyDown);
-    c.addEventListener("keyup", onKeyUp);
+    this.on(c, "keydown", onKeyDown);
+    this.on(c, "keyup", onKeyUp);
     this.setupTextField(onKeyDown, onKeyUp);
     const pos = e => { const r = c.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-    c.addEventListener("mousemove", e => { const [x, y] = pos(e); this.push(EV.MOTION, x, y, e.movementX, e.movementY); });
-    c.addEventListener("mousedown", e => { const [x, y] = pos(e); this.focusInput(); this.push(EV.BUTTON, e.button + 1 === 3 ? 3 : e.button + 1, 1, x, y, e.detail || 1); this.resumeAudio(); });
-    c.addEventListener("mouseup", e => { const [x, y] = pos(e); this.push(EV.BUTTON, e.button + 1 === 3 ? 3 : e.button + 1, 0, x, y, e.detail || 1); });
-    c.addEventListener("wheel", e => { const [x, y] = pos(e); this.push(EV.WHEEL, -e.deltaX / 100, -e.deltaY / 100, x, y); e.preventDefault(); }, { passive: false });
-    c.addEventListener("focus", e => { if (!this.switching) this.push(EV.FOCUS, 1); });
-    c.addEventListener("blur", e => { if (!this.switching && e.relatedTarget !== this.ta) this.push(EV.FOCUS, 0); });
-    window.addEventListener("gamepadconnected", e => { this.gamepads.set(e.gamepad.index, { buttons: [], axes: [] }); this.push(EV.GP_CONNECT, e.gamepad.index, 1); });
-    window.addEventListener("gamepaddisconnected", e => { this.gamepads.delete(e.gamepad.index); this.push(EV.GP_CONNECT, e.gamepad.index, 0); });
+    this.on(c, "mousemove", e => { const [x, y] = pos(e); this.push(EV.MOTION, x, y, e.movementX, e.movementY); });
+    this.on(c, "mousedown", e => { const [x, y] = pos(e); this.focusInput(); this.relock(); this.push(EV.BUTTON, e.button + 1 === 3 ? 3 : e.button + 1, 1, x, y, e.detail || 1); this.resumeAudio(); });
+    this.on(c, "mouseup", e => { const [x, y] = pos(e); this.push(EV.BUTTON, e.button + 1 === 3 ? 3 : e.button + 1, 0, x, y, e.detail || 1); });
+    // Firefox reports lines and some mice pages, not pixels
+    const wheelPx = e => e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? 800 : 1;
+    this.on(c, "wheel", e => { const [x, y] = pos(e); const k = wheelPx(e); this.push(EV.WHEEL, -e.deltaX * k / 100, -e.deltaY * k / 100, x, y); e.preventDefault(); }, { passive: false });
+    this.on(c, "focus", e => { if (!this.switching) this.push(EV.FOCUS, 1); });
+    this.on(c, "blur", e => { if (!this.switching && e.relatedTarget !== this.ta) this.push(EV.FOCUS, 0); });
+    this.on(window, "gamepadconnected", e => { this.gamepads.set(e.gamepad.index, { buttons: [], axes: [] }); this.push(EV.GP_CONNECT, e.gamepad.index, 1); });
+    this.on(window, "gamepaddisconnected", e => { this.gamepads.delete(e.gamepad.index); this.push(EV.GP_CONNECT, e.gamepad.index, 0); });
     // touch: every finger is its own event stream; the engine turns unhandled touches into mouse events
     const st = c.style;
     st.touchAction = "none"; st.userSelect = "none"; st.webkitUserSelect = "none";
     st.webkitTouchCallout = "none"; st.webkitTapHighlightColor = "transparent";
     if (this.options.fill) { document.documentElement.style.overscrollBehavior = "none"; document.body.style.overscrollBehavior = "none"; }
-    c.addEventListener("selectstart", e => e.preventDefault());
-    c.addEventListener("dragstart", e => e.preventDefault());
+    this.on(c, "selectstart", e => e.preventDefault());
+    this.on(c, "dragstart", e => e.preventDefault());
     // browser identifiers can be huge; hand the engine small stable slots that fit in a float
     this.touchSlots = new Map();
     const slotFor = (ident, create) => {
@@ -169,18 +211,18 @@ class EagleRuntime {
       }
       e.preventDefault();
     };
-    c.addEventListener("touchstart", e => { this.focusInput(); touches(TOUCH.BEGAN, e); this.resumeAudio(); }, { passive: false });
-    c.addEventListener("touchmove", e => touches(TOUCH.MOVED, e), { passive: false });
-    c.addEventListener("touchend", e => { touches(TOUCH.ENDED, e); this.focusInput(); }, { passive: false });
-    c.addEventListener("click", () => this.focusInput());
-    c.addEventListener("touchcancel", e => touches(TOUCH.CANCELLED, e), { passive: false });
+    this.on(c, "touchstart", e => { this.focusInput(); touches(TOUCH.BEGAN, e); this.resumeAudio(); }, { passive: false });
+    this.on(c, "touchmove", e => touches(TOUCH.MOVED, e), { passive: false });
+    this.on(c, "touchend", e => { touches(TOUCH.ENDED, e); this.focusInput(); this.resumeAudio(); }, { passive: false });
+    this.on(c, "click", () => { this.focusInput(); this.resumeAudio(); });
+    this.on(c, "touchcancel", e => touches(TOUCH.CANCELLED, e), { passive: false });
     // a hidden tab or lost focus never delivers the touchend, so cancel whatever is still down
     const cancelAll = () => {
       for (const s of this.touchSlots.values()) this.push(EV.TOUCH, TOUCH.CANCELLED, s, 0, 0, 0);
       this.touchSlots.clear();
     };
-    document.addEventListener("visibilitychange", () => { if (document.hidden) cancelAll(); });
-    window.addEventListener("blur", cancelAll);
+    this.on(document, "visibilitychange", () => { if (document.hidden) cancelAll(); });
+    this.on(window, "blur", cancelAll);
   }
 
   // Hidden textarea that owns keyboard focus while an engine text field is focused. It is what
@@ -299,6 +341,7 @@ class EagleRuntime {
 
   resizeCanvas() {
     const c = this.canvas;
+    this.dpr = window.devicePixelRatio || 1;
     const r = c.getBoundingClientRect();
     this.logicalW = Math.max(1, Math.round(r.width));
     this.logicalH = Math.max(1, Math.round(r.height));
@@ -357,7 +400,7 @@ class EagleRuntime {
       },
       js_clipboard_write: (ptr, len) => rt.writeClipboard(rt.str(ptr, len)),
       js_take_string: (ptr, cap) => { const n = Math.min(cap, rt.strBytes.length); rt.u8(ptr, n).set(rt.strBytes.subarray(0, n)); return n; },
-      js_relative_mouse: (on) => { if (on) rt.canvas.requestPointerLock && rt.canvas.requestPointerLock(); else if (document.exitPointerLock) document.exitPointerLock(); },
+      js_relative_mouse: (on) => { if (on) rt.requestLock(); else { rt.wantLock = false; if (document.exitPointerLock) document.exitPointerLock(); } },
       js_cursor: (visible) => { rt.canvas.style.cursor = visible ? "default" : "none"; },
       js_audio_open: (rate, frames) => {
         try {
@@ -526,8 +569,18 @@ class EagleRuntime {
       gl_get_programiv: (p, param, ptr) => { let v = gl().getProgramParameter(obj(p), param); if (param === 0x8B84) v = (gl().getProgramInfoLog(obj(p)) || "").length + 1; rt.i32(ptr, 1)[0] = typeof v === "boolean" ? (v ? 1 : 0) : v; },
       gl_get_program_info_log: (p, size, written, buf) => { const n = rt.writeStr(buf, size, gl().getProgramInfoLog(obj(p)) || ""); if (written) rt.i32(written, 1)[0] = n; },
       gl_use_program: (p) => gl().useProgram(obj(p)),
-      gl_delete_program: (p) => { gl().deleteProgram(obj(p)); rt.objects[p] = null; },
-      gl_get_uniform_location: (p, name) => { const loc = gl().getUniformLocation(obj(p), rt.cstr(name)); if (!loc) return -1; rt.locations.push(loc); return rt.locations.length - 1; },
+      gl_delete_program: (p) => { gl().deleteProgram(obj(p)); rt.objects[p] = null; rt.uniforms.delete(p); },
+      gl_get_uniform_location: (p, name) => {
+        const key = rt.cstr(name);
+        let cache = rt.uniforms.get(p);
+        if (!cache) { cache = new Map(); rt.uniforms.set(p, cache); }
+        if (cache.has(key)) return cache.get(key);
+        const loc = gl().getUniformLocation(obj(p), key);
+        let id = -1;
+        if (loc) { rt.locations.push(loc); id = rt.locations.length - 1; }
+        cache.set(key, id);
+        return id;
+      },
       gl_get_attrib_location: (p, name) => gl().getAttribLocation(obj(p), rt.cstr(name)),
       gl_bind_attrib_location: (p, i, name) => gl().bindAttribLocation(obj(p), i, rt.cstr(name)),
       gl_uniform1i: (l, v) => gl().uniform1i(rt.locations[l], v),

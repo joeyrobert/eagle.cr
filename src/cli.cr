@@ -139,9 +139,7 @@ module Eagle::CLI
 
   def run_project(file : String, release : Bool, build_only : Bool = false)
     abort "#{file} not found" unless File.exists?(file)
-    if File.exists?("shard.yml") && !Dir.exists?("lib") && File.read("shard.yml").includes?("dependencies:")
-      run_cmd(["shards", "install"])
-    end
+    install_dependencies
     Dir.mkdir_p("bin")
     out_bin = "bin/#{output_name(file)}"
     {% if flag?(:win32) %} out_bin += ".exe" {% end %}
@@ -153,11 +151,23 @@ module Eagle::CLI
     abort "#{out_bin} exited with status #{status.exit_code}" unless status.success?
   end
 
+  # Runs `shards install` when shard.yml has dependencies but lib/ doesn't exist yet.
+  private def install_dependencies
+    if File.exists?("shard.yml") && !Dir.exists?("lib") && File.read("shard.yml").includes?("dependencies:")
+      run_cmd(["shards", "install"])
+    end
+  end
+
+  private def xml_escape(s : String) : String
+    s.gsub('&', "&amp;").gsub('<', "&lt;").gsub('>', "&gt;").gsub('"', "&quot;").gsub('\'', "&apos;")
+  end
+
   def export(mode : String, file : String)
     abort "#{file} not found" unless File.exists?(file)
     name = output_name(file)
     case mode
     when "exe"
+      install_dependencies
       out_dir = "dist/#{name}"
       Dir.mkdir_p(out_dir)
       exe = "#{out_dir}/#{name}"
@@ -174,15 +184,16 @@ module Eagle::CLI
       puts "exported dist/web/#{name}/. Serve the folder over HTTP (e.g. python3 -m http.server)."
     when "app"
       {% if flag?(:darwin) %}
+        install_dependencies
         app = "dist/#{name}.app/Contents/MacOS"
         Dir.mkdir_p(app)
         run_cmd(["crystal", "build", file, "--release", "-o", "#{app}/#{name}"])
         File.write("dist/#{name}.app/Contents/Info.plist", <<-PLIST)
           <?xml version="1.0" encoding="UTF-8"?>
           <plist version="1.0"><dict>
-            <key>CFBundleName</key><string>#{name}</string>
-            <key>CFBundleExecutable</key><string>#{name}</string>
-            <key>CFBundleIdentifier</key><string>cr.eagle.#{name}</string>
+            <key>CFBundleName</key><string>#{xml_escape(name)}</string>
+            <key>CFBundleExecutable</key><string>#{xml_escape(name)}</string>
+            <key>CFBundleIdentifier</key><string>cr.eagle.#{xml_escape(name.gsub(/[^A-Za-z0-9.-]/, "-"))}</string>
             <key>CFBundlePackageType</key><string>APPL</string>
             <key>NSHighResolutionCapable</key><true/>
           </dict></plist>
@@ -198,7 +209,7 @@ module Eagle::CLI
 
   private def run_cmd(cmd : Array(String), env : Hash(String, String)? = nil)
     cmd = cmd + windows_link_flags if cmd[0] == "crystal"
-    puts "$ #{cmd.join(" ")}"
+    puts "$ #{Process.quote(cmd)}"
     status = Process.run(cmd[0], cmd[1..], env: env, output: STDOUT, error: STDERR)
     abort "command failed" unless status.success?
   end

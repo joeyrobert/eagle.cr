@@ -471,7 +471,7 @@ module Eagle
     # Gray hint text shown while empty.
     property placeholder : String
     # Maximum number of characters. 0 means no limit.
-    property max_length : Int32 = 0
+    getter max_length : Int32 = 0
     # Show dots instead of the characters.
     property? password = false
     # Caret position, in characters.
@@ -479,6 +479,7 @@ module Eagle
     # The input method's in-progress text, shown underlined at the caret until it is committed.
     getter preedit : String = ""
     @blink = 0_f32
+    @scroll_x = 0_f32
     @area_sent : {Rect, String, Int32}? = nil
 
     # Emitted after every edit, with the new text. Connect with `on_text_changed { |text| ... }`.
@@ -496,10 +497,20 @@ module Eagle
 
     # Replaces the text and emits `text_changed`.
     def text=(t : String)
+      set_text(t, @caret)
+    end
+
+    # Sets the limit and trims the current text to it.
+    def max_length=(v : Int32)
+      @max_length = v
+      self.text = @text
+    end
+
+    private def set_text(t : String, caret : Int32) : Nil
       t = t[0, @max_length] if @max_length > 0 && t.size > @max_length
       return if t == @text
       @text = t
-      @caret = @caret.clamp(0, @text.size)
+      @caret = caret.clamp(0, @text.size)
       emit_text_changed(t)
     end
 
@@ -514,9 +525,7 @@ module Eagle
       s = s.gsub('\n', "")
       return if s.empty?
       nt = @text[0, @caret] + s + @text[@caret..]
-      old = @caret
-      self.text = nt
-      @caret = Math.min(old + s.size, @text.size) if @text != nt || @text.size >= old + s.size
+      set_text(nt, @caret + s.size)
       @blink = 0_f32
     end
 
@@ -539,8 +548,7 @@ module Eagle
     def cut : Nil
       return if @password
       copy
-      self.text = ""
-      @caret = 0
+      set_text("", 0)
     end
 
     # Inserts the clipboard text at the caret.
@@ -572,8 +580,7 @@ module Eagle
         case event.key
         when Key::Backspace
           if @caret > 0
-            self.text = @text[0, @caret - 1] + @text[@caret..]
-            @caret -= 1
+            set_text(@text[0, @caret - 1] + @text[@caret..], @caret - 1)
           end
         when Key::Delete
           self.text = @text[0, @caret] + @text[@caret + 1..] if @caret < @text.size
@@ -601,7 +608,7 @@ module Eagle
           t = theme_or_inherited
           best = @text.size
           (0..@text.size).each do |i|
-            w = font.width(display_text[0, i]) + t.padding
+            w = font.width(display_text[0, i]) + t.padding - @scroll_x
             if w >= l.x
               best = i
               break
@@ -634,12 +641,29 @@ module Eagle
       t = theme_or_inherited
       f = font
       g = global_rect
-      cx = g.x + t.padding + f.width(display_text[0, @caret])
+      update_scroll
+      cx = g.x + t.padding - @scroll_x + f.width(display_text[0, @caret])
       state = {Rect.new(cx, g.y, 2, g.h), @password ? "" : @text, @caret}
       return if @area_sent == state
       @area_sent = state
       Input.text_input_area(*state)
     end
+
+    # Scrolls sideways so the caret (and any preedit) stays inside the field.
+    private def update_scroll : Nil
+      t = theme_or_inherited
+      f = font
+      shown = display_text
+      caret_x = f.width(shown[0, @caret] + @preedit)
+      total = f.width(shown[0, @caret] + @preedit + shown[@caret..])
+      room = Math.max(0_f32, @size.x - t.padding * 2 - 2)
+      @scroll_x = caret_x - room if caret_x - @scroll_x > room
+      @scroll_x = caret_x if caret_x < @scroll_x
+      @scroll_x = @scroll_x.clamp(0_f32, Math.max(0_f32, total - room))
+    end
+
+    # :nodoc:
+    def scroll_x : Float32; @scroll_x; end
 
     private def display_text : String
       @password ? "*" * @text.size : @text
@@ -651,7 +675,8 @@ module Eagle
       draw_panel(g, rect, t.input_bg, focused? ? t.focus : t.panel_border)
       f = font
       shown = display_text
-      x = t.padding
+      update_scroll
+      x = t.padding - @scroll_x
       y = (@size.y - f.height) / 2
       before = shown[0, @caret]
       g.with_scissor(global_rect.intersection(g.scissor_rect || Rect.new(-1e6, -1e6, 2e6, 2e6))) do
@@ -1006,8 +1031,15 @@ module Eagle
     private def update_popup_transform : Nil
       overlay, panel, _ = popup
       return unless overlay.parent
-      panel.position = global_position + Vec2.new(0, @size.y) - overlay.global_position
       panel.width = Math.max(@size.x, panel.size.x)
+      gp = global_position
+      pos = gp + Vec2.new(0, @size.y)
+      # flip above the field, or slide up, when the list would run off the window
+      if Window.height > 0 && pos.y + panel.size.y > Window.height
+        pos = Vec2.new(pos.x, gp.y - panel.size.y >= 0 ? gp.y - panel.size.y : Math.max(0_f32, Window.height - panel.size.y))
+      end
+      pos = Vec2.new(Math.max(0_f32, Window.width - panel.size.x), pos.y) if Window.width > 0 && pos.x + panel.size.x > Window.width
+      panel.position = pos - overlay.global_position
     end
   end
 
