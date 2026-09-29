@@ -135,7 +135,7 @@ class VoxelIslandApp < App
     g.line(w / 2, h / 2 - 10, w / 2, h / 2 - 3, Color::WHITE, 2)
     g.line(w / 2, h / 2 + 3, w / 2, h / 2 + 10, Color::WHITE, 2)
 
-    g.rect(12, 12, 280, 52, color: Color.new(0.05, 0.07, 0.1, 0.72))
+    g.rect(12, 12, 340, 52, color: Color.new(0.05, 0.07, 0.1, 0.72))
     g.print("Voxel Island   #{EagleVoxel::NAMES[@kind]}", 22, 20, Color::WHITE)
     g.print("blocks #{@island.occupied}   quads #{@island.mesh_quads}", 22, 40, Color.gray(0.8))
 
@@ -152,7 +152,7 @@ class VoxelIslandApp < App
     @yaw -= Input.mouse_delta.x * 0.0025
     @pitch = (@pitch - Input.mouse_delta.y * 0.0025).clamp(-1.35_f32, 1.35_f32)
     if pad = Input.gamepad
-      @yaw -= pad.right_stick.x * dt * 2.4
+      @yaw += pad.right_stick.x * dt * 2.4
       @pitch = (@pitch - pad.right_stick.y * dt * 2.0).clamp(-1.35_f32, 1.35_f32)
     end
   end
