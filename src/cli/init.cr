@@ -1,4 +1,5 @@
 require "option_parser"
+require "../eagle/version"
 
 # `eagle init`: the project setup wizard. Parsing, prompting and file generation live
 # here (not in cli.cr) so specs can drive them without launching the CLI.
@@ -221,7 +222,7 @@ module Eagle::CLI
     def shard_yml(o : InitOptions) : String
       # YAML single-quoted scalars preserve Windows backslashes and paths containing
       # spaces, colons or `#`. A literal quote is represented by two quotes.
-      dep = o.local ? "path: '#{o.local.not_nil!.gsub('\'', "''")}'" : "github: joeyrobert/eagle.cr"
+      dep = o.local ? "path: '#{o.local.not_nil!.gsub('\'', "''")}'" : "github: joeyrobert/eagle.cr\n    version: ~> #{Eagle::VERSION}"
       <<-YML
         name: #{o.shard_name}
         version: 0.1.0
