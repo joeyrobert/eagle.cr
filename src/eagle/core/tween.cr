@@ -257,11 +257,13 @@ module Eagle
         if @loop
           @elapsed -= @duration if @duration > 0
           @elapsed = 0_f32 if @duration <= 0
-          @on_update.try(&.call(@ease.call(progress)))
+          t = progress
+          t = Mathf.ping_pong(t * 2, 1) if @ping_pong
+          @on_update.try(&.call(@ease.call(t)))
           return
         end
         @elapsed = @duration
-        @on_update.try(&.call(@ease.call(1_f32)))
+        @on_update.try(&.call(@ease.call(@ping_pong ? 0_f32 : 1_f32)))
         @finished = true
         @@active.delete(self)
         @on_complete.each(&.call)

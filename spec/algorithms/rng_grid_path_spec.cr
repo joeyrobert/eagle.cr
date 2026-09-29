@@ -95,3 +95,17 @@ describe Eagle::Pathfinding do
     expect_raises(ArgumentError) { grid[0, 0] = 0 }
   end
 end
+
+describe "A* with cheap cells" do
+  it "finds the cheapest path when some cells cost less than one" do
+    grid = CostGrid.new(6, 1, 0.1)
+    grid[0, 0] = 5
+    a = Pathfinding.a_star(grid, {0, 0}, {5, 0})
+    d = Pathfinding.dijkstra(grid, {0, 0}, {5, 0})
+    a.cost.should be_close(d.cost, 1e-9)
+    grid2 = CostGrid.new(5, 3, 1)
+    (0...5).each { |x| grid2[x, 1] = 0.1 }
+    grid2[0, 0] = 1
+    Pathfinding.a_star(grid2, {0, 0}, {4, 0}).cost.should be_close(Pathfinding.dijkstra(grid2, {0, 0}, {4, 0}).cost, 1e-9)
+  end
+end

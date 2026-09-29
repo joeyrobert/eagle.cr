@@ -192,3 +192,71 @@ describe Eagle::Node do
     added.should eq 1; entered.should eq 1
   end
 end
+
+class Reaper < Node
+  property victim : Node? = nil
+  def process(dt : Float32); @victim.try(&.free); end
+end
+
+class InputReaper < Node
+  property victim : Node? = nil
+  def input(e : Event); @victim.try(&.free); end
+end
+
+describe "Node edge cases" do
+  before_each { SceneTree.reset }
+
+  it "still processes siblings when a node frees itself mid-frame" do
+    reaper = Reaper.new
+    after = Counter.new
+    reaper.victim = reaper
+    SceneTree.root.add(reaper)
+    SceneTree.root.add(after)
+    SceneTree.root.process_tree(0.1_f32)
+    after.processes.should eq 1
+  end
+
+  it "does not process a node freed earlier in the same frame" do
+    reaper = Reaper.new
+    victim = Counter.new
+    reaper.victim = victim
+    SceneTree.root.add(reaper)
+    SceneTree.root.add(victim)
+    SceneTree.root.process_tree(0.1_f32)
+    victim.processes.should eq 0
+  end
+
+  it "survives a node freeing an earlier sibling during input dispatch" do
+    a = Counter.new
+    b = InputReaper.new
+    b.victim = a
+    SceneTree.root.add(a)
+    SceneTree.root.add(b)
+    h = Handler.new
+    SceneTree.root.add(h)
+    SceneTree.dispatch_input(KeyEvent.new(Key::A, true))
+    h.got.size.should eq 1
+    SceneTree.root.child_count.should eq 2
+  end
+
+  it "rejects adding an ancestor below its descendant" do
+    a = Node.new("A"); b = Node.new("B")
+    a.add(b)
+    expect_raises(Error) { b.add(a) }
+  end
+
+  it "fires once handlers a single time and skips handlers disconnected mid-emit" do
+    d = Damageable.new
+    hits = 0
+    d.hit.once { |_| hits += 1; d.emit_hit(0) if hits < 3 }
+    d.emit_hit(1)
+    hits.should eq 1
+
+    later = 0
+    second = nil.as(Proc(Int32, Nil)?)
+    d.hit.connect { |_| second.try { |s| d.hit.disconnect(s) } }
+    second = d.hit.connect { |_| later += 1 }
+    d.emit_hit(1)
+    later.should eq 0
+  end
+end

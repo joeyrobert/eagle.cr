@@ -88,6 +88,8 @@ module Eagle
       unless grid.passable?(start[0], start[1]) && grid.passable?(goal[0], goal[1])
         return Result(Point).new(Array(Point).new, Float64::INFINITY, 0)
       end
+      # Cells cheaper than 1 would make the step-count heuristic overestimate, so scale it down.
+      scale = Math.min(1.0, grid.costs.min)
       frontier = [start]
       came_from = {} of Point => Point
       distance = {start => 0.0}
@@ -95,7 +97,7 @@ module Eagle
       until frontier.empty?
         current_index = frontier.each_index.min_by do |i|
           point = frontier[i]
-          distance[point] + (heuristic ? grid_heuristic(point, goal, diagonal) : 0.0)
+          distance[point] + (heuristic ? grid_heuristic(point, goal, diagonal) * scale : 0.0)
         end
         current = frontier.delete_at(current_index)
         visited += 1

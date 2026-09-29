@@ -162,6 +162,8 @@ module Eagle
     # A view matrix for a camera at *eye* looking at *target*.
     def self.look_at(eye : Vec3, target : Vec3, up : Vec3 = Vec3::UP) : Mat4
       f = (target - eye).normalized
+      # Looking along the up axis would zero the right vector, so pick another up.
+      up = (up.dot(f).abs > 0.999 ? (f.y.abs > 0.9 ? Vec3::BACK : Vec3::UP) : up)
       s = f.cross(up).normalized
       u = s.cross(f)
       m = identity

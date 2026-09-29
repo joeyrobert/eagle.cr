@@ -64,7 +64,8 @@ module Eagle
       s = s.lchop('#')
       s = s.chars.map { |c| "#{c}#{c}" }.join if s.size == 3 || s.size == 4
       v = s.to_u32(16)
-      s.size == 8 ? hex(v.to_i64) : hex(v.to_i64)
+      # Eight digits are RRGGBBAA even when red is zero, which the numeric overload can't tell apart.
+      s.size == 8 ? rgb((v >> 24) & 0xFF, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF) : hex(v.to_i64)
     end
 
     # Creates a color from hue in degrees (0 to 360, wraps), plus saturation and value in 0..1.

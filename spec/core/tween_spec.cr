@@ -79,3 +79,29 @@ describe Eagle::Tween do
     log.should eq ["start", "t1.0", "end"]
   end
 end
+
+describe "Tween ping_pong" do
+  before_each { Tween.clear }
+
+  it "ends back at the start value" do
+    last = -1_f32
+    t = Tween.new(1, :linear) { |v| last = v }
+    t.ping_pong = true
+    t.start
+    Tween.update_all(0.5_f32)
+    last.should be_close(1.0, 1e-4)
+    Tween.update_all(0.6_f32)
+    t.finished?.should be_true
+    last.should be_close(0.0, 1e-4)
+  end
+
+  it "keeps bouncing when looping" do
+    last = -1_f32
+    t = Tween.new(1, :linear) { |v| last = v }
+    t.ping_pong = true
+    t.loop = true
+    t.start
+    Tween.update_all(1.25_f32)
+    last.should be_close(0.5, 1e-3)
+  end
+end

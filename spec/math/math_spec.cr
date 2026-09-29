@@ -207,3 +207,24 @@ describe Eagle::Mathf do
     Mathf.remap(5, 0, 10, 0, 100).should eq 50
   end
 end
+
+describe "math edge cases" do
+  it "handles a zero ping_pong length" do
+    Mathf.ping_pong(3, 0).should eq 0
+  end
+
+  it "builds a valid look_at when looking straight along up" do
+    view = Mat4.look_at(v3(0, 5, 0), Vec3::ZERO)
+    (view * view.inverse).approx?(Mat4.identity).should be_true
+    view.determinant.abs.should be_close(1.0, 1e-4)
+    view.transform_point(Vec3::ZERO).z.should be_close(-5.0, 1e-4)
+  end
+
+  it "parses eight digit hex with a zero red channel" do
+    c = Color.hex("#00FF0080")
+    c.r.should eq 0
+    c.g.should eq 1
+    c.a.should be_close(128 / 255.0, 1e-4)
+    Color.hex("#0F08").a.should be_close(0x88 / 255.0, 1e-4)
+  end
+end
