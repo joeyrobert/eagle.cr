@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
 <main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Interactions</li></ol></nav>
 <div class="play"><h1>Interactions</h1><p class="lead">Every input pattern with a live event log: clicks, drags, wheel zoom, text, gamepads, signals, timers.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
@@ -133,6 +133,10 @@
     <span class="k">super</span>(<span class="t">Polygon2D</span>.rect(<span class="n">48</span>, <span class="n">48</span>, color).points, color, name: <span class="s">&quot;Crate&quot;</span>, position: position)
   <span class="k">end</span>
 
+  <span class="k">def</span> <span class="m">self</span>.reset_drag : <span class="t">Nil</span>
+    @@dragging_any <span class="o">=</span> <span class="n">false</span>
+  <span class="k">end</span>
+
   <span class="k">def</span> <span class="m">inside?</span>(p : <span class="t">Vec2</span>) : <span class="t">Bool</span>
     l <span class="o">=</span> to_local(p)
     l.x.abs <span class="o">&lt;=</span> <span class="n">24</span> <span class="o">&amp;&amp;</span> l.y.abs <span class="o">&lt;=</span> <span class="n">24</span>
@@ -245,6 +249,8 @@
 
   <span class="k">def</span> <span class="m">build_world</span>
     @world.clear_children
+    <span class="t">Crate</span>.reset_drag
+    @zone_inside <span class="o">=</span> <span class="n">false</span>
     <span class="c"># 2 &amp; 3: clickable shapes and draggable crates</span>
     @world.add(<span class="t">Clickable</span>.new(<span class="s">&quot;A&quot;</span>, v2(<span class="n">420</span>, <span class="n">140</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#4cc9f0&quot;</span>)), <span class="t">Clickable</span>.new(<span class="s">&quot;B&quot;</span>, v2(<span class="n">500</span>, <span class="n">140</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#f72585&quot;</span>)))
     @world.add(<span class="t">Crate</span>.new(v2(<span class="n">420</span>, <span class="n">260</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#b5651d&quot;</span>)), <span class="t">Crate</span>.new(v2(<span class="n">500</span>, <span class="n">260</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#c98a3c&quot;</span>)))

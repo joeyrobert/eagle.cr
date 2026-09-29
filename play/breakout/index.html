@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
 <main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Breakout</li></ol></nav>
 <div class="play"><h1>Breakout</h1><p class="lead">Paddle, ball, bricks with hit points, particles, camera shake and synthesized sounds.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
@@ -16,6 +16,7 @@
 <span class="c"># Breakout: move the paddle with the mouse or arrow keys / gamepad. Space launches.</span>
 <span class="k">class</span> <span class="t">Breakout</span> <span class="o">&lt;</span> <span class="t">App</span>
   <span class="t">W</span> <span class="o">=</span> <span class="n">800</span>; <span class="t">H</span> <span class="o">=</span> <span class="n">600</span>
+  <span class="t">MAX_SPEED</span> <span class="o">=</span> <span class="n">700_f32</span>
   record <span class="t">Brick</span>, rect : <span class="t">Rect</span>, color : <span class="t">Color</span>, hp : <span class="t">Int32</span>
 
   @paddle : <span class="t">Rect</span> <span class="o">=</span> <span class="t">Rect</span>.new(<span class="n">350</span>, <span class="n">560</span>, <span class="n">100</span>, <span class="n">14</span>)
@@ -91,6 +92,7 @@
   <span class="k">end</span>
 
   <span class="k">private</span> <span class="k">def</span> <span class="m">step</span>(dt)
+    <span class="k">return</span> <span class="k">if</span> @game_over
     @ball <span class="o">+=</span> @vel <span class="o">*</span> dt
     <span class="k">if</span> @ball.x <span class="o">-</span> @radius <span class="o">&lt;</span> <span class="n">0</span> <span class="o">||</span> @ball.x <span class="o">+</span> @radius <span class="o">&gt;</span> <span class="t">W</span>
       @vel <span class="o">=</span> v2(<span class="o">-</span>@vel.x, @vel.y); @ball <span class="o">=</span> v2(@ball.x.clamp(@radius, <span class="t">W</span> <span class="o">-</span> @radius), @ball.y); @snd_hit.try(<span class="o">&amp;</span>.play(pitch: <span class="n">1.5</span>))
@@ -112,7 +114,7 @@
     <span class="c"># paddle</span>
     <span class="k">if</span> @vel.y <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> circle_rect?(@ball, @radius, @paddle)
       t <span class="o">=</span> ((@ball.x <span class="o">-</span> @paddle.center.x) <span class="o">/</span> (@paddle.w <span class="o">/</span> <span class="n">2</span>)).clamp(<span class="n">-1_f32</span>, <span class="n">1_f32</span>)
-      speed <span class="o">=</span> @vel.length <span class="o">*</span> <span class="n">1.01</span>
+      speed <span class="o">=</span> <span class="t">Math</span>.min(@vel.length <span class="o">*</span> <span class="n">1.01</span>, <span class="t">MAX_SPEED</span>)
       @vel <span class="o">=</span> <span class="t">Vec2</span>.from_angle(<span class="o">-</span><span class="t">Math</span><span class="t">::</span><span class="t">PI</span> <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> t <span class="o">*</span> <span class="n">1.1</span>, speed)
       @ball <span class="o">=</span> v2(@ball.x, @paddle.y <span class="o">-</span> @radius <span class="o">-</span> <span class="n">0.5</span>)
       @snd_hit.try(<span class="o">&amp;</span>.play)

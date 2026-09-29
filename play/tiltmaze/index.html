@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tilt Maze · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Tilt Maze</li></ol></nav>
+<div class="play"><h1>Tilt Maze</h1><p class="lead">Tilt the board to roll a marble through a maze past holes to the goal before time runs out.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">WASD/arrows/left stick tilt · R restart</p>
+<details><summary>Source: <code>examples/tiltmaze/main.cr</code></summary><h3>examples/tiltmaze/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;./board&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
+<span class="k">include</span> <span class="t">EagleTiltMaze</span>
+
+<span class="c"># Tilt Maze is a small marble-rolling game inspired by tabletop tilt mazes.</span>
+<span class="c"># Tilt with WASD, arrow keys, or the left stick. Avoid the holes and reach the</span>
+<span class="c"># glowing blue goal before time runs out.</span>
+<span class="k">class</span> <span class="t">TiltMaze</span> <span class="o">&lt;</span> <span class="t">App</span>
+  @board <span class="o">=</span> <span class="t">Board</span>.new
+  @level <span class="o">=</span> <span class="t">Node3D</span>.new(<span class="s">&quot;tilting level&quot;</span>)
+  @ball <span class="o">=</span> <span class="t">MeshInstance3D</span>.new
+  @goal <span class="o">=</span> <span class="t">MeshInstance3D</span>.new
+  @camera <span class="o">=</span> <span class="t">Camera3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">14</span>, <span class="n">16</span>), fov: <span class="n">52</span>)
+  @hud <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;&quot;</span>)
+  @message <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;&quot;</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+  @fall_sound : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+  @win_sound : <span class="t">Sound</span>? <span class="o">=</span> <span class="n">nil</span>
+
+  <span class="k">def</span> <span class="m">load</span>
+    <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Right</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftX</span>, <span class="n">1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;up&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">W</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Up</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">-1</span>)
+    <span class="t">Input</span>.map <span class="s">&quot;down&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">S</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Down</span>, <span class="t">Input</span>.axis(<span class="t">GamepadAxis</span><span class="t">::</span><span class="t">LeftY</span>, <span class="n">1</span>)
+    @fall_sound <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">110</span>, <span class="n">0.22</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Sine</span>, <span class="n">0.3</span>)
+    @win_sound <span class="o">=</span> <span class="t">Sound</span>.tone(<span class="n">880</span>, <span class="n">0.18</span>, <span class="t">Sound</span><span class="t">::</span><span class="t">Wave</span><span class="t">::</span><span class="t">Triangle</span>, <span class="n">0.3</span>)
+    make_level
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    <span class="k">if</span> @board.state.playing?
+      @fall_sound.try(<span class="o">&amp;</span>.play) <span class="k">if</span> @board.step(<span class="t">Input</span>.vector(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>, <span class="s">&quot;up&quot;</span>, <span class="s">&quot;down&quot;</span>), dt)
+      @win_sound.try(<span class="o">&amp;</span>.play) <span class="k">if</span> @board.state.won?
+      sync_ball(dt)
+    <span class="k">elsif</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">R</span>)
+      restart
+    <span class="k">end</span>
+
+    <span class="c"># Keep the viewpoint locked to the marble so the action stays centred as the board rolls underneath it.</span>
+    @camera.position <span class="o">=</span> @ball.global_position <span class="o">+</span> v3(<span class="n">0</span>, <span class="n">14</span>, <span class="n">16</span>)
+    @camera.look_at(@ball.global_position <span class="o">+</span> v3(<span class="n">0</span>, <span class="n">0</span>, <span class="n">-3</span>))
+    goal <span class="o">=</span> @board.goal
+    @goal.rotate_y(dt <span class="o">*</span> <span class="n">2.5</span>)
+    @goal.position <span class="o">=</span> v3(goal.x, <span class="n">0.18</span> <span class="o">+</span> (@board.state.won? ? <span class="t">Math</span>.sin(<span class="t">Clock</span>.elapsed <span class="o">*</span> <span class="n">7</span>) <span class="o">*</span> <span class="n">0.12</span> : <span class="n">0</span>), goal.y)
+    @hud.text <span class="o">=</span> <span class="s">&quot;TILT MAZE    time </span><span class="i">#{</span>@board.time_left.clamp(<span class="n">0</span>, <span class="n">99</span>).ceil.to_i<span class="i">}</span><span class="s">    falls </span><span class="i">#{</span>@board.falls<span class="i">}</span><span class="s">&quot;</span>
+    @message.text <span class="o">=</span> <span class="k">case</span> @board.state
+                    <span class="k">in</span> .won?     <span class="k">then</span> <span class="s">&quot;GOAL!\nPress R to play again&quot;</span>
+                    <span class="k">in</span> .lost?    <span class="k">then</span> <span class="s">&quot;TIME UP\nPress R to try again&quot;</span>
+                    <span class="k">in</span> .playing? <span class="k">then</span> <span class="s">&quot;WASD / ARROWS: tilt the level    R: restart&quot;</span>
+                    <span class="k">end</span>
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">sync_ball</span>(dt : <span class="t">Float32</span>)
+    marble <span class="o">=</span> @board.marble
+    @ball.position <span class="o">=</span> v3(marble.x, <span class="t">BALL_RADIUS</span>, marble.y)
+    horizontal <span class="o">=</span> v3(@board.velocity.x, <span class="n">0</span>, @board.velocity.y)
+    @ball.rotate_local(<span class="t">Vec3</span><span class="t">::</span><span class="t">UP</span>.cross(horizontal).normalized, horizontal.length <span class="o">*</span> dt <span class="o">/</span> <span class="t">BALL_RADIUS</span>) <span class="k">if</span> horizontal.length <span class="o">&gt;</span> <span class="n">0.01</span>
+    @level.rotation <span class="o">=</span> @board.rotation
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">make_level</span>
+    root <span class="o">=</span> <span class="t">SceneTree</span>.root
+    <span class="t">Scene3D</span>.environment.fog(<span class="n">24</span>, <span class="n">55</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#c5d6e8&quot;</span>))
+    <span class="t">Scene3D</span>.environment.sky_colors(<span class="t">Color</span>.hex(<span class="s">&quot;#72a8d8&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#e9f4ff&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#5a6778&quot;</span>))
+    root.add(@level)
+
+    board_material <span class="o">=</span> <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#d9a55e&quot;</span>), shininess: <span class="n">32</span>, specular: <span class="n">0.3</span>)
+    @level.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.box(<span class="t">BOARD_HALF</span> <span class="o">*</span> <span class="n">2</span>, <span class="n">0.45</span>, <span class="t">BOARD_HALF</span> <span class="o">*</span> <span class="n">2</span>), board_material, position: v3(<span class="n">0</span>, <span class="n">-0.25</span>, <span class="n">0</span>)))
+    <span class="c"># The dark under-frame makes the board&#39;s tilt easy to read at a glance.</span>
+    @level.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.box(<span class="n">17.2</span>, <span class="n">0.45</span>, <span class="n">17.2</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#51372b&quot;</span>)), position: v3(<span class="n">0</span>, <span class="n">-0.65</span>, <span class="n">0</span>)))
+    tiles <span class="o">=</span> <span class="t">Texture</span>.new(<span class="t">Image</span>.checkerboard(<span class="n">64</span>, <span class="n">64</span>, <span class="n">8</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#f9dc8a&quot;</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#ecc56e&quot;</span>)), wrap: <span class="t">GPU</span><span class="t">::</span><span class="t">Wrap</span><span class="t">::</span><span class="t">Repeat</span>)
+    @level.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.plane(<span class="n">15.4</span>, <span class="n">15.4</span>, <span class="n">1</span>, uv_scale: <span class="n">8</span>), <span class="t">Material</span>.new(texture: tiles, specular: <span class="n">0.08</span>), position: v3(<span class="n">0</span>, <span class="n">0.005</span>, <span class="n">0</span>)))
+
+    wall_material <span class="o">=</span> <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#80523a&quot;</span>), shininess: <span class="n">12</span>)
+    @board.walls.each <span class="k">do</span> <span class="o">|</span>wall<span class="o">|</span>
+      @level.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.box(wall.half.x <span class="o">*</span> <span class="n">2</span>, <span class="n">0.7</span>, wall.half.y <span class="o">*</span> <span class="n">2</span>), wall_material, position: v3(wall.center.x, <span class="n">0.34</span>, wall.center.y)))
+    <span class="k">end</span>
+    @board.holes.each <span class="k">do</span> <span class="o">|</span>pos<span class="o">|</span>
+      @level.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.cylinder(<span class="t">HOLE_RADIUS</span>, <span class="n">0.03</span>, <span class="n">24</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#20202b&quot;</span>), specular: <span class="n">0</span>), position: v3(pos.x, <span class="n">-0.01</span>, pos.y)))
+      @level.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.torus(<span class="t">HOLE_RADIUS</span>, <span class="n">0.08</span>, <span class="n">24</span>, <span class="n">8</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#75462d&quot;</span>), shininess: <span class="n">12</span>), position: v3(pos.x, <span class="n">0.02</span>, pos.y)))
+    <span class="k">end</span>
+
+    goal <span class="o">=</span> @board.goal
+    @level.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.cylinder(<span class="n">0.8</span>, <span class="n">0.04</span>, <span class="n">32</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#62c889&quot;</span>), emissive: <span class="t">Color</span>.hex(<span class="s">&quot;#123a25&quot;</span>)), position: v3(<span class="t">START</span>.x, <span class="n">0.025</span>, <span class="t">START</span>.y)))
+    @level.add(<span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.cylinder(<span class="n">0.68</span>, <span class="n">0.08</span>, <span class="n">32</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#183f55&quot;</span>), emissive: <span class="t">Color</span>.hex(<span class="s">&quot;#0a1720&quot;</span>)), position: v3(goal.x, <span class="n">0.04</span>, goal.y)))
+    @goal <span class="o">=</span> <span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.torus(<span class="n">0.48</span>, <span class="n">0.13</span>, <span class="n">32</span>, <span class="n">10</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#55e6ff&quot;</span>), emissive: <span class="t">Color</span>.hex(<span class="s">&quot;#207080&quot;</span>), shininess: <span class="n">96</span>, specular: <span class="n">0.9</span>), position: v3(goal.x, <span class="n">0.18</span>, goal.y))
+    @level.add(@goal)
+    @ball <span class="o">=</span> <span class="t">MeshInstance3D</span>.new(<span class="t">Mesh</span>.sphere(<span class="t">BALL_RADIUS</span>, <span class="n">24</span>, <span class="n">16</span>), <span class="t">Material</span>.new(<span class="t">Color</span>.hex(<span class="s">&quot;#f45b69&quot;</span>), shininess: <span class="n">96</span>, specular: <span class="n">0.9</span>), position: v3(<span class="t">START</span>.x, <span class="t">BALL_RADIUS</span>, <span class="t">START</span>.y))
+    @level.add(@ball)
+    root.add(<span class="t">DirectionalLight3D</span>.new(v3(<span class="n">-0.5</span>, <span class="n">-1</span>, <span class="n">-0.35</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#fff1d2&quot;</span>), <span class="n">1.2</span>))
+    root.add(<span class="t">PointLight3D</span>.new(v3(<span class="n">0</span>, <span class="n">7</span>, <span class="n">0</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#d5f2ff&quot;</span>), <span class="n">1.2</span>, <span class="n">22</span>))
+    @camera.look_at(<span class="t">Vec3</span><span class="t">::</span><span class="t">ZERO</span>)
+    root.add(@camera)
+    hud_layer <span class="o">=</span> <span class="t">CanvasLayer</span>.new
+    @hud.position <span class="o">=</span> v2(<span class="n">18</span>, <span class="n">15</span>)
+    @hud.shadow <span class="o">=</span> <span class="t">Color</span><span class="t">::</span><span class="t">BLACK</span>
+    @hud.shadow_offset <span class="o">=</span> v2(<span class="n">2</span>, <span class="n">2</span>)
+    @message.anchor <span class="o">=</span> <span class="t">Anchor</span><span class="t">::</span><span class="t">Bottom</span>
+    @message.position <span class="o">=</span> v2(<span class="t">Window</span>.width <span class="o">/</span> <span class="n">2</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">20</span>)
+    @message.shadow <span class="o">=</span> <span class="t">Color</span><span class="t">::</span><span class="t">BLACK</span>
+    @message.shadow_offset <span class="o">=</span> v2(<span class="n">2</span>, <span class="n">2</span>)
+    hud_layer.add(@hud, @message)
+    root.add(hud_layer)
+  <span class="k">end</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="m">restart</span>
+    <span class="t">SceneTree</span>.reset
+    @board <span class="o">=</span> <span class="t">Board</span>.new
+    @level <span class="o">=</span> <span class="t">Node3D</span>.new(<span class="s">&quot;tilting level&quot;</span>)
+    @camera <span class="o">=</span> <span class="t">Camera3D</span>.new(position: v3(<span class="n">0</span>, <span class="n">14</span>, <span class="n">16</span>), fov: <span class="n">52</span>)
+    make_level
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="t">Eagle</span>.run(<span class="t">TiltMaze</span>, title: <span class="s">&quot;Eagle Tilt Maze&quot;</span>, width: <span class="n">1024</span>, height: <span class="n">640</span>, msaa: <span class="n">4</span>)
+</code></pre>
+<h3>examples/tiltmaze/board.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+
+<span class="c"># Renderer-independent tilt maze rules: marble rolling, wall collision, holes and the goal.</span>
+<span class="c"># Specs drive this file without opening a window.</span>
+<span class="k">module</span> <span class="t">EagleTiltMaze</span>
+  <span class="k">include</span> <span class="t">Eagle</span>
+
+  <span class="t">BOARD_HALF</span>  <span class="o">=</span> <span class="n">8_f32</span>
+  <span class="t">BALL_RADIUS</span> <span class="o">=</span> <span class="n">0.42_f32</span>
+  <span class="t">HOLE_RADIUS</span> <span class="o">=</span> <span class="n">0.58_f32</span>
+  <span class="t">START</span>       <span class="o">=</span> <span class="t">Vec2</span>.new(<span class="n">-6.3</span>, <span class="n">6.1</span>)
+  <span class="t">TIME_LIMIT</span>  <span class="o">=</span> <span class="n">50_f32</span>
+
+  <span class="k">enum</span> <span class="t">State</span>
+    <span class="t">Playing</span>
+    <span class="t">Won</span>
+    <span class="t">Lost</span>
+  <span class="k">end</span>
+
+  <span class="c"># An axis-aligned wall on the board, as a center and half extents in board units (x, z).</span>
+  record <span class="t">Wall</span>, center : <span class="t">Vec2</span>, half : <span class="t">Vec2</span>
+
+  <span class="k">class</span> <span class="t">Board</span>
+    getter walls <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Wall</span>
+    getter holes <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Vec2</span>
+    getter goal <span class="o">=</span> <span class="t">Vec2</span>.new(<span class="n">6.2</span>, <span class="n">-6.0</span>)
+    getter marble <span class="o">=</span> <span class="t">START</span>
+    getter velocity <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+    getter tilt <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+    getter time_left <span class="o">=</span> <span class="t">TIME_LIMIT</span>
+    getter falls <span class="o">=</span> <span class="n">0</span>
+    getter state <span class="o">=</span> <span class="t">State</span><span class="t">::</span><span class="t">Playing</span>
+
+    <span class="k">def</span> <span class="m">initialize</span>
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="n">0</span>, <span class="o">-</span><span class="t">BOARD_HALF</span>), v2(<span class="t">BOARD_HALF</span> <span class="o">+</span> <span class="n">0.35</span>, <span class="n">0.28</span>))
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="n">0</span>, <span class="t">BOARD_HALF</span>), v2(<span class="t">BOARD_HALF</span> <span class="o">+</span> <span class="n">0.35</span>, <span class="n">0.28</span>))
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="o">-</span><span class="t">BOARD_HALF</span>, <span class="n">0</span>), v2(<span class="n">0.28</span>, <span class="t">BOARD_HALF</span> <span class="o">+</span> <span class="n">0.35</span>))
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="t">BOARD_HALF</span>, <span class="n">0</span>), v2(<span class="n">0.28</span>, <span class="t">BOARD_HALF</span> <span class="o">+</span> <span class="n">0.35</span>))
+      <span class="c"># A readable zig-zag route: each barrier leaves a generous gap on one side.</span>
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="n">-2.2</span>, <span class="n">4.2</span>), v2(<span class="n">4.6</span>, <span class="n">0.25</span>))
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="n">3.0</span>, <span class="n">1.6</span>), v2(<span class="n">4.7</span>, <span class="n">0.25</span>))
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="n">-3.1</span>, <span class="n">-1.2</span>), v2(<span class="n">4.3</span>, <span class="n">0.25</span>))
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="n">2.7</span>, <span class="n">-4.0</span>), v2(<span class="n">4.9</span>, <span class="n">0.25</span>))
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="n">-5.4</span>, <span class="n">-4.8</span>), v2(<span class="n">0.25</span>, <span class="n">2.1</span>))
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="n">4.9</span>, <span class="n">5.5</span>), v2(<span class="n">0.25</span>, <span class="n">1.9</span>))
+      <span class="c"># Short gateposts make each open route obvious while leaving room to correct a rolling marble.</span>
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="n">2.7</span>, <span class="n">3.15</span>), v2(<span class="n">0.25</span>, <span class="n">0.8</span>))
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="n">-2.2</span>, <span class="n">2.65</span>), v2(<span class="n">0.25</span>, <span class="n">0.8</span>))
+      @walls <span class="o">&lt;&lt;</span> <span class="t">Wall</span>.new(v2(<span class="n">1.25</span>, <span class="n">-2.55</span>), v2(<span class="n">0.25</span>, <span class="n">0.8</span>))
+      @holes <span class="o">=</span> [v2(<span class="n">-4.7</span>, <span class="n">5.6</span>), v2(<span class="n">1.9</span>, <span class="n">5.2</span>), v2(<span class="n">-1.5</span>, <span class="n">2.7</span>), v2(<span class="n">4.7</span>, <span class="n">0.1</span>), v2(<span class="n">-4.9</span>, <span class="n">0.2</span>), v2(<span class="n">0.8</span>, <span class="n">-2.6</span>), v2(<span class="n">-2.8</span>, <span class="n">-5.8</span>), v2(<span class="n">4.3</span>, <span class="n">-5.6</span>)]
+    <span class="k">end</span>
+
+    <span class="c"># The board rotation for the current tilt: pushing a direction lowers that side.</span>
+    <span class="k">def</span> <span class="m">rotation</span> : <span class="t">Quat</span>
+      <span class="t">Quat</span>.from_euler(@tilt.y <span class="o">*</span> <span class="n">0.15</span>, <span class="n">0</span>, <span class="o">-</span>@tilt.x <span class="o">*</span> <span class="n">0.15</span>)
+    <span class="k">end</span>
+
+    <span class="c"># Advances the marble by *dt* with *input* (x right, y down the screen, i.e. toward the camera).</span>
+    <span class="c"># Returns true when the marble fell into a hole this step.</span>
+    <span class="k">def</span> <span class="m">step</span>(input : <span class="t">Vec2</span>, dt : <span class="t">Float32</span>) : <span class="t">Bool</span>
+      <span class="k">return</span> <span class="n">false</span> <span class="k">unless</span> @state.playing?
+      @tilt <span class="o">=</span> <span class="t">Mathf</span>.damp(@tilt, input, <span class="n">9</span>, dt)
+      @velocity <span class="o">+=</span> @tilt <span class="o">*</span> (<span class="n">17</span> <span class="o">*</span> dt)
+      @velocity <span class="o">*=</span> <span class="n">1</span> <span class="o">/</span> (<span class="n">1</span> <span class="o">+</span> <span class="n">2.4</span> <span class="o">*</span> dt)
+      @velocity <span class="o">=</span> @velocity.normalized <span class="o">*</span> <span class="n">10</span> <span class="k">if</span> @velocity.length <span class="o">&gt;</span> <span class="n">10</span>
+      @marble <span class="o">=</span> resolve_walls(@marble <span class="o">+</span> @velocity <span class="o">*</span> dt)
+      @time_left <span class="o">-=</span> dt
+      fell <span class="o">=</span> @holes.any? { <span class="o">|</span>hole<span class="o">|</span> @marble.distance(hole) <span class="o">&lt;</span> <span class="t">HOLE_RADIUS</span> <span class="o">*</span> <span class="n">0.72</span> }
+      <span class="k">if</span> fell
+        @falls <span class="o">+=</span> <span class="n">1</span>
+        @marble <span class="o">=</span> <span class="t">START</span>
+        @velocity <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+      <span class="k">end</span>
+      <span class="k">if</span> @marble.distance(@goal) <span class="o">&lt;</span> <span class="n">0.7</span>
+        @state <span class="o">=</span> <span class="t">State</span><span class="t">::</span><span class="t">Won</span>
+      <span class="k">elsif</span> @time_left <span class="o">&lt;=</span> <span class="n">0</span>
+        @state <span class="o">=</span> <span class="t">State</span><span class="t">::</span><span class="t">Lost</span>
+      <span class="k">end</span>
+      fell
+    <span class="k">end</span>
+
+    <span class="c"># Test hook to place the marble.</span>
+    <span class="k">def</span> <span class="m">place</span>(@marble : <span class="t">Vec2</span>, @velocity : <span class="t">Vec2</span> <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>) : <span class="t">Nil</span>
+    <span class="k">end</span>
+
+    <span class="k">private</span> <span class="k">def</span> <span class="m">resolve_walls</span>(pos : <span class="t">Vec2</span>) : <span class="t">Vec2</span>
+      @walls.each <span class="k">do</span> <span class="o">|</span>wall<span class="o">|</span>
+        closest <span class="o">=</span> pos.clamp(wall.center <span class="o">-</span> wall.half, wall.center <span class="o">+</span> wall.half)
+        delta <span class="o">=</span> pos <span class="o">-</span> closest
+        <span class="k">next</span> <span class="k">unless</span> delta.length <span class="o">&lt;</span> <span class="t">BALL_RADIUS</span>
+        normal <span class="o">=</span> delta.length <span class="o">&gt;</span> <span class="n">0.001</span> ? delta.normalized : v2(<span class="n">0</span>, <span class="n">1</span>)
+        pos <span class="o">+=</span> normal <span class="o">*</span> (<span class="t">BALL_RADIUS</span> <span class="o">-</span> delta.length)
+        into_wall <span class="o">=</span> @velocity.dot(normal)
+        @velocity <span class="o">-=</span> normal <span class="o">*</span> into_wall <span class="o">*</span> <span class="n">1.5</span> <span class="k">if</span> into_wall <span class="o">&lt;</span> <span class="n">0</span>
+      <span class="k">end</span>
+      pos
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre>
+</details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./tiltmaze.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
+</body></html>

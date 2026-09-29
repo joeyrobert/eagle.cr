@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
 <main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Asteroids</li></ol></nav>
 <div class="play"><h1>Asteroids</h1><p class="lead">Vector ship, splitting rocks, wrap-around space and thruster particles.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
@@ -54,9 +54,13 @@
 
   <span class="k">def</span> <span class="m">invulnerable?</span> : <span class="t">Bool</span>; @invuln <span class="o">&gt;</span> <span class="n">0</span>; <span class="k">end</span>
 
-  <span class="k">def</span> <span class="m">die</span>
+  <span class="k">def</span> <span class="m">revive</span> : <span class="t">Nil</span>
+    @respawn <span class="o">=</span> <span class="n">0_f32</span> <span class="k">unless</span> @alive
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">die</span>(permanent <span class="o">=</span> <span class="n">false</span>)
     @alive <span class="o">=</span> <span class="n">false</span>
-    @respawn <span class="o">=</span> <span class="n">2_f32</span>
+    @respawn <span class="o">=</span> permanent ? <span class="t">Float32</span><span class="t">::</span><span class="t">MAX</span> : <span class="n">2_f32</span>
     thrust.emitting <span class="o">=</span> <span class="n">false</span>
   <span class="k">end</span>
 
@@ -163,17 +167,18 @@
           <span class="k">break</span>
         <span class="k">end</span>
       <span class="k">end</span>
-      <span class="k">if</span> @ship.alive? <span class="o">&amp;&amp;</span> <span class="o">!</span>@ship.invulnerable? <span class="o">&amp;&amp;</span> <span class="o">!</span>r.queued_free? <span class="o">&amp;&amp;</span> r.position.distance(@ship.position) <span class="o">&lt;</span> r.radius <span class="o">+</span> <span class="n">10</span>
+      <span class="k">if</span> <span class="o">!</span>@over <span class="o">&amp;&amp;</span> @ship.alive? <span class="o">&amp;&amp;</span> <span class="o">!</span>@ship.invulnerable? <span class="o">&amp;&amp;</span> <span class="o">!</span>r.queued_free? <span class="o">&amp;&amp;</span> r.position.distance(@ship.position) <span class="o">&lt;</span> r.radius <span class="o">+</span> <span class="n">10</span>
         @lives <span class="o">-=</span> <span class="n">1</span>
         explode(@ship.position, <span class="n">40</span>)
-        @ship.die
-        @over <span class="o">=</span> <span class="n">true</span> <span class="k">if</span> @lives <span class="o">&lt;=</span> <span class="n">0</span>
+        @over <span class="o">=</span> @lives <span class="o">&lt;=</span> <span class="n">0</span>
+        @ship.die(@over)
       <span class="k">end</span>
     <span class="k">end</span>
     spawn_wave <span class="k">if</span> rocks.empty?
     <span class="k">if</span> @over <span class="o">&amp;&amp;</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">R</span>)
       <span class="t">SceneTree</span>.root.children_of(<span class="t">Rock</span>).each(<span class="o">&amp;</span>.queue_free)
       @score <span class="o">=</span> <span class="n">0</span>; @lives <span class="o">=</span> <span class="n">3</span>; @wave <span class="o">=</span> <span class="n">0</span>; @over <span class="o">=</span> <span class="n">false</span>
+      @ship.revive
       <span class="t">SceneTree</span>.flush_deferred
       spawn_wave
     <span class="k">end</span>

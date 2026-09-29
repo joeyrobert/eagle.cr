@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
 <main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">3D fly-through</li></ol></nav>
 <div class="play"><h1>3D fly-through</h1><p class="lead">Every 3D feature: primitives, textures, lights, shadows, fog, transparency, wireframe, picking.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
@@ -96,7 +96,7 @@
 
   <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
     g.rect(<span class="n">0</span>, <span class="n">0</span>, <span class="t">Window</span>.width, <span class="n">30</span>, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.45</span>))
-    g.print(<span class="s">&quot;Eagle 3D  fps </span><span class="i">#{</span><span class="t">Clock</span>.fps.round<span class="i">}</span><span class="s">  draw calls </span><span class="i">#{</span><span class="t">Scene3D</span>.renderer.draw_calls<span class="i">}</span><span class="s">  WASD/QE move, right-drag look, F wireframe, click to pick&quot;</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
+    g.print(<span class="s">&quot;Eagle 3D  fps </span><span class="i">#{</span><span class="t">Clock</span>.fps.round<span class="i">}</span><span class="s">  draws </span><span class="i">#{</span><span class="t">Scene3D</span>.renderer.draw_calls<span class="i">}</span><span class="s">  WASD/QE move, F wire, click pick&quot;</span>, <span class="n">10</span>, <span class="n">10</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>)
     <span class="k">if</span> p <span class="o">=</span> @picked
       <span class="k">if</span> s <span class="o">=</span> @cam.world_to_screen(p.global_position)
         g.circle(s.x, s.y, <span class="n">12</span>, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, <span class="t">Color</span><span class="t">::</span><span class="t">YELLOW</span>)

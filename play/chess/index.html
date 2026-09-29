@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
 <main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Chess</li></ol></nav>
 <div class="play"><h1>Chess</h1><p class="lead">Full rules with castling, en passant, promotion; perft-verified move generator and an alpha-beta AI.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
@@ -108,8 +108,8 @@
   <span class="k">end</span>
 
   <span class="k">def</span> <span class="m">undo</span>
-    n <span class="o">=</span> (@vs_ai <span class="o">&amp;&amp;</span> @board.history.size <span class="o">&gt;=</span> <span class="n">2</span>) ? <span class="n">2</span> : <span class="n">1</span>
-    <span class="k">return</span> <span class="k">if</span> @board.history.size <span class="o">&lt;</span> n
+    n <span class="o">=</span> @board.undo_plies(@vs_ai)
+    <span class="k">return</span> <span class="k">if</span> n <span class="o">==</span> <span class="n">0</span>
     hist <span class="o">=</span> @board.history[<span class="n">0</span>...<span class="o">-</span>n]
     @board <span class="o">=</span> <span class="t">Chess</span><span class="t">::</span><span class="t">Board</span>.new
     hist.each { <span class="o">|</span>m<span class="o">|</span> @board.apply(m) }
@@ -589,6 +589,11 @@
       <span class="k">end</span>
       <span class="k">return</span> <span class="t">Status</span><span class="t">::</span><span class="t">Draw</span> <span class="k">if</span> @halfmove <span class="o">&gt;=</span> <span class="n">100</span> <span class="o">||</span> insufficient_material?
       check ? <span class="t">Status</span><span class="t">::</span><span class="t">Check</span> : <span class="t">Status</span><span class="t">::</span><span class="t">Playing</span>
+    <span class="k">end</span>
+
+    <span class="c"># How many plies undo takes back: in AI mode back to a position where White (the human) is to move.</span>
+    <span class="k">def</span> <span class="m">undo_plies</span>(vs_ai : <span class="t">Bool</span>) : <span class="t">Int32</span>
+      <span class="t">Math</span>.min(vs_ai <span class="o">&amp;&amp;</span> @turn.white? ? <span class="n">2</span> : <span class="n">1</span>, @history.size)
     <span class="k">end</span>
 
     <span class="k">def</span> <span class="m">game_over?</span> : <span class="t">Bool</span>

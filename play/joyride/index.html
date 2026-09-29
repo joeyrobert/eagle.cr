@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
 <main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Joyride</li></ol></nav>
 <div class="play"><h1>Joyride</h1><p class="lead">Drive through an infinite deterministic city and countryside with traffic, police, pedestrians and delivery or race missions.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
@@ -147,7 +147,7 @@
   <span class="k">private</span> <span class="k">def</span> <span class="m">update_pedestrians</span>(dt : <span class="t">Float32</span>) : <span class="t">Nil</span>
     cars <span class="o">=</span> [@player] <span class="o">+</span> @traffic.map(<span class="o">&amp;</span>.car) <span class="o">+</span> @police
     @pedestrians.each <span class="k">do</span> <span class="o">|</span>p<span class="o">|</span>
-      <span class="k">if</span> p.update(dt, cars)
+      <span class="k">if</span> p.update(dt, cars) <span class="o">&amp;&amp;</span> p.hit_by.same?(@player)
         notify(<span class="s">&quot;Pedestrian hit! Wanted level raised&quot;</span>) <span class="k">if</span> @wanted.crime!(<span class="n">2</span>)
       <span class="k">end</span>
     <span class="k">end</span>
@@ -877,6 +877,8 @@
     getter pants : <span class="t">Color</span>
     getter phase : <span class="t">Float32</span> <span class="o">=</span> <span class="n">0_f32</span>
     property fly : <span class="t">Vec2</span> <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
+    <span class="c"># The car that last knocked this pedestrian down.</span>
+    getter hit_by : <span class="t">Car</span>? <span class="o">=</span> <span class="n">nil</span>
     @a : <span class="t">Vec2</span>
     @b : <span class="t">Vec2</span>
     @toward_b <span class="o">=</span> <span class="n">true</span>
@@ -924,6 +926,7 @@
         <span class="k">if</span> dist <span class="o">&lt;</span> <span class="n">2.1</span> <span class="o">&amp;&amp;</span> spd <span class="o">&gt;</span> <span class="n">3</span>
           <span class="c"># hit: thrown along the car&#39;s motion</span>
           @state <span class="o">=</span> <span class="t">State</span><span class="t">::</span><span class="t">Down</span>
+          @hit_by <span class="o">=</span> car
           @timer <span class="o">=</span> <span class="n">4_f32</span>
           @fly <span class="o">=</span> car.vel <span class="o">*</span> <span class="n">0.6_f32</span> <span class="o">+</span> rel.normalized <span class="o">*</span> <span class="n">2</span>
           <span class="k">return</span> <span class="n">true</span>
@@ -987,6 +990,10 @@
     <span class="c"># Returns :checkpoint, :complete, :failed or nil.</span>
     <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>, pos : <span class="t">Vec2</span>, speed : <span class="t">Float32</span>) : <span class="t">Symbol</span>?
       <span class="k">return</span> <span class="n">nil</span> <span class="k">unless</span> @state.active?
+      <span class="k">if</span> @targets.empty?
+        @state <span class="o">=</span> <span class="t">State</span><span class="t">::</span><span class="t">Complete</span>
+        <span class="k">return</span> <span class="n">:complete</span>
+      <span class="k">end</span>
       <span class="k">if</span> t <span class="o">=</span> @time_left
         t <span class="o">-=</span> dt
         @time_left <span class="o">=</span> t

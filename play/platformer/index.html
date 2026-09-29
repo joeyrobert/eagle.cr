@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
 <main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Platformer</li></ol></nav>
 <div class="play"><h1>Platformer</h1><p class="lead">ASCII level to TileMap + colliders, coyote time, jump buffering, enemies you can stomp, coins and a goal.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
@@ -23,8 +23,8 @@
   #    P      ###          c c                        c              #
   #  #####            e   ####                  ###  ####            #
   #                 #####            ####               ##   c   G   #
-  #        c c                  e             c   e         ####  ###
-  #       #####        ^^^    ######    ^^^  ####### ^^^^ ^^        #
+  #        c c                  e             c   e         ####  ####
+  #       #####        ^^^    ######    ^^^  ####### ^^^^ ^^        ##
   ####################################################################
   MAP</span>
 
@@ -109,6 +109,7 @@
   @coins <span class="o">=</span> <span class="n">0</span>
   @total <span class="o">=</span> <span class="n">0</span>
   @deaths <span class="o">=</span> <span class="n">0</span>
+  @respawn_gen <span class="o">=</span> <span class="n">0</span>
   @won <span class="o">=</span> <span class="n">false</span>
   @world <span class="o">=</span> <span class="t">Node2D</span>.new(<span class="s">&quot;World&quot;</span>)
   @hud <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;&quot;</span>)
@@ -130,7 +131,8 @@
 
   <span class="k">def</span> <span class="m">build</span>
     @world.clear_children
-    @coins <span class="o">=</span> <span class="n">0</span>; @total <span class="o">=</span> <span class="n">0</span>; @won <span class="o">=</span> <span class="n">false</span>
+    @coins <span class="o">=</span> <span class="n">0</span>; @total <span class="o">=</span> <span class="n">0</span>; @won <span class="o">=</span> <span class="n">false</span>; @deaths <span class="o">=</span> <span class="n">0</span>
+    @respawn_gen <span class="o">+=</span> <span class="n">1</span>
     lines <span class="o">=</span> <span class="t">LEVEL</span>.lines.map(<span class="o">&amp;</span>.rstrip)
     ts <span class="o">=</span> <span class="t">Image</span>.new(<span class="t">TILE</span> <span class="o">*</span> <span class="n">2</span>, <span class="t">TILE</span>)
     ts.fill_rect(<span class="n">0</span>, <span class="n">0</span>, <span class="t">TILE</span>, <span class="t">TILE</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#3d5a80&quot;</span>))
@@ -204,13 +206,14 @@
   <span class="k">end</span>
 
   <span class="k">def</span> <span class="m">hurt</span>
-    <span class="k">return</span> <span class="k">unless</span> (p <span class="o">=</span> @player) <span class="o">&amp;&amp;</span> p.in_tree?
+    <span class="k">return</span> <span class="k">unless</span> (p <span class="o">=</span> @player) <span class="o">&amp;&amp;</span> p.in_tree? <span class="o">&amp;&amp;</span> <span class="o">!</span>p.queued_free?
     @deaths <span class="o">+=</span> <span class="n">1</span>
     <span class="t">Sounds</span>.hurt
     @cam.shake(<span class="n">6</span>, <span class="n">0.3</span>)
     start <span class="o">=</span> p.position
     p.queue_free
-    <span class="t">SceneTree</span>.defer { spawn(v2(<span class="n">2.5</span> <span class="o">*</span> <span class="t">TILE</span>, <span class="n">4.5</span> <span class="o">*</span> <span class="t">TILE</span>)) }
+    gen <span class="o">=</span> @respawn_gen
+    <span class="t">SceneTree</span>.defer { spawn(v2(<span class="n">2.5</span> <span class="o">*</span> <span class="t">TILE</span>, <span class="n">4.5</span> <span class="o">*</span> <span class="t">TILE</span>)) <span class="k">if</span> gen <span class="o">==</span> @respawn_gen }
   <span class="k">end</span>
 
   <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)

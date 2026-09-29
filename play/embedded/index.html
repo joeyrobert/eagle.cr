@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
 <main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Embedded assets</li></ol></nav>
 <div class="play"><h1>Embedded assets</h1><p class="lead">A game whose PNG, WAV and shader are baked into the binary at compile time.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
@@ -30,7 +30,7 @@
   <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
     g.with_shader(@fx) { g.draw_tiled(@tex.not_nil!, <span class="t">Rect</span>.new(<span class="n">40</span>, <span class="n">60</span>, <span class="t">Window</span>.width <span class="o">-</span> <span class="n">80</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">120</span>), v2(<span class="t">Clock</span>.elapsed <span class="o">*</span> <span class="n">30</span>, <span class="n">0</span>)) }
     g.print(<span class="s">&quot;embedded assets: </span><span class="i">#{</span><span class="t">Assets</span>.embedded_paths.join(<span class="s">&quot;, &quot;</span>)<span class="i">}</span><span class="s">&quot;</span>, <span class="n">10</span>, <span class="n">10</span>)
-    g.print(<span class="s">&quot;no files are read from disk; try moving the executable anywhere&quot;</span>, <span class="n">10</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">26</span>, <span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>)
+    g.print(<span class="s">&quot;nothing is read from disk; move the exe anywhere&quot;</span>, <span class="n">10</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">26</span>, <span class="t">Color</span><span class="t">::</span><span class="t">GRAY</span>)
   <span class="k">end</span>
 <span class="k">end</span>
 

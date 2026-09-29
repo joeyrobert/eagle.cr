@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
 <main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Snake</li></ol></nav>
 <div class="play"><h1>Snake</h1><p class="lead">Grid logic with a unit-tested core and speed that ramps as you eat.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
@@ -33,6 +33,7 @@
   <span class="k">end</span>
 
   <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
     @game.turn(<span class="t">SnakeGame</span><span class="t">::</span><span class="t">Dir</span><span class="t">::</span><span class="t">Up</span>) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;up&quot;</span>)
     @game.turn(<span class="t">SnakeGame</span><span class="t">::</span><span class="t">Dir</span><span class="t">::</span><span class="t">Down</span>) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;down&quot;</span>)
     @game.turn(<span class="t">SnakeGame</span><span class="t">::</span><span class="t">Dir</span><span class="t">::</span><span class="t">Left</span>) <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;left&quot;</span>)
@@ -51,10 +52,11 @@
         @snd.try(<span class="o">&amp;</span>.play(pitch: <span class="n">1</span> <span class="o">+</span> @game.score <span class="o">*</span> <span class="n">0.02</span>))
         @speed <span class="o">+=</span> <span class="n">0.25</span>
         @best <span class="o">=</span> <span class="t">Math</span>.max(@best, @game.score)
-      <span class="k">when</span> <span class="n">:died</span> <span class="k">then</span> @snd_die.try(<span class="o">&amp;</span>.play)
+      <span class="k">when</span> <span class="n">:died</span>
+        @snd_die.try(<span class="o">&amp;</span>.play)
+        <span class="k">break</span>
       <span class="k">end</span>
     <span class="k">end</span>
-    <span class="t">Eagle</span>.quit <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="t">Key</span><span class="t">::</span><span class="t">Escape</span>)
   <span class="k">end</span>
 
   <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)

@@ -5,15 +5,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
 <main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">UI toolkit</li></ol></nav>
-<div class="play"><h1>UI toolkit</h1><p class="lead">Panels, buttons, sliders, checkboxes, text input, grids and themes.</p>
+<div class="play"><h1>UI toolkit</h1><p class="lead">Panels, buttons, sliders, text input, drop-downs, rich text, scroll containers, grids and themes.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
 <p class="controls">Click around; Tab cycles focus</p>
 <details><summary>Source: <code>examples/ui/main.cr</code></summary><h3>examples/ui/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
 <span class="k">include</span> <span class="t">Eagle</span>
 
-<span class="c"># UI showcase: containers, buttons, sliders, text input, themes, TrueType font.</span>
+<span class="c"># UI showcase: containers, buttons, sliders, text input, drop-down, rich text, scroll container, themes, TrueType font.</span>
 <span class="k">class</span> <span class="t">UIDemo</span> <span class="o">&lt;</span> <span class="t">App</span>
   @status <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;Ready.&quot;</span>)
   @ttf : <span class="t">Font</span>? <span class="o">=</span> <span class="n">nil</span>
@@ -63,11 +63,31 @@
 
     input <span class="o">=</span> <span class="t">TextInput</span>.new(<span class="s">&quot;&quot;</span>, <span class="s">&quot;Type your name and press Enter&quot;</span>)
     input.on_submitted { <span class="o">|</span>t<span class="o">|</span> @status.text <span class="o">=</span> <span class="s">&quot;Hello, </span><span class="i">#{</span>t<span class="i">}</span><span class="s">!&quot;</span> }
+    input.on_text_changed { <span class="o">|</span>t<span class="o">|</span> @status.text <span class="o">=</span> <span class="s">&quot;Typing: </span><span class="i">#{</span>t<span class="i">}</span><span class="s">&quot;</span> }
     vbox.add(input)
+    clip <span class="o">=</span> <span class="t">HBox</span>.new
+    clip.add(<span class="t">Button</span>.new(<span class="s">&quot;Copy text&quot;</span>) { <span class="t">Clipboard</span>.text <span class="o">=</span> input.text; @status.text <span class="o">=</span> <span class="s">&quot;Copied </span><span class="i">#{</span>input.text.size<span class="i">}</span><span class="s"> characters&quot;</span> })
+    clip.add(<span class="t">Button</span>.new(<span class="s">&quot;Paste&quot;</span>) { input.paste })
+    vbox.add(clip)
 
     grid <span class="o">=</span> <span class="t">GridContainer</span>.new(<span class="n">3</span>)
     <span class="n">9</span>.times { <span class="o">|</span>i<span class="o">|</span> grid.add(<span class="t">Button</span>.new(<span class="s">&quot;</span><span class="i">#{</span>i <span class="o">+</span> <span class="n">1</span><span class="i">}</span><span class="s">&quot;</span>) { @status.text <span class="o">=</span> <span class="s">&quot;Grid </span><span class="i">#{</span>i <span class="o">+</span> <span class="n">1</span><span class="i">}</span><span class="s">&quot;</span> }) }
     vbox.add(grid)
+
+    biome <span class="o">=</span> <span class="t">OptionButton</span>.new([<span class="s">&quot;Forest&quot;</span>, <span class="s">&quot;Desert&quot;</span>, <span class="s">&quot;Ocean&quot;</span>, <span class="s">&quot;Tundra&quot;</span>])
+    biome.on_item_selected { <span class="o">|</span>i<span class="o">|</span> @status.text <span class="o">=</span> <span class="s">&quot;Biome: </span><span class="i">#{</span>biome.items[i]<span class="i">}</span><span class="s">&quot;</span> }
+    vbox.add(biome)
+
+    tip <span class="o">=</span> <span class="t">RichTextLabel</span>.new(<span class="s">&quot;**Rich text:** [color=#e3a537]colors[/color] and [url=docs][color=#8fbaff]links[/color][/url].&quot;</span>)
+    tip.on_meta_clicked { <span class="o">|</span>m<span class="o">|</span> @status.text <span class="o">=</span> <span class="s">&quot;Clicked link: </span><span class="i">#{</span>m<span class="i">}</span><span class="s">&quot;</span> }
+    vbox.add(tip)
+
+    log <span class="o">=</span> <span class="t">VBox</span>.new
+    <span class="n">12</span>.times { <span class="o">|</span>i<span class="o">|</span> log.add(<span class="t">Label</span>.new(<span class="s">&quot;Log entry </span><span class="i">#{</span>i <span class="o">+</span> <span class="n">1</span><span class="i">}</span><span class="s">&quot;</span>, color: <span class="t">Color</span>.gray(<span class="n">0.8</span>))) }
+    scroller <span class="o">=</span> <span class="t">ScrollContainer</span>.new(size: v2(<span class="n">0</span>, <span class="n">70</span>))
+    scroller.min_size <span class="o">=</span> v2(<span class="n">0</span>, <span class="n">70</span>)
+    scroller.add(log)
+    vbox.add(scroller)
 
     theme_row <span class="o">=</span> <span class="t">HBox</span>.new
     theme_row.add(<span class="t">Button</span>.new(<span class="s">&quot;Dark&quot;</span>) { panel.theme <span class="o">=</span> <span class="n">nil</span>; @status.text <span class="o">=</span> <span class="s">&quot;Dark theme&quot;</span> })
@@ -81,7 +101,7 @@
   <span class="k">end</span>
 <span class="k">end</span>
 
-<span class="t">Eagle</span>.run(<span class="t">UIDemo</span>, title: <span class="s">&quot;Eagle UI&quot;</span>, width: <span class="n">900</span>, height: <span class="n">640</span>)
+<span class="t">Eagle</span>.run(<span class="t">UIDemo</span>, title: <span class="s">&quot;Eagle UI&quot;</span>, width: <span class="n">900</span>, height: <span class="n">800</span>)
 </code></pre>
 </details></div>
 <script type="module">import { runEagle } from "./eagle.js"; runEagle("./ui.wasm", document.getElementById("eagle"), { antialias: true });</script></main>

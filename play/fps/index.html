@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 <link rel="icon" href="../../assets/favicon.svg"></head>
-<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.1.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
 <main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Neon Bastion (FPS)</li></ol></nav>
 <div class="play"><h1>Neon Bastion (FPS)</h1><p class="lead">First-person arena shooter: mouse look, pulse rifle and scattergun, grunt and charger AI, Waves and Deathmatch.</p>
 <div class="stage"><canvas id="eagle"></canvas></div>
@@ -122,10 +122,10 @@
     <span class="c"># Calling this from a click is required by browser pointer-lock&#39;s user-gesture rule;</span>
     <span class="c"># repeating it is harmless and lets a click recapture after Escape releases the lock.</span>
     <span class="t">Window</span>.relative_mouse <span class="o">=</span> <span class="n">true</span> <span class="k">if</span> <span class="t">Input</span>.mouse_pressed?(<span class="t">MouseButton</span><span class="t">::</span><span class="t">Left</span>)
-    @yaw <span class="o">-=</span> <span class="t">Input</span>.mouse_delta.x <span class="o">*</span> <span class="n">0.0025</span>
+    @yaw <span class="o">+=</span> <span class="t">Input</span>.mouse_delta.x <span class="o">*</span> <span class="n">0.0025</span>
     @pitch <span class="o">=</span> (@pitch <span class="o">-</span> <span class="t">Input</span>.mouse_delta.y <span class="o">*</span> <span class="n">0.0025</span>).clamp(<span class="n">-1.25_f32</span>, <span class="n">1.25_f32</span>)
     <span class="k">if</span> pad <span class="o">=</span> <span class="t">Input</span>.gamepad
-      @yaw <span class="o">-=</span> pad.right_stick.x <span class="o">*</span> dt <span class="o">*</span> <span class="n">2.4</span>
+      @yaw <span class="o">+=</span> pad.right_stick.x <span class="o">*</span> dt <span class="o">*</span> <span class="n">2.4</span>
       @pitch <span class="o">=</span> (@pitch <span class="o">-</span> pad.right_stick.y <span class="o">*</span> dt <span class="o">*</span> <span class="n">2.0</span>).clamp(<span class="n">-1.25_f32</span>, <span class="n">1.25_f32</span>)
     <span class="k">end</span>
 
@@ -437,6 +437,7 @@
     getter cooldown <span class="o">=</span> <span class="n">0_f32</span>
     getter elapsed <span class="o">=</span> <span class="n">0_f32</span>
     getter message <span class="o">=</span> <span class="s">&quot;&quot;</span>
+    @message_time <span class="o">=</span> <span class="n">0_f32</span>
     getter? finished <span class="o">=</span> <span class="n">false</span>
     @next_id <span class="o">=</span> <span class="n">1</span>
     @rng : <span class="t">RNG</span>
@@ -460,6 +461,8 @@
     <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>) : <span class="t">Nil</span>
       <span class="k">return</span> <span class="k">if</span> @finished
       @elapsed <span class="o">+=</span> dt
+      @message_time <span class="o">-=</span> dt <span class="k">if</span> @message_time <span class="o">&gt;</span> <span class="n">0</span>
+      @message <span class="o">=</span> <span class="s">&quot;&quot;</span> <span class="k">if</span> @message_time <span class="o">&lt;=</span> <span class="n">0</span>
       @cooldown <span class="o">=</span> <span class="t">Math</span>.max(<span class="n">0_f32</span>, @cooldown <span class="o">-</span> dt)
       <span class="k">if</span> @health <span class="o">&lt;=</span> <span class="n">0</span>
         @respawn <span class="o">-=</span> dt
@@ -491,7 +494,7 @@
       <span class="k">if</span> @mode.waves? <span class="o">&amp;&amp;</span> @health <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> @enemies.none?(<span class="o">&amp;</span>.alive?)
         @wave <span class="o">+=</span> <span class="n">1</span>
         @health <span class="o">=</span> <span class="t">Math</span>.min(<span class="n">100</span>, @health <span class="o">+</span> <span class="n">25</span>)
-        @message <span class="o">=</span> <span class="s">&quot;Wave </span><span class="i">#{</span>@wave<span class="i">}</span><span class="s">&quot;</span>
+        say(<span class="s">&quot;Wave </span><span class="i">#{</span>@wave<span class="i">}</span><span class="s">&quot;</span>)
         spawn_wave
       <span class="k">elsif</span> @mode.deathmatch?
         @enemies.reject! { <span class="o">|</span>e<span class="o">|</span> <span class="o">!</span>e.alive? }
@@ -500,7 +503,7 @@
         <span class="k">end</span>
         <span class="k">if</span> @score <span class="o">&gt;=</span> <span class="n">15</span>
           @finished <span class="o">=</span> <span class="n">true</span>
-          @message <span class="o">=</span> <span class="s">&quot;Frag limit reached&quot;</span>
+          say(<span class="s">&quot;Frag limit reached&quot;</span>)
         <span class="k">end</span>
       <span class="k">end</span>
     <span class="k">end</span>
@@ -549,20 +552,25 @@
       <span class="t">ShotResult</span>.new(<span class="n">true</span>, hits, kills, endpoint)
     <span class="k">end</span>
 
+    <span class="k">private</span> <span class="k">def</span> <span class="m">say</span>(text : <span class="t">String</span>) : <span class="t">Nil</span>
+      @message <span class="o">=</span> text
+      @message_time <span class="o">=</span> <span class="n">3_f32</span>
+    <span class="k">end</span>
+
     <span class="k">private</span> <span class="k">def</span> <span class="m">damage_player</span>(amount : <span class="t">Int32</span>) : <span class="t">Nil</span>
       <span class="k">return</span> <span class="k">if</span> @health <span class="o">&lt;=</span> <span class="n">0</span>
       @health <span class="o">=</span> <span class="t">Math</span>.max(<span class="n">0</span>, @health <span class="o">-</span> amount)
       <span class="k">if</span> @health <span class="o">==</span> <span class="n">0</span>
         @deaths <span class="o">+=</span> <span class="n">1</span>
         @respawn <span class="o">=</span> <span class="n">2_f32</span>
-        @message <span class="o">=</span> <span class="s">&quot;Respawning...&quot;</span>
+        say(<span class="s">&quot;Respawning...&quot;</span>)
       <span class="k">end</span>
     <span class="k">end</span>
 
     <span class="k">private</span> <span class="k">def</span> <span class="m">respawn_player</span> : <span class="t">Nil</span>
       @health <span class="o">=</span> <span class="n">100</span>
       @player <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ZERO</span>
-      @message <span class="o">=</span> <span class="s">&quot;Back in the fight&quot;</span>
+      say(<span class="s">&quot;Back in the fight&quot;</span>)
     <span class="k">end</span>
 
     <span class="k">private</span> <span class="k">def</span> <span class="m">spawn_wave</span> : <span class="t">Nil</span>

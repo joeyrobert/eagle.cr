@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Touch · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Touch</li></ol></nav>
+<div class="play"><h1>Touch</h1><p class="lead">Multi-touch drag, pinch and twist gestures, a virtual joystick and button, and touch-driven UI.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Use a touch screen (or Chrome device emulation)</p>
+<details><summary>Source: <code>examples/touch/main.cr</code></summary><h3>examples/touch/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
+
+<span class="c"># Touch showcase for phones and tablets (or Chrome device emulation on the web build).</span>
+<span class="c">#</span>
+<span class="c">#  1. Drag the cards: each one claims the finger that lands on it and moves with drag events.</span>
+<span class="c">#  2. Pinch and twist the big star with two fingers (GestureRecognizer), double tap to reset it.</span>
+<span class="c">#  3. The virtual joystick moves the dot through the same &quot;left/right/up/down&quot; actions as WASD.</span>
+<span class="c">#  4. The virtual button fires a pulse through the &quot;fire&quot; action, which is also mapped to Space.</span>
+<span class="c">#  5. The buttons at the top are plain UI, driven by touch through mouse emulation.</span>
+<span class="c"># Run with EAGLE_DEMO=1 to have the engine play synthetic touches itself.</span>
+
+<span class="k">class</span> <span class="t">Card</span> <span class="o">&lt;</span> <span class="t">Node2D</span>
+  <span class="t">W</span> <span class="o">=</span> <span class="n">120</span>
+  <span class="t">H</span> <span class="o">=</span> <span class="n">80</span>
+  @finger : <span class="t">Int32</span>? <span class="o">=</span> <span class="n">nil</span>
+  @flash <span class="o">=</span> <span class="n">0_f32</span>
+
+  <span class="k">def</span> <span class="m">initialize</span>(position : <span class="t">Vec2</span>, @color : <span class="t">Color</span>, @label : <span class="t">String</span>)
+    <span class="k">super</span>(<span class="s">&quot;Card&quot;</span>, position)
+    @home <span class="o">=</span> position
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">reset</span> : <span class="t">Nil</span>
+    <span class="k">self</span>.position <span class="o">=</span> @home
+    <span class="k">self</span>.z_index <span class="o">=</span> <span class="n">0</span>
+    @finger <span class="o">=</span> <span class="n">nil</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">input</span>(e : <span class="t">Event</span>)
+    <span class="k">case</span> e
+    <span class="k">when</span> <span class="t">TouchEvent</span>
+      local <span class="o">=</span> to_local(e.position)
+      <span class="k">if</span> e.began? <span class="o">&amp;&amp;</span> @finger.<span class="k">nil?</span> <span class="o">&amp;&amp;</span> local.x.abs <span class="o">&lt;=</span> <span class="t">W</span> <span class="o">/</span> <span class="n">2</span> <span class="o">&amp;&amp;</span> local.y.abs <span class="o">&lt;=</span> <span class="t">H</span> <span class="o">/</span> <span class="n">2</span>
+        @finger <span class="o">=</span> e.id
+        <span class="k">self</span>.z_index <span class="o">=</span> <span class="n">1</span>
+        e.handled <span class="o">=</span> <span class="n">true</span>
+      <span class="k">elsif</span> e.id <span class="o">==</span> @finger <span class="o">&amp;&amp;</span> (e.ended? <span class="o">||</span> e.cancelled?)
+        @flash <span class="o">=</span> <span class="n">0.3_f32</span> <span class="k">unless</span> <span class="t">Touch</span>.released.any? { <span class="o">|</span>f<span class="o">|</span> f.id <span class="o">==</span> e.id <span class="o">&amp;&amp;</span> f.dragging? }
+        @finger <span class="o">=</span> <span class="n">nil</span>
+        <span class="k">self</span>.z_index <span class="o">=</span> <span class="n">0</span>
+      <span class="k">end</span>
+    <span class="k">when</span> <span class="t">TouchDragEvent</span>
+      <span class="k">self</span>.position <span class="o">+=</span> e.delta <span class="k">if</span> e.moved? <span class="o">&amp;&amp;</span> e.id <span class="o">==</span> @finger
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">process</span>(dt : <span class="t">Float32</span>)
+    @flash <span class="o">=</span> <span class="t">Math</span>.max(<span class="n">0_f32</span>, @flash <span class="o">-</span> dt)
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    g.rounded_rect(<span class="o">-</span><span class="t">W</span> <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">3</span>, <span class="o">-</span><span class="t">H</span> <span class="o">/</span> <span class="n">2</span> <span class="o">+</span> <span class="n">5</span>, <span class="t">W</span>, <span class="t">H</span>, <span class="n">10</span>, color: <span class="t">Color</span>.new(<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0.35</span>)) <span class="k">if</span> @finger
+    g.rounded_rect(<span class="o">-</span><span class="t">W</span> <span class="o">/</span> <span class="n">2</span>, <span class="o">-</span><span class="t">H</span> <span class="o">/</span> <span class="n">2</span>, <span class="t">W</span>, <span class="t">H</span>, <span class="n">10</span>, color: @color.lerp(<span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>, @flash <span class="o">*</span> <span class="n">2</span>))
+    g.rounded_rect(<span class="o">-</span><span class="t">W</span> <span class="o">/</span> <span class="n">2</span>, <span class="o">-</span><span class="t">H</span> <span class="o">/</span> <span class="n">2</span>, <span class="t">W</span>, <span class="t">H</span>, <span class="n">10</span>, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, @finger ? <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span> : <span class="t">Color</span>.gray(<span class="n">0.15</span>))
+    g.print(@label, <span class="n">0</span>, <span class="n">-6</span>, <span class="t">Color</span><span class="t">::</span><span class="t">BLACK</span>, align: <span class="t">TextAlign</span><span class="t">::</span><span class="t">Center</span>)
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">class</span> <span class="t">TouchDemo</span> <span class="o">&lt;</span> <span class="t">App</span>
+  @star <span class="o">=</span> <span class="t">Polygon2D</span>.regular(<span class="n">5</span>, <span class="n">70</span>, <span class="t">Color</span>.hex(<span class="s">&quot;#ffd166&quot;</span>))
+  @dot : <span class="t">Vec2</span> <span class="o">=</span> v2(<span class="n">200</span>, <span class="n">380</span>)
+  @pulse <span class="o">=</span> <span class="n">0_f32</span>
+  @log <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;&quot;</span>)
+  @lines <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">String</span>
+  @fingers <span class="o">=</span> <span class="t">Label</span>.new(<span class="s">&quot;&quot;</span>)
+  @cards <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">Card</span>
+
+  <span class="k">def</span> <span class="m">load</span>
+    <span class="t">Input</span>.map <span class="s">&quot;left&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">A</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Left</span>
+    <span class="t">Input</span>.map <span class="s">&quot;right&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">D</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Right</span>
+    <span class="t">Input</span>.map <span class="s">&quot;up&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">W</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Up</span>
+    <span class="t">Input</span>.map <span class="s">&quot;down&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">S</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Down</span>
+    <span class="t">Input</span>.map <span class="s">&quot;fire&quot;</span>, <span class="t">Key</span><span class="t">::</span><span class="t">Space</span>
+
+    @star.position <span class="o">=</span> v2(<span class="t">Window</span>.width <span class="o">/</span> <span class="n">2</span>, <span class="t">Window</span>.height <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">10</span>)
+    <span class="t">SceneTree</span>.root.add(@star)
+    @cards <span class="o">&lt;&lt;</span> <span class="t">Card</span>.new(v2(<span class="n">150</span>, <span class="n">150</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#4cc9f0&quot;</span>), <span class="s">&quot;drag me&quot;</span>)
+    @cards <span class="o">&lt;&lt;</span> <span class="t">Card</span>.new(v2(<span class="t">Window</span>.width <span class="o">-</span> <span class="n">150</span>, <span class="n">150</span>), <span class="t">Color</span>.hex(<span class="s">&quot;#f72585&quot;</span>), <span class="s">&quot;or me&quot;</span>)
+    @cards.each { <span class="o">|</span>c<span class="o">|</span> <span class="t">SceneTree</span>.root.add(c) }
+
+    gestures <span class="o">=</span> <span class="t">GestureRecognizer</span>.new
+    gestures.on_pinched { <span class="o">|</span>_, delta, c<span class="o">|</span> @star.scale <span class="o">*=</span> delta <span class="k">if</span> near_star?(c) }
+    gestures.on_rotated { <span class="o">|</span>_, delta, c<span class="o">|</span> @star.rotation <span class="o">+=</span> delta <span class="k">if</span> near_star?(c) }
+    gestures.on_double_tapped <span class="k">do</span> <span class="o">|</span>p<span class="o">|</span>
+      <span class="k">if</span> near_star?(p)
+        @star.scale <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ONE</span>
+        @star.rotation <span class="o">=</span> <span class="n">0</span>
+        log(<span class="s">&quot;double tap: reset&quot;</span>)
+      <span class="k">end</span>
+    <span class="k">end</span>
+    gestures.on_tapped { <span class="o">|</span>p<span class="o">|</span> log(<span class="s">&quot;tap </span><span class="i">#{</span>p.x.to_i<span class="i">}</span><span class="s">,</span><span class="i">#{</span>p.y.to_i<span class="i">}</span><span class="s">&quot;</span>) }
+    gestures.on_long_pressed { <span class="o">|</span>p<span class="o">|</span> log(<span class="s">&quot;long press&quot;</span>) }
+    gestures.on_swiped { <span class="o">|</span>dir, _, _<span class="o">|</span> log(<span class="s">&quot;swipe </span><span class="i">#{</span>dir.x.round(<span class="n">1</span>)<span class="i">}</span><span class="s">,</span><span class="i">#{</span>dir.y.round(<span class="n">1</span>)<span class="i">}</span><span class="s">&quot;</span>) }
+    <span class="t">SceneTree</span>.root.add(gestures)
+
+    hud <span class="o">=</span> <span class="t">CanvasLayer</span>.new
+    stick <span class="o">=</span> <span class="t">VirtualJoystick</span>.new(v2(<span class="n">30</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">190</span>), <span class="n">80</span>).bind(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>, <span class="s">&quot;up&quot;</span>, <span class="s">&quot;down&quot;</span>)
+    fire <span class="o">=</span> <span class="t">VirtualButton</span>.new(<span class="s">&quot;fire&quot;</span>, <span class="s">&quot;FIRE&quot;</span>, v2(<span class="t">Window</span>.width <span class="o">-</span> <span class="n">130</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">130</span>), <span class="n">100</span>)
+    row <span class="o">=</span> <span class="t">HBox</span>.new(position: v2(<span class="t">Window</span>.width <span class="o">/</span> <span class="n">2</span> <span class="o">-</span> <span class="n">130</span>, <span class="n">10</span>))
+    row.add(<span class="t">Button</span>.new(<span class="s">&quot;Reset&quot;</span>) { reset }, <span class="t">Button</span>.new(<span class="s">&quot;Clear log&quot;</span>) { @lines.clear; @log.text <span class="o">=</span> <span class="s">&quot;&quot;</span> })
+    @log.position <span class="o">=</span> v2(<span class="t">Window</span>.width <span class="o">-</span> <span class="n">260</span>, <span class="n">200</span>)
+    @log.color <span class="o">=</span> <span class="t">Color</span>.gray(<span class="n">0.85</span>)
+    @fingers.position <span class="o">=</span> v2(<span class="n">12</span>, <span class="n">12</span>)
+    hud.add(stick, fire, row, @log, @fingers)
+    <span class="t">SceneTree</span>.root.add(hud)
+    demo_script <span class="k">if</span> <span class="t">ENV</span>[<span class="s">&quot;EAGLE_DEMO&quot;</span>]? <span class="o">==</span> <span class="s">&quot;1&quot;</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">reset</span>
+    @star.scale <span class="o">=</span> <span class="t">Vec2</span><span class="t">::</span><span class="t">ONE</span>
+    @star.rotation <span class="o">=</span> <span class="n">0</span>
+    @dot <span class="o">=</span> v2(<span class="n">200</span>, <span class="n">380</span>)
+    @cards.each(<span class="o">&amp;</span>.reset)
+    log(<span class="s">&quot;reset&quot;</span>)
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">near_star?</span>(p : <span class="t">Vec2</span>) : <span class="t">Bool</span>
+    p.distance(@star.position) <span class="o">&lt;</span> <span class="n">200</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">log</span>(msg : <span class="t">String</span>)
+    @lines <span class="o">&lt;&lt;</span> msg
+    @lines.shift <span class="k">if</span> @lines.size <span class="o">&gt;</span> <span class="n">10</span>
+    @log.text <span class="o">=</span> @lines.join(<span class="s">&quot;\n&quot;</span>)
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">update</span>(dt : <span class="t">Float32</span>)
+    @dot <span class="o">+=</span> <span class="t">Input</span>.vector(<span class="s">&quot;left&quot;</span>, <span class="s">&quot;right&quot;</span>, <span class="s">&quot;up&quot;</span>, <span class="s">&quot;down&quot;</span>) <span class="o">*</span> <span class="n">240</span> <span class="o">*</span> dt
+    @dot <span class="o">=</span> @dot.clamp(v2(<span class="n">20</span>, <span class="n">60</span>), <span class="t">Window</span>.size <span class="o">-</span> v2(<span class="n">20</span>, <span class="n">20</span>))
+    <span class="k">if</span> <span class="t">Input</span>.pressed?(<span class="s">&quot;fire&quot;</span>)
+      @pulse <span class="o">=</span> <span class="n">1_f32</span>
+      log(<span class="s">&quot;fire&quot;</span>)
+    <span class="k">end</span>
+    @pulse <span class="o">=</span> <span class="t">Math</span>.max(<span class="n">0_f32</span>, @pulse <span class="o">-</span> dt <span class="o">*</span> <span class="n">2</span>)
+    @fingers.text <span class="o">=</span> <span class="s">&quot;fingers: </span><span class="i">#{</span><span class="t">Touch</span>.count<span class="i">}</span><span class="s">  &quot;</span> <span class="o">+</span> <span class="t">Touch</span>.fingers.map { <span class="o">|</span>f<span class="o">|</span> <span class="s">&quot;#</span><span class="i">#{</span>f.id<span class="i">}</span><span class="s"></span><span class="i">#{</span>f.dragging? ? <span class="s">&quot;*&quot;</span> : <span class="s">&quot;&quot;</span><span class="i">}</span><span class="s">&quot;</span> }.join(<span class="s">&quot; &quot;</span>)
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="m">draw</span>(g : <span class="t">Graphics</span>)
+    g.circle(@dot, <span class="n">18</span> <span class="o">+</span> @pulse <span class="o">*</span> <span class="n">30</span>, color: <span class="t">Color</span>.hex(<span class="s">&quot;#7bd88f&quot;</span>))
+    g.circle(@dot, <span class="n">18</span> <span class="o">+</span> @pulse <span class="o">*</span> <span class="n">30</span>, <span class="t">DrawMode</span><span class="t">::</span><span class="t">Line</span>, <span class="t">Color</span><span class="t">::</span><span class="t">WHITE</span>) <span class="k">if</span> @pulse <span class="o">&gt;</span> <span class="n">0</span>
+  <span class="k">end</span>
+
+  <span class="c"># Scripted walkthrough used for the automated screenshot.</span>
+  <span class="k">def</span> <span class="m">demo_script</span>
+    <span class="t">Script</span>.touch_drag(v2(<span class="n">150</span>, <span class="n">150</span>), v2(<span class="n">300</span>, <span class="n">240</span>), seconds: <span class="n">0.4</span>, start: <span class="n">0.3</span>)
+    <span class="t">Script</span>.pinch(v2(<span class="t">Window</span>.width <span class="o">/</span> <span class="n">2</span>, <span class="t">Window</span>.height <span class="o">/</span> <span class="n">2</span>), <span class="n">160</span>, <span class="n">240</span>, seconds: <span class="n">0.5</span>, start: <span class="n">1.0</span>)
+    <span class="t">Script</span>.twist(v2(<span class="t">Window</span>.width <span class="o">/</span> <span class="n">2</span>, <span class="t">Window</span>.height <span class="o">/</span> <span class="n">2</span>), <span class="n">130</span>, <span class="n">0.7</span>, seconds: <span class="n">0.5</span>, start: <span class="n">1.7</span>)
+    <span class="t">Script</span>.at(<span class="n">2.4</span>) { <span class="t">Script</span>.touch_tap(v2(<span class="n">60</span>, <span class="n">200</span>)) }
+    <span class="t">Script</span>.at(<span class="n">2.6</span>) { <span class="t">Script</span>.touch_down(<span class="n">0</span>, v2(<span class="n">110</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">110</span>)) }
+    <span class="t">Script</span>.at(<span class="n">2.7</span>) { <span class="t">Script</span>.touch_move(<span class="n">0</span>, v2(<span class="n">150</span>, <span class="t">Window</span>.height <span class="o">-</span> <span class="n">110</span>)) }
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="t">Eagle</span>.run(<span class="t">TouchDemo</span>, title: <span class="s">&quot;Eagle touch&quot;</span>, width: <span class="n">960</span>, height: <span class="n">540</span>)
+</code></pre>
+</details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./touch.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
+</body></html>
