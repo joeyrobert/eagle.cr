@@ -20,6 +20,7 @@ module Eagle
           body = data[pos + 8, Math.min(size, data.size - pos - 8)]
           case id
           when "fmt "
+            raise AssetError.new("WAV fmt chunk is truncated") if body.size < 16
             format = le.decode(UInt16, body[0, 2]).to_i
             channels = le.decode(UInt16, body[2, 2]).to_i
             rate = le.decode(UInt32, body[4, 4]).to_i
@@ -35,6 +36,7 @@ module Eagle
         raise AssetError.new("WAV has no data chunk") unless pcm
         raise AssetError.new("WAV has no fmt chunk") if channels == 0
         bytes_per = bits // 8
+        raise AssetError.new("Unsupported WAV bit depth #{bits}") if bytes_per == 0
         frames = pcm.size // (bytes_per * channels)
         samples = Slice(Float32).new(frames * channels)
         case {format, bits}

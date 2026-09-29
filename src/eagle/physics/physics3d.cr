@@ -204,10 +204,13 @@ module Eagle
           @triangles.each_index { |i| yield i }
           return
         end
+        return unless box.intersects?(@cached_aabb)
         seen = Set(Int32).new
-        x0 = (box.min.x / @cell).floor.to_i; x1 = (box.max.x / @cell).floor.to_i
-        y0 = (box.min.y / @cell).floor.to_i; y1 = (box.max.y / @cell).floor.to_i
-        z0 = (box.min.z / @cell).floor.to_i; z1 = (box.max.z / @cell).floor.to_i
+        # clamp to the mesh bounds so long rays do not walk millions of empty cells
+        lo = box.min.max(@cached_aabb.min); hi = box.max.min(@cached_aabb.max)
+        x0 = (lo.x / @cell).floor.to_i; x1 = (hi.x / @cell).floor.to_i
+        y0 = (lo.y / @cell).floor.to_i; y1 = (hi.y / @cell).floor.to_i
+        z0 = (lo.z / @cell).floor.to_i; z1 = (hi.z / @cell).floor.to_i
         (x0..x1).each do |x|
           (y0..y1).each do |y|
             (z0..z1).each do |z|
@@ -564,7 +567,9 @@ module Eagle
               -d / dist
             else
               tn = (tri[1] - tri[0]).cross(tri[2] - tri[0])
-              tn.length_squared > 1e-12 ? tn.normalized : Vec3::UP
+              tn = tn.length_squared > 1e-12 ? tn.normalized : Vec3::UP
+              # the segment crosses the triangle: push out along the side the capsule centre is on
+              tn.dot((a + b) * 0.5_f32 - tri[0]) < 0 ? -tn : tn
             end
         # n from triangle (A/mesh) to capsule: if d = pt-ps is from capsule to tri, n = -d
         Manifold.new(n, radius - dist, [pt])
@@ -1320,7 +1325,7 @@ module Eagle
         q_rel = @a.rotation.inverse * @b.rotation
         q_err = @rest.inverse * q_rel
         q_err = Quat.new(-q_err.x, -q_err.y, -q_err.z, -q_err.w) if q_err.w < 0
-        err_w = @a.rotation * Vec3.new(q_err.x, q_err.y, q_err.z) * 2
+        err_w = (@a.rotation * @rest) * Vec3.new(q_err.x, q_err.y, q_err.z) * 2
         err_w -= axis * err_w.dot(axis)
         t1, t2 = World.orthonormal(axis)
         world.solve_angular(@a, @b, t1, err_w.dot(t1), dt)
@@ -1362,7 +1367,7 @@ module Eagle
         q_rel = @a.rotation.inverse * @b.rotation
         q_err = @rest.inverse * q_rel
         q_err = Quat.new(-q_err.x, -q_err.y, -q_err.z, -q_err.w) if q_err.w < 0
-        err_w = @a.rotation * Vec3.new(q_err.x, q_err.y, q_err.z) * 2
+        err_w = (@a.rotation * @rest) * Vec3.new(q_err.x, q_err.y, q_err.z) * 2
         world.solve_angular(@a, @b, Vec3::RIGHT, err_w.x, dt)
         world.solve_angular(@a, @b, Vec3::UP, err_w.y, dt)
         world.solve_angular(@a, @b, Vec3::BACK, err_w.z, dt)
@@ -1450,7 +1455,7 @@ module Eagle
       def remove_body(b : Body) : Nil
         @bodies.delete(b)
         @joints.reject! { |j| j.a == b || j.b == b }
-        b.contacts.each { |o| o.contacts.delete(b); @pairs.delete(pair_key(b, o)) }
+        b.contacts.each { |o| o.contacts.delete(b); o.wake; @pairs.delete(pair_key(b, o)) }
         b.contacts.clear
       end
 
@@ -1492,6 +1497,8 @@ module Eagle
           a = @bodies.find { |b| b.id == key[0] }; b = @bodies.find { |x| x.id == key[1] }
           if a && b
             a.contacts.delete(b); b.contacts.delete(a)
+            # a body resting on something that moved or vanished must fall again
+            a.wake if a.sleeping?; b.wake if b.sleeping?
             @ended << {a, b}
           end
         end
@@ -1628,17 +1635,25 @@ module Eagle
       private def update_sleeping(dt : Float32)
         jointed = Set(Body).new
         @joints.each { |j| jointed << j.a << j.b if j.enabled? }
+        ready = Set(Body).new
         @bodies.each do |b|
           next unless b.dynamic? && b.enabled?
           next if jointed.includes?(b)
           speed = b.velocity.length + b.angular_velocity.length
           if speed < @sleep_threshold
             b.sleep_timer += dt
-            b.sleep! if !b.sleeping? && b.sleep_timer >= @sleep_time
+            ready << b if !b.sleeping? && b.sleep_timer >= @sleep_time
           else
             b.wake
           end
         end
+        # a body only sleeps together with its awake neighbours, or they would keep waking it
+        loop do
+          held = ready.select { |b| b.contacts.any? { |o| o.dynamic? && !o.sensor? && !o.sleeping? && !ready.includes?(o) } }
+          break if held.empty?
+          held.each { |b| ready.delete(b) }
+        end
+        ready.each(&.sleep!)
       end
 
       # :nodoc:

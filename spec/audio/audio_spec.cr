@@ -34,6 +34,12 @@ describe Eagle::Codecs::WAV do
     f32 = Bytes.new(4); le.encode(0.25_f32, f32)
     Codecs::WAV.decode(make.call(3, 32, f32)).samples[0].should eq 0.25_f32
     expect_raises(AssetError) { Codecs::WAV.decode(make.call(1, 12, Bytes[0, 0])) }
+    expect_raises(AssetError) { Codecs::WAV.decode(make.call(1, 0, Bytes[0, 0])) }
+  end
+
+  it "rejects a truncated fmt chunk" do
+    data = "RIFF\0\0\0\0WAVEfmt \4\0\0\0\1\0\1\0data\0\0\0\0".to_slice
+    expect_raises(AssetError) { Codecs::WAV.decode(data) }
   end
 end
 
@@ -139,6 +145,40 @@ describe Eagle::Audio do
     Audio.render(4)[0].should eq 0.25_f32
     st.stop
     Audio.render(4)[0].should eq 0
+  end
+
+  it "applies stream volume and keeps voices when a stream assigns its samples" do
+    Audio.play(Sound.generate(0.1) { |t| 0.5_f32 })
+    st = AssigningStream.new
+    st.volume = 0.5_f32
+    Audio.add_stream(st)
+    out = Audio.render(4)
+    out[0].should be_close(0.5 * 0.7071 + 0.1, 1e-3)
+    st.stop
+  end
+
+  it "node updates do not cancel a voice fade" do
+    s = Sound.generate(1.0) { |t| 1_f32 }
+    p = AudioPlayer.new(s, volume: 1)
+    p.play
+    v = p.voice.not_nil!
+    v.fade(0.2, 0.5)
+    Audio.render(4800)
+    p.update_voice
+    v.volume.should be < 1
+    p.stop
+  end
+
+  it "survives an out of range pan without NaN" do
+    v = Sound.generate(0.1) { |t| 0.5_f32 }.play(pan: 2)
+    Audio.render(8).each { |x| x.nan?.should be_false }
+    v.stop
+  end
+end
+
+class AssigningStream < Eagle::AudioStream
+  def fill(buf : Slice(Float32), frames : Int32, sample_rate : Int32) : Nil
+    frames.times { |i| buf[i * 2] = 0.2_f32; buf[i * 2 + 1] = 0.2_f32 }
   end
 end
 
