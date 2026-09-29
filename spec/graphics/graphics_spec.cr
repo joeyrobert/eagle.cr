@@ -104,6 +104,48 @@ describe Eagle::Graphics do
     img[10, 10].should eq Color::BLACK
   end
 
+  gpu_it "clears the tracked scissor when entering a canvas" do
+    g = Eagle.graphics
+    inner = Canvas.new(16, 16)
+    g.begin_frame
+    g.scissor = Rect.new(40, 40, 4, 4)
+    g.with_canvas(inner, clear: Color::BLACK) do
+      g.with_scissor(Rect.new(0, 0, 4, 4)) { g.rect(0, 0, 2, 2, color: Color::RED) }
+      g.rect(0, 0, 16, 16, color: Color::WHITE)
+    end
+    g.end_frame
+    img = inner.to_image
+    inner.dispose
+    img[10, 10].should eq Color::WHITE
+  end
+
+  gpu_it "raises on geometry larger than one batch" do
+    g = Eagle.graphics
+    g.begin_frame
+    n = 70_000
+    ring = Array(Vec2).new(n) { |i| a = Math::PI * 2 * i / n; Vec2.new(Math.cos(a), Math.sin(a)) }
+    expect_raises(ArgumentError, /Too much geometry/) { g.polygon(ring) }
+    tex = Texture.white
+    big = Array(Vec2).new(n) { Vec2::ZERO }
+    expect_raises(ArgumentError, /Too much geometry/) { g.triangles(tex, big, big, Array(Color).new(n) { Color::WHITE }, [0, 1, 2]) }
+    g.end_frame
+  end
+
+  gpu_it "keeps the bound target when reading a canvas back" do
+    g = Eagle.graphics
+    a = Canvas.new(8, 8)
+    b = Canvas.new(8, 8)
+    g.begin_frame
+    g.with_canvas(a, clear: Color::BLACK) do
+      b.to_image
+      g.rect(0, 0, 8, 8, color: Color::WHITE)
+    end
+    g.end_frame
+    img = a.to_image
+    a.dispose; b.dispose
+    img[4, 4].should eq Color::WHITE
+  end
+
   gpu_it "renders text with the built-in font" do
     img = GPUSpec.render(64, 24) { |g| g.print("I", 0, 0, Color::WHITE) }
     # 'I' at 2x scale: a vertical bar around x = 4..5, y = 0..13

@@ -51,6 +51,22 @@ describe Eagle::Mesh do
     m.bounds.max.x.should eq 10.5
   end
 
+  it "invalidates bounds when vertices are added" do
+    m = Mesh.new
+    m.add_vertex(v3(0, 0, 0))
+    m.bounds.max.should eq v3(0, 0, 0)
+    m.add_vertex(v3(3, 4, 5))
+    m.bounds.max.should eq v3(3, 4, 5)
+  end
+
+  it "reads OBJ faces with relative indices" do
+    obj = "v 0 0 0\nv 1 0 0\nv 0 1 0\nf -3 -2 -1\nv 0 0 1\nv 1 0 1\nv 0 1 1\nf -3 -2 -1\n"
+    m = Mesh.decode(obj)
+    m.vertex_count.should eq 6
+    m.positions[m.indices[3].to_i].should eq v3(0, 0, 1)
+    m.positions[m.indices[5].to_i].should eq v3(0, 1, 1)
+  end
+
   it "round-trips OBJ" do
     cube = Mesh.cube(1)
     text = Codecs::OBJ.encode(cube)
@@ -280,6 +296,102 @@ describe Eagle::Renderer3D do
     render.call
     Scene3D.renderer.draw_calls.should eq 2 # one shadow caster + one visible mesh
     env.shadow_distance = 40
+    canvas.dispose
+  end
+
+  gpu_it "shadows from the shadow-casting light even when it is not first" do
+    root = SceneTree.root
+    cam = Camera3D.new(position: v3(0, 6, 0.01))
+    cam.look_at(Vec3::ZERO)
+    env = Scene3D.environment
+    env.sky = false; env.background = Color::BLACK; env.ambient = Color::BLACK
+    env.shadows = true; env.shadow_size = 512
+    env.fog(0, 0)
+    floor = MeshInstance3D.new(Mesh.plane(20, 20), Material.new(Color::WHITE, specular: 0))
+    block = MeshInstance3D.new(Mesh.cube(1), Material.new(Color::WHITE, specular: 0), position: v3(0, 1, 0))
+    # a dim unshadowed fill light is added first, the sun after it
+    fill = DirectionalLight3D.new(v3(0, -1, 0))
+    fill.shadows = false
+    fill.intensity = 0.1
+    sun = DirectionalLight3D.new(v3(-1, -1, 0))
+    root.add(cam, floor, block, fill, sun)
+    canvas = Canvas.new(64, 64, depth: true)
+    g = Eagle.graphics
+    g.begin_frame
+    g.with_canvas(canvas, clear: nil) { Scene3D.render(root, cam, canvas.size, flip_y: true) }
+    g.end_frame
+    img = canvas.to_image
+    img.average(39, 30, 5, 4).r.should be < 0.15
+    img.average(12, 30, 6, 4).r.should be > 0.4
+    canvas.dispose
+  end
+
+  gpu_it "keeps the 2D blend mode and scissor across a 3D render" do
+    root = SceneTree.root
+    cam = Camera3D.new(position: v3(0, 0, 4))
+    cam.look_at(Vec3::ZERO)
+    env = Scene3D.environment
+    env.shadows = true; env.shadow_size = 256
+    root.add(cam, DirectionalLight3D.new(v3(0, -1, -1)))
+    canvas = Canvas.new(16, 16, depth: true)
+    g = Eagle.graphics
+    g.begin_frame
+    g.with_canvas(canvas, clear: Color.gray(0.5)) do
+      g.blend = GPU::BlendMode::Additive
+      g.scissor = Rect.new(0, 0, 8, 16)
+      Scene3D.render(root, cam, canvas.size, flip_y: true, clear: false)
+      g.rect(0, 0, 16, 16, color: Color.new(0, 1, 0, 0.5))
+    end
+    g.end_frame
+    img = canvas.to_image
+    canvas.dispose
+    img[2, 8].g.should be > 0.9 # additive: 0.5 + 0.5, alpha blend would give 0.75
+    img[12, 8].g.should be < 0.6 # outside the scissor
+  end
+
+  gpu_it "applies fog to unlit materials" do
+    root = SceneTree.root
+    cam = Camera3D.new(position: v3(0, 0, 10))
+    cam.look_at(Vec3::ZERO)
+    env = Scene3D.environment
+    env.sky = false; env.background = Color::BLUE; env.shadows = false
+    env.fog(1, 5, Color::BLACK)
+    quad = MeshInstance3D.new(Mesh.quad(20, 20), Material.unlit(Color::WHITE))
+    root.add(cam, quad)
+    canvas = Canvas.new(16, 16, depth: true)
+    g = Eagle.graphics
+    g.begin_frame
+    g.with_canvas(canvas, clear: nil) { Scene3D.render(root, cam, canvas.size, flip_y: true) }
+    g.end_frame
+    img = canvas.to_image
+    canvas.dispose
+    img[8, 8].r.should be < 0.05
+  end
+
+  gpu_it "honors Material#receive_shadows" do
+    root = SceneTree.root
+    cam = Camera3D.new(position: v3(0, 6, 0.01))
+    cam.look_at(Vec3::ZERO)
+    env = Scene3D.environment
+    env.sky = false; env.background = Color::BLACK; env.ambient = Color::BLACK
+    env.shadows = true; env.shadow_size = 512
+    env.fog(0, 0)
+    floor_mat = Material.new(Color::WHITE, specular: 0)
+    floor = MeshInstance3D.new(Mesh.plane(20, 20), floor_mat)
+    block = MeshInstance3D.new(Mesh.cube(1), Material.new(Color::WHITE, specular: 0), position: v3(0, 1, 0))
+    sun = DirectionalLight3D.new(v3(-1, -1, 0))
+    root.add(cam, floor, block, sun)
+    canvas = Canvas.new(64, 64, depth: true)
+    shot = -> do
+      g = Eagle.graphics
+      g.begin_frame
+      g.with_canvas(canvas, clear: nil) { Scene3D.render(root, cam, canvas.size, flip_y: true) }
+      g.end_frame
+      canvas.to_image.average(39, 30, 5, 4).r
+    end
+    shot.call.should be < 0.15
+    floor_mat.receive_shadows = false
+    shot.call.should be > 0.4
     canvas.dispose
   end
 

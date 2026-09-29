@@ -123,12 +123,12 @@ module Eagle
             color += (diffuse_col * ndl + spec_col * spec) * u_light_color[i] * atten * sh;
           }
           color += u_emissive;
-          if (u_fog_range.y > u_fog_range.x) {
-            float dist = length(u_camera_pos - v_world_pos);
-            float f = clamp((dist - u_fog_range.x) / (u_fog_range.y - u_fog_range.x), 0.0, 1.0);
-            color = mix(color, u_fog_color, f);
-          }
           frag_color = vec4(color, base.a);
+        }
+        if (u_fog_range.y > u_fog_range.x) {
+          float dist = length(u_camera_pos - v_world_pos);
+          float f = clamp((dist - u_fog_range.x) / (u_fog_range.y - u_fog_range.x), 0.0, 1.0);
+          frag_color.rgb = mix(frag_color.rgb, u_fog_color, f);
         }
       }
       GLSL

@@ -67,7 +67,7 @@ module Eagle
     # Adds a vertex and returns its index.
     def add_vertex(p : Vec3, n : Vec3 = Vec3::UP, uv : Vec2 = Vec2::ZERO, c : Color = Color::WHITE) : UInt32
       @positions << p; @normals << n; @uvs << uv; @colors << c
-      @dirty = true
+      @dirty = true; @bounds = nil
       (@positions.size - 1).to_u32
     end
 
@@ -410,7 +410,7 @@ module Eagle
       def self.decode(text : String, hint : String = "") : Mesh
         mesh = Mesh.new(File.basename(hint, ".obj"))
         vs = [] of Vec3; vts = [] of Vec2; vns = [] of Vec3
-        cache = {} of String => UInt32
+        cache = {} of {Int32, Int32, Int32} => UInt32
         has_normals = false
         text.each_line do |line|
           line = line.strip
@@ -422,11 +422,12 @@ module Eagle
           when "vn" then vns << Vec3.new(parts[1].to_f, parts[2].to_f, parts[3].to_f); has_normals = true
           when "f"
             idx = parts[1..].map do |tok|
-              cache[tok] ||= begin
-                f = tok.split('/')
-                vi = resolve(f[0], vs.size)
-                ti = f.size > 1 && !f[1].empty? ? resolve(f[1], vts.size) : -1
-                ni = f.size > 2 && !f[2].empty? ? resolve(f[2], vns.size) : -1
+              f = tok.split('/')
+              vi = resolve(f[0], vs.size)
+              ti = f.size > 1 && !f[1].empty? ? resolve(f[1], vts.size) : -1
+              ni = f.size > 2 && !f[2].empty? ? resolve(f[2], vns.size) : -1
+              # keyed by resolved indices, since relative (negative) indices mean different vertices over time
+              cache[{vi, ti, ni}] ||= begin
                 mesh.add_vertex(vs[vi], ni >= 0 ? vns[ni] : Vec3::UP, ti >= 0 ? vts[ti] : Vec2::ZERO)
               end
             end

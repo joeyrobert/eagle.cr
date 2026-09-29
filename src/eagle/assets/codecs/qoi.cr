@@ -57,6 +57,8 @@ module Eagle
               end
             end
             index[hash(r, g, b, a)] = {r, g, b, a}
+          else
+            raise AssetError.new("QOI data truncated")
           end
           px[i] = r; px[i + 1] = g; px[i + 2] = b; px[i + 3] = a
           i += 4

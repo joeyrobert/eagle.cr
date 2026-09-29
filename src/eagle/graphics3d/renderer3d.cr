@@ -193,9 +193,14 @@ module Eagle
       shadow_light = lights.find { |l| l.kind.directional? && l.shadows? } if @environment.shadows?
       shadow_ok = false
       if sl = shadow_light
+        # the shader shadows light 0 only, so put the shadow caster first
+        lights = lights.dup
+        lights.unshift(lights.delete_at(lights.index!(sl)))
         caller_target = dev.current_target
+        dev.scissor(nil, 0)
         shadow_ok = render_shadows(sl, items, camera)
         dev.bind_render_target(caller_target)
+        Eagle.graphics.restore_state if Eagle.initialized?
         dbg("shadow pass")
       end
 
@@ -253,6 +258,7 @@ module Eagle
         end
         m = item.material
         m.apply(sh)
+        sh["u_shadows"] = shadow_ok && m.receive_shadows? ? 1 : 0
         sh["u_model"] = item.transform
         sh["u_normal_matrix"] = item.transform.to_mat3.inverse.transposed
         dev.cull(m.double_sided? ? GPU::CullMode::None : GPU::CullMode::Back)
@@ -276,7 +282,11 @@ module Eagle
       dev.depth_test(false)
       dev.cull(GPU::CullMode::None)
       dev.front_face_ccw(true)
-      dev.blend_mode(GPU::BlendMode::Alpha)
+      if Eagle.initialized?
+        Eagle.graphics.restore_state
+      else
+        dev.blend_mode(GPU::BlendMode::Alpha)
+      end
       @stats_draw_calls = @draw_calls
       @stats_culled = @culled
     end
