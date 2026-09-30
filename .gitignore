@@ -12,3 +12,6 @@
 /.doccheck/
 /.claude/
 /.cursor/
+
+# Save files written by the portal3 example when it is run from the repo.
+portal3.save

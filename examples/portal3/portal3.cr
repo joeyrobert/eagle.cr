@@ -1,0 +1,16 @@
+require "../../src/eagle"
+include Eagle
+
+require "./portal3/textures"
+require "./portal3/build"
+require "./portal3/portal_hole"
+require "./portal3/portal_camera"
+require "./portal3/portals"
+require "./portal3/player"
+require "./portal3/entities"
+require "./portal3/sounds"
+require "./portal3/levels"
+require "./portal3/save"
+require "./portal3/cutscene"
+require "./portal3/menu"
+require "./portal3/game"
