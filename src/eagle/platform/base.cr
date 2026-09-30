@@ -65,6 +65,17 @@ module Eagle
       abstract def clipboard : String
       # Sets the clipboard text.
       abstract def clipboard=(s : String)
+
+      # Key/value storage that outlives the process, such as a browser's localStorage.
+      # Returns nil when the platform has nowhere to keep it, and writes are dropped.
+      # A browser has no writable filesystem at all, so a game that wants its saves to
+      # survive a reload has to go through here rather than through `File`.
+      def storage_read(key : String) : String?
+        nil
+      end
+
+      def storage_write(key : String, value : String) : Nil
+      end
       # Starts or stops OS text input.
       abstract def text_input=(enabled : Bool)
       # Tells the OS where the text caret is (in window coordinates) and what the focused field

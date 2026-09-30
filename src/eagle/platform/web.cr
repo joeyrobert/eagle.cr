@@ -47,6 +47,19 @@ module Eagle
         end
 
         def clipboard=(s : String); LibJS.js_clipboard_write(s.to_unsafe, s.bytesize); end
+
+        def storage_read(key : String) : String?
+          n = LibJS.js_storage_read(key.to_unsafe, key.bytesize, Pointer(UInt8).null, 0)
+          return nil if n <= 0
+          String.new(n) { |buf|
+            LibJS.js_storage_read(key.to_unsafe, key.bytesize, buf, n)
+            {n, 0}
+          }
+        end
+
+        def storage_write(key : String, value : String) : Nil
+          LibJS.js_storage_write(key.to_unsafe, key.bytesize, value.to_unsafe, value.bytesize)
+        end
         def text_input=(enabled : Bool); LibJS.js_text_input(enabled ? 1 : 0); end
 
         def set_text_input_area(rect : Rect, text : String, caret : Int32) : Nil

@@ -14,6 +14,8 @@
     fun js_clipboard_read(ptr : Pointer(UInt8), cap : Int32) : Int32
     fun js_clipboard_write(ptr : Pointer(UInt8), len : Int32)
     fun js_take_string(ptr : Pointer(UInt8), cap : Int32) : Int32
+    fun js_storage_read(key : Pointer(UInt8), key_len : Int32, ptr : Pointer(UInt8), cap : Int32) : Int32
+    fun js_storage_write(key : Pointer(UInt8), key_len : Int32, ptr : Pointer(UInt8), len : Int32)
     fun js_relative_mouse(enabled : Int32)
     fun js_cursor(visible : Int32)
     fun js_audio_open(rate : Int32, frames : Int32) : Int32
