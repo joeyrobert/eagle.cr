@@ -553,7 +553,7 @@ def api_link(name : String, rel : String) : String?
 end
 
 # marketing page
-shots = %w(joyride flythrough3d coinrush3d tiltmaze fps voxel chess platformer physics3d roguelike algorithms ui interactions asteroids breakout physics checkers).select { |n| has_shot.call(n) }
+shots = %w(portal3 joyride flythrough3d coinrush3d tiltmaze fps voxel chess platformer physics3d roguelike algorithms ui interactions asteroids breakout physics checkers).select { |n| has_shot.call(n) }
 gallery = shots.map do |n|
   t, d, _ = EXAMPLES[n]
   "<figure><a href=\"play/#{n}/index.html\"><img src=\"assets/screenshots/#{n}.png\" alt=\"#{t} screenshot\" loading=\"lazy\"></a><figcaption><b><a href=\"play/#{n}/index.html\">#{t}</a></b>#{d}</figcaption></figure>"
