@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal 3 · Eagle</title>
+<meta name="description" content="Eagle is a 2D and 3D game engine written in Crystal.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg"></head>
+<body><header class="top"><div class="wrap"><a class="brand" href="../../index.html"><img src="../../assets/favicon.svg" alt=""><span>Eagle</span><span class="ver">v0.2.0</span></a><nav><a href="../../play/index.html" class="active">Play</a><a href="../../docs/guide.html">Guide</a><a href="../../docs/api/index.html">API</a><a href="https://github.com/joeyrobert/eagle.cr">GitHub</a></nav></div></header>
+<main class="wrap"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../../index.html">Home</a></li><li><a href="../../play/index.html">Play</a></li><li aria-current="page">Portal 3</li></ol></nav>
+<div class="play"><h1>Portal 3</h1><p class="lead">First-person portal puzzle across 20 chambers: linked portals that keep your momentum, weighted cubes, buttons, lifts, sentry turrets, lasers and a pit of toxic liquid. Every texture and sound is generated at runtime.</p>
+<div class="stage"><canvas id="eagle"></canvas></div>
+<p class="controls">Click to capture mouse · WASD move · Ctrl crouch · LMB/RMB portals · E carry · Esc menu</p>
+<details><summary>Source: <code>examples/portal3/main.cr</code></summary><h3>examples/portal3/main.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3&quot;</span>
+
+<span class="c"># Portal 3 is a first-person puzzle game. The device in your hand opens a linked pair of</span>
+<span class="c"># portals on white panels, and everything else follows from that: weighted cubes,</span>
+<span class="c"># buttons, doors, lifts, sentry turrets, lasers and a pit of toxic liquid. Nineteen</span>
+<span class="c"># chambers teach the pieces and then combine them.</span>
+<span class="c">#</span>
+<span class="c"># Everything you see and hear is generated at runtime. There are no asset files: the</span>
+<span class="c"># panel and hazard textures are drawn into images at startup, and every sound is</span>
+<span class="c"># synthesised, so the whole game ships as a single executable.</span>
+<span class="t">Eagle</span>.run(<span class="t">Portal3</span><span class="t">::</span><span class="t">Game</span>,
+  title: <span class="s">&quot;Portal 3&quot;</span>,
+  width: <span class="n">1600</span>,
+  height: <span class="n">900</span>,
+  msaa: <span class="n">4</span>,
+  vsync: <span class="n">true</span>)
+</code></pre>
+<h3>examples/portal3/portal3.cr</h3><pre class="code"><code class="lang-crystal"><span class="k">require</span> <span class="s">&quot;../../src/eagle&quot;</span>
+<span class="k">include</span> <span class="t">Eagle</span>
+
+<span class="k">require</span> <span class="s">&quot;./portal3/textures&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/build&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/portal_hole&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/portal_camera&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/portals&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/player&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/entities&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/sounds&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/levels&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/save&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/cutscene&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/menu&quot;</span>
+<span class="k">require</span> <span class="s">&quot;./portal3/game&quot;</span>
+</code></pre>
+</details></div>
+<script type="module">import { runEagle } from "./eagle.js"; runEagle("./portal3.wasm", document.getElementById("eagle"), { antialias: true });</script></main>
+<footer><div class="wrap"><span>Eagle is free software under the LGPL v3.</span><span>Written in Crystal. <a href="https://github.com/joeyrobert/eagle.cr">Source on GitHub</a></span></div></footer>
+</body></html>

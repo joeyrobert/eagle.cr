@@ -399,6 +399,21 @@ class EagleRuntime {
         return bytes.length;
       },
       js_clipboard_write: (ptr, len) => rt.writeClipboard(rt.str(ptr, len)),
+      // localStorage, so a game's save survives the page being reloaded. A browser in
+      // private mode, or one with storage blocked, throws on access, so every call is
+      // guarded: losing a save must never take the game down with it.
+      js_storage_read: (kptr, klen, ptr, cap) => {
+        try {
+          const v = window.localStorage.getItem(rt.str(kptr, klen));
+          if (v === null) return 0;
+          const bytes = rt.encoder.encode(v);
+          if (ptr !== 0 && cap >= bytes.length) rt.u8(ptr, bytes.length).set(bytes);
+          return bytes.length;
+        } catch (e) { return 0; }
+      },
+      js_storage_write: (kptr, klen, ptr, len) => {
+        try { window.localStorage.setItem(rt.str(kptr, klen), rt.str(ptr, len)); } catch (e) { }
+      },
       js_take_string: (ptr, cap) => { const n = Math.min(cap, rt.strBytes.length); rt.u8(ptr, n).set(rt.strBytes.subarray(0, n)); return n; },
       js_relative_mouse: (on) => { if (on) rt.requestLock(); else { rt.wantLock = false; if (document.exitPointerLock) document.exitPointerLock(); } },
       js_cursor: (visible) => { rt.canvas.style.cursor = visible ? "default" : "none"; },
