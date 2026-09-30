@@ -14,10 +14,32 @@ module Portal3
       @@saving_broken
     end
 
-    # Probes that a save can actually be written, rather than assuming it.
+    # Checks that a save can actually be written, without touching the real one.
     def self.check_writable : Nil
-      probe = SaveData.write_text("version:1\n")
-      return if probe
+      if file_backed?
+        probe = SaveData.default_path + ".probe"
+        begin
+          File.write(probe, "1")
+          File.delete(probe)
+          @@saving_broken = false
+          return
+        rescue
+          @@saving_broken = true
+          return
+        end
+      end
+      if pf = Eagle.platform?
+        begin
+          pf.storage_write(PROBE_KEY, "1")
+          ok = pf.storage_read(PROBE_KEY) == "1"
+          pf.storage_write(PROBE_KEY, "")
+          @@saving_broken = !ok
+          return
+        rescue
+          @@saving_broken = true
+          return
+        end
+      end
       @@saving_broken = true
     end
 
@@ -42,14 +64,39 @@ module Portal3
     # what a save has to use on the web.
     STORAGE_KEY = "portal3.save"
 
-    # A save has to go to a file when the platform has a filesystem, and to the
-    # platform's own store when it does not. A browser answers ENOTCAPABLE to every
-    # file open, so there the file is tried first, fails, and the store takes over.
-    def self.read_text : String?
-      file = SaveData.path
-      begin
-        return File.read(file) if File.exists?(file)
+    # Used to check that a save can actually be written. It must never be the real
+    # save's key: writing the probe used to overwrite the player's progress before it
+    # was read, which silently reset the game on every launch.
+    PROBE_KEY = "portal3.probe"
+
+    # Whether this platform has a usable filesystem at all.
+    #
+    # A browser does not, and merely asking is fatal: the WASI layer answers
+    # ENOTCAPABLE to a file open and raises trying to create a directory that is not
+    # there, which took the whole game down on the first frame. So the question is
+    # asked once, defensively, and the answer cached.
+    @@file_backed : Bool? = nil
+
+    def self.file_backed? : Bool
+      return @@file_backed.not_nil! unless @@file_backed.nil?
+      @@file_backed = begin
+        # A directory that is there is as much as can be checked safely here; whether
+        # the write itself succeeds is settled by write_text, which is already guarded.
+        Dir.exists?(File.dirname(default_path))
       rescue
+        false
+      end
+    end
+
+    # A save goes to a file where there is one, and to the platform's own store where
+    # there is not. Neither is assumed to work: the browser can also refuse storage,
+    # in which case the game runs and simply cannot remember anything.
+    def self.read_text : String?
+      if file_backed?
+        begin
+          return File.read(default_path) if File.exists?(default_path)
+        rescue
+        end
       end
       if pf = Eagle.platform?
         begin
@@ -60,13 +107,13 @@ module Portal3
       nil
     end
 
-    # Writes to the file first, and to the platform's own store when that fails.
-    # Neither can be relied on, and neither failure should stop the game.
     def self.write_text(text : String) : Bool
-      begin
-        File.write(SaveData.path, text)
-        return true
-      rescue
+      if file_backed?
+        begin
+          File.write(default_path, text)
+          return true
+        rescue
+        end
       end
       if pf = Eagle.platform?
         begin
@@ -80,27 +127,15 @@ module Portal3
 
     # Where the game writes on platforms that have a filesystem. A folder that is not
     # writable is skipped, so a read-only install still runs.
-    def self.path : String
+    def self.default_path : String
       override = ENV["PORTAL3_SAVE"]?
       return override if override && !override.empty?
-      candidates = ["portal3.save", File.join(home, ".portal3.save")]
-      candidates.find { |c| writable?(c) } || candidates.first
+      "portal3.save"
     end
 
-    private def self.home : String
-      ENV["HOME"]? || "."
-    end
-
-    private def self.writable?(file : String) : Bool
-      dir = File.dirname(file)
-      return true if File.exists?(file)
-      Dir.mkdir_p(dir)
-      probe = File.join(dir, ".portal3_probe")
-      File.write(probe, "")
-      File.delete(probe)
-      true
-    rescue
-      false
+    # Kept for the settings screen, which reports where a save lives.
+    def self.path : String
+      default_path
     end
 
     def self.load : SaveData

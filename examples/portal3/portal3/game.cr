@@ -99,8 +99,10 @@ module Portal3
 
       # The front end. Menus and save are wired first, then the game either drops
       # straight into a chamber or waits on the main menu.
-      SaveData.check_writable
+      # The save is read first, then probed. Probing used to write over the save
+      # before this read it, which reset progress on every launch.
       @save = SaveData.load
+      SaveData.check_writable
       apply_settings(@save)
       Audio.volume = @save.volume
       @menus = Menus.new(@save)
